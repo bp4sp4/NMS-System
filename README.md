@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 한평생 eduvisor - 교육 관리 시스템
 
-## Getting Started
+교육 기관을 위한 종합 관리 시스템입니다. 개인 순위, 지점 순위, CRM, 정산 등의 기능을 제공합니다.
 
-First, run the development server:
+## 주요 기능
+
+- **로그인 시스템**: Supabase 기반 인증
+- **대시보드**: 전체 현황 및 통계
+- **순위 관리**: 개인별/지점별 순위 관리
+- **CRM**: 고객 관계 관리
+- **정산**: 매출 및 정산 관리
+
+## 기술 스택
+
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **Styling**: Tailwind CSS 4
+- **Icons**: Lucide React
+
+## 시작하기
+
+### 필수 요구사항
+
+- Node.js 18.0.0 이상
+- npm 또는 yarn
+- Supabase 계정
+
+### 설치
+
+1. 저장소를 클론합니다:
+
+```bash
+git clone <repository-url>
+cd NMSProject
+```
+
+2. 의존성을 설치합니다:
+
+```bash
+npm install
+```
+
+3. 환경 변수를 설정합니다:
+
+```bash
+# .env.local 파일 생성
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+4. 개발 서버를 시작합니다:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. 브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 애플리케이션을 확인합니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 프로젝트 구조
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── auth/              # 인증 관련 페이지
+│   │   └── login/         # 로그인 페이지
+│   ├── dashboard/         # 대시보드
+│   ├── ranking/           # 순위 관리
+│   ├── crm/              # CRM
+│   ├── settlement/       # 정산
+│   ├── layout.tsx        # 루트 레이아웃
+│   └── page.tsx          # 메인 페이지
+├── components/           # 재사용 가능한 컴포넌트
+│   └── AuthContext.tsx   # 인증 컨텍스트
+├── lib/                  # 유틸리티 함수
+│   ├── auth.ts          # 인증 관련 함수
+│   └── supabase.ts      # Supabase 설정
+└── types/               # TypeScript 타입 정의
+    └── auth.ts          # 인증 관련 타입
+```
 
-## Learn More
+## 사용 가능한 스크립트
 
-To learn more about Next.js, take a look at the following resources:
+- `npm run dev` - 개발 서버 시작 (Turbopack 사용)
+- `npm run build` - 프로덕션 빌드 생성
+- `npm run start` - 프로덕션 서버 시작
+- `npm run lint` - ESLint를 사용한 코드 검사
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 테스트 계정
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+개발 환경에서 사용할 수 있는 테스트 계정:
 
-## Deploy on Vercel
+- **사용자명**: honggildong
+- **비밀번호**: password
+- **역할**: AIO
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 기여하기
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. 이 저장소를 포크합니다
+2. 새로운 기능 브랜치를 생성합니다 (`git checkout -b feature/amazing-feature`)
+3. 변경사항을 커밋합니다 (`git commit -m 'Add some amazing feature'`)
+4. 브랜치에 푸시합니다 (`git push origin feature/amazing-feature`)
+5. Pull Request를 생성합니다
+
+## 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+
+## 지원
+
+문제가 발생하거나 질문이 있으시면 이슈를 생성해 주세요.

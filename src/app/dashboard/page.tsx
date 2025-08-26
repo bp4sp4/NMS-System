@@ -264,7 +264,7 @@ export default function DashboardPage() {
     return true;
   });
 
-  const filteredBranchData = branchRankingData.filter((item) => {
+  const filteredBranchData = branchRankingData.filter(() => {
     // 년도 필터 (현재는 모든 데이터가 2025년으로 가정)
     if (branchFilters.year !== "2025") return false;
 

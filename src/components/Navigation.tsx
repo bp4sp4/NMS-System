@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useAuth } from "@/components/AuthContext";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 
 export default function Header() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
 
   const handleLogout = async () => {
     await logout();

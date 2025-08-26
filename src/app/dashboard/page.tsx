@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 import Header from "@/components/Navigation";
 

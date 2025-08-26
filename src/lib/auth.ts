@@ -24,6 +24,7 @@ export const loginUser = async (
     const user: User = {
       id: profile.id,
       username: profile.username,
+      email: profile.email,
       name: profile.name,
       branch: profile.branch,
       team: profile.team,

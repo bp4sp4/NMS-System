@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
     username: "",
+    email: "",
     name: "",
     password: "",
     confirmPassword: "",
@@ -60,6 +61,7 @@ export default function RegisterPage() {
       const { error: profileError } = await supabase.from("users").insert({
         id: userId,
         username: formData.username,
+        email: formData.email,
         name: formData.name,
         password: formData.password,
         branch: formData.branch,
@@ -76,6 +78,7 @@ export default function RegisterPage() {
       const user = {
         id: userId,
         username: formData.username,
+        email: formData.email,
         name: formData.name,
         branch: formData.branch,
         team: formData.team,
@@ -128,6 +131,28 @@ export default function RegisterPage() {
                 value={formData.username}
                 onChange={(e) =>
                   setFormData({ ...formData, username: e.target.value })
+                }
+              />
+            </div>
+
+            {/* 이메일 */}
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
+                이메일 *
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="이메일을 입력하세요"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
                 }
               />
             </div>

@@ -12,7 +12,7 @@ export interface Database {
       users: {
         Row: {
           id: string;
-          username: string;
+          email: string;
           name: string;
           password?: string;
           branch?: string;
@@ -23,7 +23,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          username: string;
+          email: string;
           name: string;
           password?: string;
           branch?: string;
@@ -34,7 +34,7 @@ export interface Database {
         };
         Update: {
           id?: string;
-          username?: string;
+          email?: string;
           name?: string;
           password?: string;
           branch?: string;

@@ -16,7 +16,7 @@ export default function Header() {
   };
 
   const menuItems = [
-    { href: "/dashboard", label: "홈" },
+    { href: "/", label: "홈" },
     { href: "/ranking", label: "순위" },
     { href: "/crm", label: "CRM" },
     { href: "/settlement", label: "정산" },

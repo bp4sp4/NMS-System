@@ -41,8 +41,8 @@ function LoginForm() {
       // Refresh auth context
       await refreshUser();
 
-      // Redirect to dashboard
-      router.push("/dashboard");
+      // Redirect to home
+      router.push("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "로그인에 실패했습니다.");
     } finally {

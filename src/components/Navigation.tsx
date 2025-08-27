@@ -8,18 +8,45 @@ import { supabase } from "@/lib/supabase";
 import styles from "./Navigation.module.css";
 
 export default function Header() {
-  const { user } = useAuth();
+  const { user, logout: authLogout } = useAuth();
   const pathname = usePathname();
 
   const handleLogout = async () => {
     try {
+      // 로그아웃 버튼 비활성화
+      const logoutButton = document.querySelector(
+        "[data-logout-button]"
+      ) as HTMLButtonElement;
+      if (logoutButton) {
+        logoutButton.disabled = true;
+        logoutButton.textContent = "로그아웃 중...";
+      }
+
+      // AuthContext 상태 정리
+      await authLogout();
+
+      // Supabase 세션 정리
       await supabase.auth.signOut();
-      // Force page refresh to clear any cached state
-      window.location.href = "/auth/login";
+
+      // 로컬 스토리지 및 세션 스토리지 완전 정리
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // 쿠키 정리 (가능한 경우)
+      document.cookie.split(";").forEach(function (c) {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+
+      // 페이지 완전 새로고침으로 모든 상태 초기화
+      window.location.replace("/auth/login");
     } catch (error) {
       console.error("로그아웃 오류:", error);
-      // 오류가 발생해도 로그인 페이지로 이동
-      window.location.href = "/auth/login";
+      // 오류가 발생해도 강제로 로그인 페이지로 이동
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.replace("/auth/login");
     }
   };
 
@@ -87,7 +114,11 @@ export default function Header() {
                 </div>
               </Link>
             </div>
-            <button onClick={handleLogout} className={styles.logoutButton}>
+            <button
+              onClick={handleLogout}
+              className={styles.logoutButton}
+              data-logout-button
+            >
               <LogOut className={styles.logoutIcon} />
               로그아웃
             </button>

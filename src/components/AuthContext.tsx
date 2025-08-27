@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   refreshUser: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -59,10 +60,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     // onAuthStateChange가 자동으로 처리하므로 별도 작업 불필요
   };
 
+  // 로그아웃 함수
+  const logout = async () => {
+    try {
+      // 사용자 상태 즉시 초기화
+      setUser(null);
+      setIsLoading(false);
+      setAuthInitialized(false);
+    } catch (error) {
+      console.error("로그아웃 오류:", error);
+    }
+  };
+
   const value = {
     user,
     isLoading,
     refreshUser,
+    logout,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

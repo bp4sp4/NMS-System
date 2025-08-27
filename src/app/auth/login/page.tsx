@@ -51,23 +51,8 @@ function LoginForm() {
       window.history.replaceState({}, "", url.toString());
     }
 
-    // 이메일 인증 성공 후 자동 로그인 처리
-    const checkEmailConfirmation = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (session?.user) {
-          // 이메일 인증 후 자동으로 로그인된 경우 홈으로 리다이렉트
-          router.push("/");
-        }
-      } catch (error) {
-        console.log("Session check failed:", error);
-      }
-    };
-
-    checkEmailConfirmation();
-  }, [searchParams, router]);
+    // 자동 로그인 체크 제거 - 로그아웃 후 자동으로 홈으로 가지 않도록 함
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,8 +61,7 @@ function LoginForm() {
 
     try {
       await loginUser(credentials);
-      // Supabase Auth가 자동으로 세션을 관리하므로 별도 호출 불필요
-      // onAuthStateChange가 자동으로 처리함
+
       router.push("/");
     } catch (err) {
       const errorMessage =

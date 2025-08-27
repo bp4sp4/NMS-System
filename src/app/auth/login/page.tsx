@@ -87,7 +87,7 @@ function LoginForm() {
       <div className={styles.content}>
         {/* Main title */}
         <div>
-          <h1 className={styles.title}>계정으로 로그인</h1>
+          <h1 className={styles.title}>로그인</h1>
         </div>
 
         {/* Message */}

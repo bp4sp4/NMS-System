@@ -44,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
+    let authInitialized = false;
 
     // Supabase Auth 상태 변경 리스너를 먼저 설정
     const {
@@ -58,7 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isMounted) {
         console.log("Setting user from auth state change:", user?.name);
         setUser(user);
-        setIsLoading(false);
+        if (!authInitialized) {
+          setIsLoading(false);
+          authInitialized = true;
+        }
       } else {
         console.log("Component not mounted, skipping state update");
       }
@@ -69,16 +73,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         console.log("Initializing auth...");
         const currentUser = await getCurrentUser();
-        if (isMounted) {
+        if (isMounted && !authInitialized) {
           console.log("Setting initial user:", currentUser?.name);
           setUser(currentUser);
           setIsLoading(false);
+          authInitialized = true;
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
-        if (isMounted) {
+        if (isMounted && !authInitialized) {
           setUser(null);
           setIsLoading(false);
+          authInitialized = true;
         }
       }
     };
@@ -86,13 +92,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 즉시 초기화 실행
     initAuth();
 
-    // 2초 후에도 로딩이 끝나지 않으면 강제로 false로 설정
+    // 3초 후에도 로딩이 끝나지 않으면 강제로 false로 설정
     const timeout = setTimeout(() => {
-      if (isMounted && isLoading) {
+      if (isMounted && !authInitialized) {
         console.log("Auth timeout, forcing isLoading to false");
         setIsLoading(false);
+        authInitialized = true;
       }
-    }, 2000);
+    }, 3000);
 
     // 컴포넌트 언마운트 시 구독 해제
     return () => {
@@ -100,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(timeout);
       subscription.unsubscribe();
     };
-  }, []); // isLoading 의존성 제거
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, logout, refreshUser }}>

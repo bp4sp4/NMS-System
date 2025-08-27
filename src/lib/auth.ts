@@ -245,13 +245,23 @@ export const getCurrentUser = async (): Promise<User | null> => {
       avatar: session.user.user_metadata?.avatar_url || null,
     };
 
-    // 사용자 프로필 정보 가져오기 (선택적)
+    // 사용자 프로필 정보 가져오기 (타임아웃 설정)
     try {
-      const { data: profile, error: profileError } = await supabase
+      const profilePromise = supabase
         .from("users")
         .select("*")
         .eq("id", session.user.id)
         .single();
+
+      // 2초 타임아웃 설정
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Profile lookup timeout")), 2000)
+      );
+
+      const { data: profile, error: profileError } = (await Promise.race([
+        profilePromise,
+        timeoutPromise,
+      ])) as any;
 
       if (!profileError && profile) {
         console.log("Profile found:", profile.name);
@@ -276,7 +286,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
       }
     } catch (profileError) {
       console.log(
-        "Profile lookup failed, using basic user info:",
+        "Profile lookup failed or timed out, using basic user info:",
         profileError
       );
     }

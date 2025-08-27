@@ -34,7 +34,7 @@ interface ProfileFormData {
 }
 
 export default function ProfilePage() {
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -64,10 +64,10 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("basic");
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!user) {
       router.push("/auth/login");
     }
-  }, [user, isLoading, router]);
+  }, [user, router]);
 
   useEffect(() => {
     if (user) {
@@ -299,20 +299,6 @@ export default function ProfilePage() {
       setIsChangingPassword(false);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">로딩 중...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (!user) {
     return null;

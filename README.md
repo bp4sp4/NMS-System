@@ -47,7 +47,21 @@ npm install
 # .env.local 파일 생성
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# 사이트 URL 설정 (선택사항)
+# 이 값을 설정하면 동적 감지 대신 이 값을 사용합니다
+# NEXT_PUBLIC_SITE_URL=https://your-domain.com
+
+# 예시:
+# NEXT_PUBLIC_SITE_URL=https://nms-system.vercel.app
+# NEXT_PUBLIC_SITE_URL=https://localhost:3000
 ```
+
+**환경 변수 설명:**
+
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase 프로젝트 URL (필수)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase 익명 키 (필수)
+- `NEXT_PUBLIC_SITE_URL`: 사이트 URL (선택사항, 설정하지 않으면 자동 감지)
 
 4. 개발 서버를 시작합니다:
 

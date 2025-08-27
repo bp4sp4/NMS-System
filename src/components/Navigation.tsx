@@ -4,16 +4,23 @@ import Link from "next/link";
 import { useAuth } from "@/components/AuthContext";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import styles from "./Navigation.module.css";
 
 export default function Header() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const pathname = usePathname();
 
   const handleLogout = async () => {
-    await logout();
-    // Force page refresh to clear any cached state
-    window.location.href = "/auth/login";
+    try {
+      await supabase.auth.signOut();
+      // Force page refresh to clear any cached state
+      window.location.href = "/auth/login";
+    } catch (error) {
+      console.error("로그아웃 오류:", error);
+      // 오류가 발생해도 로그인 페이지로 이동
+      window.location.href = "/auth/login";
+    }
   };
 
   const menuItems = [

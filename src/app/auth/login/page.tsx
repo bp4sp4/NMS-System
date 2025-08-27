@@ -75,12 +75,9 @@ function LoginForm() {
     setError("");
 
     try {
-      const response = await loginUser(credentials);
-
+      await loginUser(credentials);
       // Supabase Auth가 자동으로 세션을 관리하므로 별도 호출 불필요
       // onAuthStateChange가 자동으로 처리함
-
-      // Redirect to home
       router.push("/");
     } catch (err) {
       const errorMessage =

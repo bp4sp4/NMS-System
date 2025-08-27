@@ -34,7 +34,7 @@ interface FilterState {
 }
 
 export default function RankingPage() {
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const [individualRankingData, setIndividualRankingData] = useState<
     RankingData[]
@@ -42,7 +42,6 @@ export default function RankingPage() {
   const [branchRankingData, setBranchRankingData] = useState<
     BranchRankingData[]
   >([]);
-  const [isLoadingData, setIsLoadingData] = useState(false);
 
   const [individualFilters, setIndividualFilters] = useState<FilterState>({
     year: new Date().getFullYear().toString(),
@@ -61,14 +60,13 @@ export default function RankingPage() {
   });
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!user) {
       router.push("/auth/login");
     }
-  }, [user, isLoading, router]);
+  }, [user, router]);
 
   // CRM 데이터에서 순위 계산
   const fetchRankingData = async () => {
-    setIsLoadingData(true);
     try {
       const { data, error } = await supabase
         .from("customers")
@@ -181,8 +179,6 @@ export default function RankingPage() {
       setBranchRankingData(sortedBranchData);
     } catch (error) {
       console.error("순위 데이터 가져오기 오류:", error);
-    } finally {
-      setIsLoadingData(false);
     }
   };
 
@@ -235,20 +231,6 @@ export default function RankingPage() {
 
     return true;
   });
-
-  if (isLoading || isLoadingData) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">순위 데이터를 불러오는 중...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (!user) {
     return null;

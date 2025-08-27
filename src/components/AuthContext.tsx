@@ -9,6 +9,7 @@ import {
 } from "react";
 import { User } from "@/types/auth";
 import { getCurrentUser, logoutUser, onAuthStateChange } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 interface AuthContextType {
   user: User | null;
@@ -48,6 +49,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initAuth = async () => {
       try {
         console.log("Initializing auth...");
+
+        // 먼저 Supabase 세션 확인
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("Session check error:", error);
+          if (isMounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        if (!session) {
+          console.log("No session found during init");
+          if (isMounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        console.log("Session found during init:", session.user.email);
+
+        // 세션이 있으면 사용자 정보 가져오기
         const currentUser = await getCurrentUser();
         if (isMounted) {
           console.log("Setting initial user:", currentUser?.name);
@@ -85,13 +114,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // 5초 후에도 로딩이 끝나지 않으면 강제로 false로 설정
+    // 2초 후에도 로딩이 끝나지 않으면 강제로 false로 설정 (더 빠른 응답)
     const timeout = setTimeout(() => {
       if (isMounted && isLoading) {
         console.log("Auth timeout, forcing isLoading to false");
         setIsLoading(false);
       }
-    }, 5000);
+    }, 2000);
 
     // 컴포넌트 언마운트 시 구독 해제
     return () => {
@@ -99,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(timeout);
       subscription.unsubscribe();
     };
-  }, [isLoading]);
+  }, []); // isLoading 의존성 제거
 
   return (
     <AuthContext.Provider value={{ user, isLoading, logout, refreshUser }}>

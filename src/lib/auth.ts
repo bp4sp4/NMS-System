@@ -207,43 +207,47 @@ export const getCurrentUser = async (): Promise<User | null> => {
 
     console.log("Session found for user:", session.user.email);
 
-    // 사용자 프로필 정보 가져오기
-    const { data: profile, error: profileError } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", session.user.id)
-      .single();
-
-    if (profileError) {
-      console.error("Profile error:", profileError);
-      console.error("Profile error code:", profileError.code);
-      console.error("Profile error message:", profileError.message);
-      return null;
-    }
-
-    if (!profile) {
-      console.log("No profile found for user:", session.user.email);
-      return null;
-    }
-
-    console.log("Profile found:", profile.name);
-    console.log("Profile details:", {
-      id: profile.id,
-      email: profile.email,
-      name: profile.name,
-      branch: profile.branch,
-      team: profile.team,
-    });
-
-    return {
-      id: profile.id,
-      username: profile.email, // 이메일을 username으로 사용
-      email: profile.email,
-      name: profile.name,
-      branch: profile.branch,
-      team: profile.team,
-      avatar: profile.avatar,
+    // 세션이 있으면 기본 사용자 정보 반환 (프로필 조회 실패 방지)
+    const basicUser: User = {
+      id: session.user.id,
+      username: session.user.email!,
+      email: session.user.email!,
+      name: session.user.user_metadata?.name || "사용자",
+      branch: session.user.user_metadata?.branch || null,
+      team: session.user.user_metadata?.team || null,
+      avatar: session.user.user_metadata?.avatar_url || null,
     };
+
+    // 사용자 프로필 정보 가져오기 (선택적)
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+
+      if (!profileError && profile) {
+        console.log("Profile found:", profile.name);
+        return {
+          id: profile.id,
+          username: profile.email,
+          email: profile.email,
+          name: profile.name,
+          branch: profile.branch,
+          team: profile.team,
+          avatar: profile.avatar,
+        };
+      }
+    } catch (profileError) {
+      console.log(
+        "Profile lookup failed, using basic user info:",
+        profileError
+      );
+    }
+
+    // 프로필이 없어도 기본 사용자 정보 반환
+    console.log("Using basic user info from session");
+    return basicUser;
   } catch (error) {
     console.error("Error getting current user:", error);
     return null;

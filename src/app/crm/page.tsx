@@ -12,6 +12,7 @@ interface CRMData {
   team: string;
   manager: string;
   courseType: string;
+  course: string;
   institution: string;
   customerName: string;
   contact: string;
@@ -40,6 +41,7 @@ export default function CRMPage() {
 
   const [formData, setFormData] = useState({
     courseType: "학점은행제",
+    course: "사회복지사2급",
     institution: "한평생학점은행",
     customerName: "",
     contact: "",
@@ -78,6 +80,7 @@ export default function CRMPage() {
           team: item.team,
           manager: item.manager,
           courseType: item.course_type,
+          course: item.course || "",
           institution: item.institution,
           customerName: item.customer_name,
           contact: item.contact,
@@ -199,6 +202,41 @@ export default function CRMPage() {
     }
   };
 
+  // 과정분류별 과정 목록
+  const getCoursesByCourseType = (courseType: string): string[] => {
+    switch (courseType) {
+      case "학점은행제":
+        return [
+          "사회복지사2급",
+          "보육교사2급",
+          "평생교육사2급",
+          "한국어교원2급",
+          "아동학사",
+          "아동전문학사",
+          "사회복지학사",
+          "사회복지전문학사",
+        ];
+      case "민간 자격증":
+        return [
+          "사회복지사2급",
+          "보육교사2급",
+          "평생교육사2급",
+          "한국어교원2급",
+        ];
+      case "유학":
+        return [
+          "영어연수",
+          "일본어연수",
+          "중국어연수",
+          "호주유학",
+          "캐나다유학",
+          "미국유학",
+        ];
+      default:
+        return ["사회복지사2급"];
+    }
+  };
+
   // 등록/수정 처리
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -234,6 +272,7 @@ export default function CRMPage() {
             team: user.team || "",
             manager: user.name,
             course_type: formData.courseType,
+            course: formData.course,
             institution: formData.institution,
             customer_name: formData.customerName,
             contact: formData.contact,
@@ -259,6 +298,7 @@ export default function CRMPage() {
         // 폼 초기화
         setFormData({
           courseType: "학점은행제",
+          course: "사회복지사2급",
           institution: "한평생학점은행",
           customerName: "",
           contact: "",
@@ -289,6 +329,7 @@ export default function CRMPage() {
     if (item) {
       setFormData({
         courseType: item.courseType,
+        course: item.course || "사회복지사2급",
         institution: item.institution,
         customerName: item.customerName,
         contact: item.contact,
@@ -320,6 +361,7 @@ export default function CRMPage() {
         .from("customers")
         .update({
           course_type: formData.courseType,
+          course: formData.course,
           institution: formData.institution,
           customer_name: formData.customerName,
           contact: formData.contact,
@@ -343,6 +385,7 @@ export default function CRMPage() {
       // 폼 초기화
       setFormData({
         courseType: "학점은행제",
+        course: "사회복지사2급",
         institution: "한평생학점은행",
         customerName: "",
         contact: "",
@@ -525,11 +568,17 @@ export default function CRMPage() {
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
                   value={formData.courseType}
                   onChange={(e) => {
+                    const newCourseType = e.target.value;
+                    const availableCourses =
+                      getCoursesByCourseType(newCourseType);
+                    const availableInstitutions =
+                      getInstitutionsByCourseType(newCourseType);
+
                     setFormData({
                       ...formData,
-                      courseType: e.target.value,
-                      institution:
-                        getInstitutionsByCourseType(e.target.value)[0] || "",
+                      courseType: newCourseType,
+                      course: availableCourses[0] || "사회복지사2급",
+                      institution: availableInstitutions[0] || "",
                     });
                   }}
                   required
@@ -537,6 +586,28 @@ export default function CRMPage() {
                   <option value="학점은행제">학점은행제</option>
                   <option value="민간 자격증">민간 자격증</option>
                   <option value="유학">유학</option>
+                </select>
+              </div>
+
+              {/* 과정 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  과정 *
+                </label>
+                <select
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                  value={formData.course}
+                  onChange={(e) =>
+                    setFormData({ ...formData, course: e.target.value })
+                  }
+                  required
+                >
+                  <option value="">과정을 선택하세요</option>
+                  {getCoursesByCourseType(formData.courseType).map((course) => (
+                    <option key={course} value={course}>
+                      {course}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -721,6 +792,7 @@ export default function CRMPage() {
                         setEditingItem(null);
                         setFormData({
                           courseType: "학점은행제",
+                          course: "사회복지사2급",
                           institution: "한평생학점은행",
                           customerName: "",
                           contact: "",
@@ -904,6 +976,9 @@ export default function CRMPage() {
                       과정분류
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                      과정
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                       기관명
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
@@ -952,6 +1027,9 @@ export default function CRMPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {item.courseType}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.course || "미선택"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {item.institution}

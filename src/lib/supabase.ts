@@ -9,7 +9,14 @@ if (typeof window !== "undefined") {
   console.log("Supabase Key exists:", !!supabaseAnonKey);
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    storageKey: "nms-auth-token",
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
 
 // Database types
 export interface Database {

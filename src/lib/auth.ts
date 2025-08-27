@@ -187,15 +187,25 @@ export const logoutUser = async (): Promise<void> => {
 
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
+    console.log("Getting current user...");
+
     // Supabase Auth에서 현재 세션 가져오기
     const {
       data: { session },
       error,
     } = await supabase.auth.getSession();
 
-    if (error || !session) {
+    if (error) {
+      console.error("Session error:", error);
       return null;
     }
+
+    if (!session) {
+      console.log("No session found");
+      return null;
+    }
+
+    console.log("Session found for user:", session.user.email);
 
     // 사용자 프로필 정보 가져오기
     const { data: profile, error: profileError } = await supabase
@@ -204,9 +214,17 @@ export const getCurrentUser = async (): Promise<User | null> => {
       .eq("id", session.user.id)
       .single();
 
-    if (profileError || !profile) {
+    if (profileError) {
+      console.error("Profile error:", profileError);
       return null;
     }
+
+    if (!profile) {
+      console.log("No profile found for user:", session.user.email);
+      return null;
+    }
+
+    console.log("Profile found:", profile.name);
 
     return {
       id: profile.id,
@@ -226,6 +244,8 @@ export const getCurrentUser = async (): Promise<User | null> => {
 // Supabase Auth 상태 변경 리스너
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
   return supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log("Auth state change:", event, session?.user?.email);
+
     if (event === "SIGNED_IN" && session?.user) {
       // 사용자 프로필 정보 가져오기
       const { data: profile } = await supabase
@@ -244,8 +264,55 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
           team: profile.team,
           avatar: profile.avatar,
         });
+      } else {
+        callback(null);
       }
     } else if (event === "SIGNED_OUT") {
+      callback(null);
+    } else if (event === "TOKEN_REFRESHED" && session?.user) {
+      // 토큰 갱신 시에도 사용자 정보 업데이트
+      const { data: profile } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profile) {
+        callback({
+          id: profile.id,
+          username: profile.email,
+          email: profile.email,
+          name: profile.name,
+          branch: profile.branch,
+          team: profile.team,
+          avatar: profile.avatar,
+        });
+      } else {
+        callback(null);
+      }
+    } else if (event === "USER_UPDATED" && session?.user) {
+      // 사용자 정보 업데이트 시
+      const { data: profile } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profile) {
+        callback({
+          id: profile.id,
+          username: profile.email,
+          email: profile.email,
+          name: profile.name,
+          branch: profile.branch,
+          team: profile.team,
+          avatar: profile.avatar,
+        });
+      } else {
+        callback(null);
+      }
+    } else {
+      // 기타 이벤트의 경우 null 반환
       callback(null);
     }
   });

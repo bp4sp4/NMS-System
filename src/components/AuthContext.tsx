@@ -43,14 +43,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     const initAuth = async () => {
       try {
+        console.log("Initializing auth...");
         const currentUser = await getCurrentUser();
-        setUser(currentUser);
+        if (isMounted) {
+          setUser(currentUser);
+          setIsLoading(false);
+        }
       } catch (error) {
         console.error("Error initializing auth:", error);
-      } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
       }
     };
 
@@ -60,12 +68,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = onAuthStateChange((user) => {
-      setUser(user);
-      setIsLoading(false);
+      console.log("Auth state change callback:", user?.email);
+      if (isMounted) {
+        setUser(user);
+        setIsLoading(false);
+      }
     });
 
     // 컴포넌트 언마운트 시 구독 해제
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);

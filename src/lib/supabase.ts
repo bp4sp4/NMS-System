@@ -3,6 +3,12 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+// 환경 변수 디버깅 (라이브 환경에서만)
+if (typeof window !== "undefined") {
+  console.log("Supabase URL exists:", !!supabaseUrl);
+  console.log("Supabase Key exists:", !!supabaseAnonKey);
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Database types

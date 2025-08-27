@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import styles from "./page.module.css";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
-    username: "",
     email: "",
     name: "",
     password: "",
@@ -20,7 +20,27 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // URL 파라미터에서 메시지 확인
+  useEffect(() => {
+    const message = searchParams.get("message");
+    if (message) {
+      setSuccessMessage(message);
+      // 3초 후 메시지 제거
+      const timer = setTimeout(() => {
+        setSuccessMessage("");
+        // URL에서 메시지 파라미터 제거
+        const url = new URL(window.location.href);
+        url.searchParams.delete("message");
+        window.history.replaceState({}, "", url.toString());
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,41 +76,42 @@ export default function RegisterPage() {
     }
 
     try {
-      const userId = crypto.randomUUID();
-
-      const { error: profileError } = await supabase.from("users").insert({
-        id: userId,
-        username: formData.username,
+      // Supabase Auth로 사용자 계정 생성
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
-        name: formData.name,
         password: formData.password,
-        branch: formData.branch,
-        team: formData.team,
+        options: {
+          data: {
+            name: formData.name,
+            branch: formData.branch,
+            team: formData.team,
+          },
+        },
       });
 
-      if (profileError) {
-        throw new Error(
-          `사용자 정보 저장에 실패했습니다: ${profileError.message}`
-        );
+      if (error) {
+        throw new Error(error.message);
       }
 
-      // 2. 로컬 스토리지에 사용자 정보 저장 (간단한 인증)
-      const user = {
-        id: userId,
-        username: formData.username,
+      if (!data.user) {
+        throw new Error("회원가입에 실패했습니다.");
+      }
+
+      // 회원가입 성공 시 자동으로 로그인
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
-        name: formData.name,
-        branch: formData.branch,
-        team: formData.team,
-      };
+        password: formData.password,
+      });
 
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("auth-token", `local-token-${userId}`);
-
-      // 3. 로그인 페이지로 리다이렉트
-      router.push(
-        "/auth/login?message=회원가입이 완료되었습니다. 바로 로그인해주세요."
-      );
+      if (signInError) {
+        // 자동 로그인 실패 시 로그인 페이지로 이동
+        router.push(
+          "/auth/login?message=회원가입이 완료되었습니다. 로그인해주세요."
+        );
+      } else {
+        // 자동 로그인 성공 시 홈으로 이동
+        router.push("/?message=회원가입이 완료되었습니다.");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "회원가입에 실패했습니다.");
     } finally {
@@ -99,244 +120,218 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className={styles.container}>
+      {/* Header */}
+      <div className={styles.header}>
+        <div className={styles.logo}>
+          <span className={styles.logoText}>
+            <img src="/images/logo2.png" alt="logo" />
+          </span>
+        </div>
+        <span className={styles.brandName}>한평생 에듀바이저스</span>
+      </div>
+
+      <div className={styles.content}>
+        {/* Main title */}
         <div>
-          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white text-xl font-bold">E</span>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            한평생 eduvisor
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">회원가입</p>
+          <h1 className={styles.title}>회원가입</h1>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            {/* 아이디 */}
-            <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700"
-              >
-                아이디 *
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="아이디를 입력하세요"
-                value={formData.username}
-                onChange={(e) =>
-                  setFormData({ ...formData, username: e.target.value })
-                }
-              />
-            </div>
-
-            {/* 이메일 */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                이메일 *
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="이메일을 입력하세요"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-              />
-            </div>
-
-            {/* 이름 */}
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
-              >
-                이름 *
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="이름을 입력하세요"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-              />
-            </div>
-
-            {/* 지점 */}
-            <div>
-              <label
-                htmlFor="branch"
-                className="block text-sm font-medium text-gray-700"
-              >
-                지점 *
-              </label>
-              <select
-                id="branch"
-                name="branch"
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={formData.branch}
-                onChange={(e) =>
-                  setFormData({ ...formData, branch: e.target.value })
-                }
-                required
-              >
-                <option value="">지점을 선택하세요</option>
-                <option value="AIO">AIO</option>
-                <option value="위드업">위드업</option>
-              </select>
-            </div>
-
-            {/* 팀 */}
-            <div>
-              <label
-                htmlFor="team"
-                className="block text-sm font-medium text-gray-700"
-              >
-                팀 *
-              </label>
-              <select
-                id="team"
-                name="team"
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={formData.team}
-                onChange={(e) =>
-                  setFormData({ ...formData, team: e.target.value })
-                }
-                required
-              >
-                <option value="">팀을 선택하세요</option>
-                <option value="1팀">1팀</option>
-                <option value="2팀">2팀</option>
-                <option value="3팀">3팀</option>
-                <option value="4팀">4팀</option>
-              </select>
-            </div>
-
-            {/* 비밀번호 */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                비밀번호 *
-              </label>
-              <div className="relative">
+        {/* Register container */}
+        <div className={styles.registerContainer}>
+          <form className={styles.form} onSubmit={handleSubmit}>
+            <div className={styles.inputGroup}>
+              {/* 이메일 */}
+              <div className={styles.formField}>
+                <label htmlFor="email" className={styles.label}>
+                  이메일 *
+                </label>
                 <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
+                  id="email"
+                  name="email"
+                  type="email"
                   required
-                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="비밀번호를 입력하세요"
-                  value={formData.password}
+                  className={styles.input}
+                  placeholder="이메일을 입력하세요"
+                  value={formData.email}
                   onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
+                    setFormData({ ...formData, email: e.target.value })
                   }
                 />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
               </div>
-            </div>
 
-            {/* 비밀번호 확인 */}
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700"
-              >
-                비밀번호 확인 *
-              </label>
-              <div className="relative">
+              {/* 이름 */}
+              <div className={styles.formField}>
+                <label htmlFor="name" className={styles.label}>
+                  이름 *
+                </label>
                 <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
+                  id="name"
+                  name="name"
+                  type="text"
                   required
-                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="비밀번호를 다시 입력하세요"
-                  value={formData.confirmPassword}
+                  className={styles.input}
+                  placeholder="이름을 입력하세요"
+                  value={formData.name}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      confirmPassword: e.target.value,
-                    })
+                    setFormData({ ...formData, name: e.target.value })
                   }
                 />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
               </div>
-            </div>
-          </div>
 
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="flex">
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">{error}</h3>
+              {/* 지점 */}
+              <div className={styles.formField}>
+                <label htmlFor="branch" className={styles.label}>
+                  지점 *
+                </label>
+                <select
+                  id="branch"
+                  name="branch"
+                  className={styles.select}
+                  value={formData.branch}
+                  onChange={(e) =>
+                    setFormData({ ...formData, branch: e.target.value })
+                  }
+                  required
+                >
+                  <option value="">지점을 선택하세요</option>
+                  <option value="AIO">AIO</option>
+                  <option value="위드업">위드업</option>
+                </select>
+              </div>
+
+              {/* 팀 */}
+              <div className={styles.formField}>
+                <label htmlFor="team" className={styles.label}>
+                  팀 *
+                </label>
+                <select
+                  id="team"
+                  name="team"
+                  className={styles.select}
+                  value={formData.team}
+                  onChange={(e) =>
+                    setFormData({ ...formData, team: e.target.value })
+                  }
+                  required
+                >
+                  <option value="">팀을 선택하세요</option>
+                  <option value="1팀">1팀</option>
+                  <option value="2팀">2팀</option>
+                  <option value="3팀">3팀</option>
+                  <option value="4팀">4팀</option>
+                </select>
+              </div>
+
+              {/* 비밀번호 */}
+              <div className={styles.formField}>
+                <label htmlFor="password" className={styles.label}>
+                  비밀번호 *
+                </label>
+                <div className={styles.passwordContainer}>
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    className={`${styles.input} ${styles.passwordInput}`}
+                    placeholder="비밀번호를 입력하세요"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                  />
+                  <button
+                    type="button"
+                    className={styles.eyeButton}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* 비밀번호 확인 */}
+              <div className={styles.formField}>
+                <label htmlFor="confirmPassword" className={styles.label}>
+                  비밀번호 확인 *
+                </label>
+                <div className={styles.passwordContainer}>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    className={`${styles.input} ${styles.passwordInput}`}
+                    placeholder="비밀번호를 다시 입력하세요"
+                    value={formData.confirmPassword}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                  />
+                  <button
+                    type="button"
+                    className={styles.eyeButton}
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
-          )}
 
-          <div>
+            {/* Success Message */}
+            {successMessage && (
+              <div className={`${styles.message} ${styles.successMessage}`}>
+                <div>
+                  <h3 className={styles.successText}>{successMessage}</h3>
+                </div>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className={`${styles.message} ${styles.errorMessage}`}>
+                <div>
+                  <h3 className={styles.errorText}>{error}</h3>
+                </div>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={styles.registerButton}
             >
               {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <div className={styles.registerButtonContent}>
+                  <Loader2 className={`h-5 w-5 ${styles.spinner}`} />
+                  회원가입 중...
+                </div>
               ) : (
                 "회원가입"
               )}
             </button>
-          </div>
 
-          <div className="text-center">
-            <Link
-              href="/auth/login"
-              className="flex items-center justify-center text-sm text-blue-600 hover:text-blue-800"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              로그인으로 돌아가기
-            </Link>
-          </div>
-        </form>
+            <div className={styles.backLink}>
+              <Link href="/auth/login">
+                <ArrowLeft className={styles.backIcon} />
+                로그인으로 돌아가기
+              </Link>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

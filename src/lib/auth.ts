@@ -5,25 +5,93 @@ export const loginUser = async (
   credentials: LoginCredentials
 ): Promise<LoginResponse> => {
   try {
-    // Get user profile from users table by username
+    console.log("로그인 시도:", credentials.username);
+    console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log(
+      "Supabase Key 존재:",
+      !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: credentials.username, // username 필드에 이메일이 들어옴
+      password: credentials.password,
+    });
+
+    if (error) {
+      console.error("Auth 오류:", error);
+      console.error("오류 코드:", error.status);
+      console.error("오류 메시지:", error.message);
+      throw new Error(error.message);
+    }
+
+    if (!data.user) {
+      throw new Error("로그인에 실패했습니다.");
+    }
+
+    console.log("Auth 성공, 사용자 ID:", data.user.id);
+    console.log("사용자 이메일:", data.user.email);
+    console.log("사용자 메타데이터:", data.user.user_metadata);
+
+    // 사용자 프로필 정보 가져오기
     const { data: profile, error: profileError } = await supabase
       .from("users")
       .select("*")
-      .eq("username", credentials.username)
+      .eq("id", data.user.id)
       .single();
 
-    if (profileError || !profile) {
-      throw new Error("사용자를 찾을 수 없습니다.");
+    console.log("프로필 조회 결과:", { profile, profileError });
+
+    if (profileError) {
+      console.error("프로필 조회 오류:", profileError);
+      console.error("프로필 오류 코드:", profileError.code);
+      console.error("프로필 오류 메시지:", profileError.message);
     }
 
-    // 저장된 비밀번호와 비교
-    if (credentials.password !== profile.password) {
-      throw new Error("비밀번호가 올바르지 않습니다.");
+    if (profileError || !profile) {
+      console.log("프로필이 없음, 새로 생성 시도");
+
+      // 프로필이 없으면 새로 생성
+      const { data: newProfile, error: insertError } = await supabase
+        .from("users")
+        .insert({
+          id: data.user.id,
+          email: data.user.email!,
+          name: data.user.user_metadata?.name || "사용자",
+          branch: data.user.user_metadata?.branch || null,
+          team: data.user.user_metadata?.team || null,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error("프로필 생성 오류:", insertError);
+        console.error("삽입 오류 코드:", insertError.code);
+        console.error("삽입 오류 메시지:", insertError.message);
+        console.error("삽입 오류 세부사항:", insertError.details);
+        throw new Error(`프로필 생성에 실패했습니다: ${insertError.message}`);
+      }
+
+      console.log("새 프로필 생성됨:", newProfile);
+
+      const user: User = {
+        id: newProfile.id,
+        username: newProfile.email, // 이메일을 username으로 사용
+        email: newProfile.email,
+        name: newProfile.name,
+        branch: newProfile.branch,
+        team: newProfile.team,
+        avatar: newProfile.avatar,
+      };
+
+      return {
+        user,
+        token: data.session?.access_token || "",
+      };
     }
 
     const user: User = {
       id: profile.id,
-      username: profile.username,
+      username: profile.email, // 이메일을 username으로 사용
       email: profile.email,
       name: profile.name,
       branch: profile.branch,
@@ -33,7 +101,7 @@ export const loginUser = async (
 
     return {
       user,
-      token: `local-token-${profile.id}`,
+      token: data.session?.access_token || "",
     };
   } catch (error) {
     console.error("Login error:", error);
@@ -45,10 +113,10 @@ export const loginUser = async (
 
 export const logoutUser = async (): Promise<void> => {
   try {
-    // 로컬 스토리지에서 사용자 정보 삭제
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("user");
-      localStorage.removeItem("auth-token");
+    // Supabase Auth 로그아웃
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw error;
     }
   } catch (error) {
     throw new Error(
@@ -59,19 +127,66 @@ export const logoutUser = async (): Promise<void> => {
 
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
-    // 로컬 스토리지에서 사용자 정보 가져오기
-    if (typeof window === "undefined") return null;
+    // Supabase Auth에서 현재 세션 가져오기
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
 
-    const userStr = localStorage.getItem("user");
-    if (!userStr) return null;
-
-    try {
-      return JSON.parse(userStr);
-    } catch {
+    if (error || !session) {
       return null;
     }
+
+    // 사용자 프로필 정보 가져오기
+    const { data: profile, error: profileError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", session.user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return null;
+    }
+
+    return {
+      id: profile.id,
+      username: profile.email, // 이메일을 username으로 사용
+      email: profile.email,
+      name: profile.name,
+      branch: profile.branch,
+      team: profile.team,
+      avatar: profile.avatar,
+    };
   } catch (error) {
     console.error("Error getting current user:", error);
     return null;
   }
+};
+
+// Supabase Auth 상태 변경 리스너
+export const onAuthStateChange = (callback: (user: User | null) => void) => {
+  return supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === "SIGNED_IN" && session?.user) {
+      // 사용자 프로필 정보 가져오기
+      const { data: profile } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profile) {
+        callback({
+          id: profile.id,
+          username: profile.email, // 이메일을 username으로 사용
+          email: profile.email,
+          name: profile.name,
+          branch: profile.branch,
+          team: profile.team,
+          avatar: profile.avatar,
+        });
+      }
+    } else if (event === "SIGNED_OUT") {
+      callback(null);
+    }
+  });
 };

@@ -8,7 +8,7 @@ import {
   ReactNode,
 } from "react";
 import { User } from "@/types/auth";
-import { getCurrentUser, logoutUser } from "@/lib/auth";
+import { getCurrentUser, logoutUser, onAuthStateChange } from "@/lib/auth";
 
 interface AuthContextType {
   user: User | null;
@@ -55,6 +55,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     initAuth();
+
+    // Supabase Auth 상태 변경 리스너 설정
+    const {
+      data: { subscription },
+    } = onAuthStateChange((user) => {
+      setUser(user);
+      setIsLoading(false);
+    });
+
+    // 컴포넌트 언마운트 시 구독 해제
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
@@ -71,4 +84,3 @@ export function useAuth() {
   }
   return context;
 }
-

@@ -14,7 +14,6 @@ export interface Database {
           id: string;
           email: string;
           name: string;
-          password?: string;
           branch?: string;
           team?: string;
           avatar?: string;
@@ -25,7 +24,6 @@ export interface Database {
           id?: string;
           email: string;
           name: string;
-          password?: string;
           branch?: string;
           team?: string;
           avatar?: string;
@@ -36,7 +34,6 @@ export interface Database {
           id?: string;
           email?: string;
           name?: string;
-          password?: string;
           branch?: string;
           team?: string;
           avatar?: string;

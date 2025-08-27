@@ -50,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("Initializing auth...");
         const currentUser = await getCurrentUser();
         if (isMounted) {
+          console.log("Setting initial user:", currentUser?.name);
           setUser(currentUser);
           setIsLoading(false);
         }
@@ -62,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
+    // 즉시 초기화 실행
     initAuth();
 
     // Supabase Auth 상태 변경 리스너 설정
@@ -75,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isMounted
       );
       if (isMounted) {
-        console.log("Setting user:", user?.name);
+        console.log("Setting user from auth state change:", user?.name);
         setUser(user);
         setIsLoading(false);
       } else {
@@ -83,12 +85,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    // 5초 후에도 로딩이 끝나지 않으면 강제로 false로 설정
+    const timeout = setTimeout(() => {
+      if (isMounted && isLoading) {
+        console.log("Auth timeout, forcing isLoading to false");
+        setIsLoading(false);
+      }
+    }, 5000);
+
     // 컴포넌트 언마운트 시 구독 해제
     return () => {
       isMounted = false;
+      clearTimeout(timeout);
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isLoading]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, logout, refreshUser }}>

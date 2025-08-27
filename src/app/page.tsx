@@ -30,7 +30,14 @@ function HomeContent() {
   }, [searchParams]);
 
   useEffect(() => {
+    console.log(
+      "Home page effect - isLoading:",
+      isLoading,
+      "user:",
+      user?.name
+    );
     if (!isLoading && !user) {
+      console.log("Redirecting to login page");
       router.push("/auth/login");
     }
   }, [user, isLoading, router]);

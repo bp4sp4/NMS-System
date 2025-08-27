@@ -20,7 +20,7 @@ export default function Header() {
     { href: "/", label: "홈" },
     { href: "/ranking", label: "순위" },
     { href: "/crm", label: "CRM" },
-    { href: "/settlement", label: "정산" },
+    // { href: "/settlement", label: "정산" }, // 임시 비활성화
   ];
 
   return (

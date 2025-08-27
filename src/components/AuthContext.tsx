@@ -26,18 +26,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      console.log("refreshUser called - forcing auth state refresh...");
-      // onAuthStateChange가 자동으로 처리하므로 강제로 세션 새로고침만 수행
-      const { data, error } = await supabase.auth.refreshSession();
-
-      if (error) {
-        console.error("Session refresh error:", error);
-        setUser(null);
-      }
-      // onAuthStateChange가 자동으로 사용자 상태를 업데이트함
+      console.log("refreshUser called - skipping to prevent rate limit...");
+      // Rate limit 방지를 위해 실제 호출하지 않음
+      // onAuthStateChange가 자동으로 처리함
     } catch (error) {
       console.error("Error refreshing user:", error);
-      setUser(null);
     }
   };
 
@@ -79,14 +72,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // onAuthStateChange가 자동으로 초기 세션을 처리하므로 별도 초기화 불필요
     console.log("AuthContext initialized, waiting for auth state change...");
 
-    // 1초 후에도 로딩이 끝나지 않으면 강제로 false로 설정
+    // 3초 후에도 로딩이 끝나지 않으면 강제로 false로 설정
     const timeout = setTimeout(() => {
       if (isMounted && !authInitialized) {
         console.log("Auth timeout, forcing isLoading to false");
         setIsLoading(false);
         authInitialized = true;
       }
-    }, 1000);
+    }, 3000);
 
     // 컴포넌트 언마운트 시 구독 해제
     return () => {

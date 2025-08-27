@@ -34,7 +34,7 @@ interface ProfileFormData {
 }
 
 export default function ProfilePage() {
-  const { user, isLoading, refreshUser } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 

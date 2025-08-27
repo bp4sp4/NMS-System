@@ -20,7 +20,7 @@ function LoginForm() {
   const [message, setMessage] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { refreshUser } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     const messageParam = searchParams.get("message");
@@ -59,7 +59,6 @@ function LoginForm() {
         } = await supabase.auth.getSession();
         if (session?.user) {
           // 이메일 인증 후 자동으로 로그인된 경우 홈으로 리다이렉트
-          await refreshUser();
           router.push("/");
         }
       } catch (error) {
@@ -68,7 +67,7 @@ function LoginForm() {
     };
 
     checkEmailConfirmation();
-  }, [searchParams, refreshUser, router]);
+  }, [searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,9 +77,8 @@ function LoginForm() {
     try {
       const response = await loginUser(credentials);
 
-      // Supabase Auth가 자동으로 세션을 관리하므로 로컬 스토리지 저장 불필요
-      // refreshUser()를 호출하여 AuthContext 업데이트
-      await refreshUser();
+      // Supabase Auth가 자동으로 세션을 관리하므로 별도 호출 불필요
+      // onAuthStateChange가 자동으로 처리함
 
       // Redirect to home
       router.push("/");

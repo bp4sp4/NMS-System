@@ -52,10 +52,6 @@ export default function CRMPage() {
 
   const [crmData, setCrmData] = useState<CRMData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [showMessageGenerator, setShowMessageGenerator] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<CRMData | null>(
-    null
-  );
 
   // 데이터베이스에서 CRM 데이터 가져오기
   const fetchCRMData = useCallback(async () => {
@@ -473,45 +469,6 @@ export default function CRMPage() {
       if (newSelectedItems.length === userCRMData.length) {
         setSelectAll(true);
       }
-    }
-  };
-
-  // 메시지 생성기 열기
-  const openMessageGenerator = (customer: CRMData) => {
-    setSelectedCustomer(customer);
-    setShowMessageGenerator(true);
-  };
-
-  // 메시지 전송 처리
-  const handleSendMessage = async (message: string) => {
-    if (!selectedCustomer) return;
-
-    try {
-      // 여기에 실제 SMS/카카오톡 발송 로직 추가
-      console.log("메시지 전송:", {
-        to: selectedCustomer.contact,
-        message: message,
-        customer: selectedCustomer.customerName,
-      });
-
-      // 발송 기록 저장 (선택사항)
-      const { error } = await supabase.from("message_logs").insert({
-        customer_id: selectedCustomer.id,
-        manager: user?.name,
-        message: message,
-        sent_at: new Date().toISOString(),
-      });
-
-      if (error) {
-        console.error("메시지 로그 저장 오류:", error);
-      }
-
-      alert("메시지가 전송되었습니다!");
-      setShowMessageGenerator(false);
-      setSelectedCustomer(null);
-    } catch (error) {
-      console.error("메시지 전송 오류:", error);
-      alert("메시지 전송에 실패했습니다.");
     }
   };
 

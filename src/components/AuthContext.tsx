@@ -68,10 +68,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = onAuthStateChange((user) => {
-      console.log("Auth state change callback:", user?.email);
+      console.log(
+        "Auth state change callback:",
+        user?.email,
+        "isMounted:",
+        isMounted
+      );
       if (isMounted) {
+        console.log("Setting user:", user?.name);
         setUser(user);
         setIsLoading(false);
+      } else {
+        console.log("Component not mounted, skipping state update");
       }
     });
 

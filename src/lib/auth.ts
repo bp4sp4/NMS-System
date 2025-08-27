@@ -216,6 +216,8 @@ export const getCurrentUser = async (): Promise<User | null> => {
 
     if (profileError) {
       console.error("Profile error:", profileError);
+      console.error("Profile error code:", profileError.code);
+      console.error("Profile error message:", profileError.message);
       return null;
     }
 
@@ -225,6 +227,13 @@ export const getCurrentUser = async (): Promise<User | null> => {
     }
 
     console.log("Profile found:", profile.name);
+    console.log("Profile details:", {
+      id: profile.id,
+      email: profile.email,
+      name: profile.name,
+      branch: profile.branch,
+      team: profile.team,
+    });
 
     return {
       id: profile.id,
@@ -255,19 +264,23 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
         .single();
 
       if (profile) {
-        callback({
+        const user: User = {
           id: profile.id,
-          username: profile.email, // 이메일을 username으로 사용
+          username: profile.email,
           email: profile.email,
           name: profile.name,
           branch: profile.branch,
           team: profile.team,
           avatar: profile.avatar,
-        });
+        };
+        console.log("Profile found, calling callback with user:", user.name);
+        callback(user);
       } else {
+        console.log("No profile found, calling callback with null");
         callback(null);
       }
     } else if (event === "SIGNED_OUT") {
+      console.log("SIGNED_OUT, calling callback with null");
       callback(null);
     } else if (event === "TOKEN_REFRESHED" && session?.user) {
       // 토큰 갱신 시에도 사용자 정보 업데이트
@@ -278,7 +291,7 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
         .single();
 
       if (profile) {
-        callback({
+        const user: User = {
           id: profile.id,
           username: profile.email,
           email: profile.email,
@@ -286,8 +299,13 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
           branch: profile.branch,
           team: profile.team,
           avatar: profile.avatar,
-        });
+        };
+        console.log("Token refreshed, calling callback with user:", user.name);
+        callback(user);
       } else {
+        console.log(
+          "Token refreshed but no profile, calling callback with null"
+        );
         callback(null);
       }
     } else if (event === "USER_UPDATED" && session?.user) {
@@ -299,7 +317,7 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
         .single();
 
       if (profile) {
-        callback({
+        const user: User = {
           id: profile.id,
           username: profile.email,
           email: profile.email,
@@ -307,12 +325,16 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
           branch: profile.branch,
           team: profile.team,
           avatar: profile.avatar,
-        });
+        };
+        console.log("User updated, calling callback with user:", user.name);
+        callback(user);
       } else {
+        console.log("User updated but no profile, calling callback with null");
         callback(null);
       }
     } else {
       // 기타 이벤트의 경우 null 반환
+      console.log("Other event, calling callback with null");
       callback(null);
     }
   });

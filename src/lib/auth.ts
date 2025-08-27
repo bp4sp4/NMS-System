@@ -234,7 +234,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
 
     console.log("Session found for user:", session.user.email);
 
-    // 세션이 있으면 기본 사용자 정보 반환 (프로필 조회 실패 방지)
+    // 세션이 있으면 기본 사용자 정보 생성
     const basicUser: User = {
       id: session.user.id,
       username: session.user.email!,
@@ -245,23 +245,13 @@ export const getCurrentUser = async (): Promise<User | null> => {
       avatar: session.user.user_metadata?.avatar_url || null,
     };
 
-    // 사용자 프로필 정보 가져오기 (타임아웃 설정)
+    // 사용자 프로필 정보 가져오기 (선택적, 실패해도 기본 정보 반환)
     try {
-      const profilePromise = supabase
+      const { data: profile, error: profileError } = await supabase
         .from("users")
         .select("*")
         .eq("id", session.user.id)
         .single();
-
-      // 2초 타임아웃 설정
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Profile lookup timeout")), 2000)
-      );
-
-      const { data: profile, error: profileError } = (await Promise.race([
-        profilePromise,
-        timeoutPromise,
-      ])) as any;
 
       if (!profileError && profile) {
         console.log("Profile found:", profile.name);
@@ -283,15 +273,17 @@ export const getCurrentUser = async (): Promise<User | null> => {
           emergency_contact_a: profile.emergency_contact_a,
           emergency_contact_b: profile.emergency_contact_b,
         };
+      } else {
+        console.log("No profile found, using basic user info");
       }
     } catch (profileError) {
       console.log(
-        "Profile lookup failed or timed out, using basic user info:",
+        "Profile lookup failed, using basic user info:",
         profileError
       );
     }
 
-    // 프로필이 없어도 기본 사용자 정보 반환
+    // 프로필이 없어도 기본 사용자 정보 반환 (회원가입 직후 로그인 시)
     console.log("Using basic user info from session");
     return basicUser;
   } catch (error) {
@@ -306,99 +298,124 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
     console.log("Auth state change:", event, session?.user?.email);
 
     if (event === "SIGNED_IN" && session?.user) {
-      // 사용자 프로필 정보 가져오기
-      const { data: profile } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", session.user.id)
-        .single();
+      // 기본 사용자 정보 먼저 생성 (프로필 조회 실패 시에도 사용)
+      const basicUser: User = {
+        id: session.user.id,
+        username: session.user.email!,
+        email: session.user.email!,
+        name: session.user.user_metadata?.name || "사용자",
+        branch: session.user.user_metadata?.branch || null,
+        team: session.user.user_metadata?.team || null,
+        avatar: session.user.user_metadata?.avatar_url || null,
+      };
 
-      if (profile) {
-        const user: User = {
-          id: profile.id,
-          username: profile.email,
-          email: profile.email,
-          name: profile.name,
-          branch: profile.branch,
-          team: profile.team,
-          avatar: profile.avatar,
-          hire_date: profile.hire_date,
-          position: profile.position,
-          contact: profile.contact,
-          bank: profile.bank,
-          bank_account: profile.bank_account,
-          address: profile.address,
-          resident_number: profile.resident_number,
-          emergency_contact_a: profile.emergency_contact_a,
-          emergency_contact_b: profile.emergency_contact_b,
-        };
-        console.log("Profile found, calling callback with user:", user.name);
-        callback(user);
-      } else {
-        // 프로필이 없어도 세션이 있으면 기본 사용자 정보 반환
-        const user: User = {
-          id: session.user.id,
-          username: session.user.email!,
-          email: session.user.email!,
-          name: session.user.user_metadata?.name || "사용자",
-          branch: session.user.user_metadata?.branch || null,
-          team: session.user.user_metadata?.team || null,
-          avatar: session.user.user_metadata?.avatar_url || null,
-        };
+      try {
+        // 사용자 프로필 정보 가져오기 (선택적)
+        const { data: profile, error: profileError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+
+        if (!profileError && profile) {
+          const user: User = {
+            id: profile.id,
+            username: profile.email,
+            email: profile.email,
+            name: profile.name,
+            branch: profile.branch,
+            team: profile.team,
+            avatar: profile.avatar,
+            hire_date: profile.hire_date,
+            position: profile.position,
+            contact: profile.contact,
+            bank: profile.bank,
+            bank_account: profile.bank_account,
+            address: profile.address,
+            resident_number: profile.resident_number,
+            emergency_contact_a: profile.emergency_contact_a,
+            emergency_contact_b: profile.emergency_contact_b,
+          };
+          console.log("Profile found, calling callback with user:", user.name);
+          callback(user);
+        } else {
+          // 프로필이 없어도 기본 사용자 정보 반환
+          console.log(
+            "No profile found, calling callback with basic user:",
+            basicUser.name
+          );
+          callback(basicUser);
+        }
+      } catch (profileError) {
+        // 프로필 조회 실패 시에도 기본 사용자 정보 반환
         console.log(
-          "No profile but session exists, calling callback with basic user:",
-          user.name
+          "Profile lookup failed, calling callback with basic user:",
+          basicUser.name
         );
-        callback(user);
+        callback(basicUser);
       }
     } else if (event === "SIGNED_OUT") {
       console.log("SIGNED_OUT, calling callback with null");
       callback(null);
     } else if (event === "TOKEN_REFRESHED" && session?.user) {
-      // 토큰 갱신 시에도 사용자 정보 업데이트
-      const { data: profile } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", session.user.id)
-        .single();
+      // 기본 사용자 정보 먼저 생성
+      const basicUser: User = {
+        id: session.user.id,
+        username: session.user.email!,
+        email: session.user.email!,
+        name: session.user.user_metadata?.name || "사용자",
+        branch: session.user.user_metadata?.branch || null,
+        team: session.user.user_metadata?.team || null,
+        avatar: session.user.user_metadata?.avatar_url || null,
+      };
 
-      if (profile) {
-        const user: User = {
-          id: profile.id,
-          username: profile.email,
-          email: profile.email,
-          name: profile.name,
-          branch: profile.branch,
-          team: profile.team,
-          avatar: profile.avatar,
-          hire_date: profile.hire_date,
-          position: profile.position,
-          contact: profile.contact,
-          bank: profile.bank,
-          bank_account: profile.bank_account,
-          address: profile.address,
-          resident_number: profile.resident_number,
-          emergency_contact_a: profile.emergency_contact_a,
-          emergency_contact_b: profile.emergency_contact_b,
-        };
-        console.log("Token refreshed, calling callback with user:", user.name);
-        callback(user);
-      } else {
-        // 프로필이 없어도 세션이 있으면 기본 사용자 정보 반환
-        const user: User = {
-          id: session.user.id,
-          username: session.user.email!,
-          email: session.user.email!,
-          name: session.user.user_metadata?.name || "사용자",
-          branch: session.user.user_metadata?.branch || null,
-          team: session.user.user_metadata?.team || null,
-          avatar: session.user.user_metadata?.avatar_url || null,
-        };
+      try {
+        // 사용자 프로필 정보 가져오기 (선택적)
+        const { data: profile, error: profileError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+
+        if (!profileError && profile) {
+          const user: User = {
+            id: profile.id,
+            username: profile.email,
+            email: profile.email,
+            name: profile.name,
+            branch: profile.branch,
+            team: profile.team,
+            avatar: profile.avatar,
+            hire_date: profile.hire_date,
+            position: profile.position,
+            contact: profile.contact,
+            bank: profile.bank,
+            bank_account: profile.bank_account,
+            address: profile.address,
+            resident_number: profile.resident_number,
+            emergency_contact_a: profile.emergency_contact_a,
+            emergency_contact_b: profile.emergency_contact_b,
+          };
+          console.log(
+            "Token refreshed, calling callback with user:",
+            user.name
+          );
+          callback(user);
+        } else {
+          // 프로필이 없어도 기본 사용자 정보 반환
+          console.log(
+            "Token refreshed but no profile, calling callback with basic user:",
+            basicUser.name
+          );
+          callback(basicUser);
+        }
+      } catch (profileError) {
+        // 프로필 조회 실패 시에도 기본 사용자 정보 반환
         console.log(
-          "Token refreshed but no profile, calling callback with basic user:",
-          user.name
+          "Token refreshed but profile lookup failed, calling callback with basic user:",
+          basicUser.name
         );
-        callback(user);
+        callback(basicUser);
       }
     } else if (event === "USER_UPDATED" && session?.user) {
       // 비밀번호 변경 등의 USER_UPDATED 이벤트는 무시

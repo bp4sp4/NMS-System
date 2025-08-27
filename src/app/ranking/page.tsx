@@ -11,6 +11,7 @@ interface RankingData {
   branch: string;
   team: string;
   manager: string;
+  managerAvatar?: string;
   totalPaymentAmount: number;
   totalCommission: number;
   customerCount: number;
@@ -86,6 +87,7 @@ export default function RankingPage() {
           branch: string;
           team: string;
           manager: string;
+          managerAvatar?: string;
           totalPaymentAmount: number;
           totalCommission: number;
           customerCount: number;
@@ -135,12 +137,31 @@ export default function RankingPage() {
         branchStat.customerCount += 1;
       });
 
+      // 사용자 아바타 정보 가져오기
+      const { data: usersData, error: usersError } = await supabase
+        .from("users")
+        .select("name, avatar")
+        .in("name", Array.from(managerStats.keys()));
+
+      if (usersError) {
+        console.error("사용자 아바타 정보 가져오기 오류:", usersError);
+      }
+
+      // 아바타 정보를 담당자별로 매핑
+      const avatarMap = new Map<string, string>();
+      usersData?.forEach((user) => {
+        if (user.name && user.avatar) {
+          avatarMap.set(user.name, user.avatar);
+        }
+      });
+
       // 담당자별 순위 (총 결제금액 기준)
       const sortedIndividualData = Array.from(managerStats.values())
         .sort((a, b) => b.totalPaymentAmount - a.totalPaymentAmount)
         .map((item, index) => ({
           rank: index + 1,
           ...item,
+          managerAvatar: avatarMap.get(item.manager),
         }));
 
       // 지점별 순위 (총 결제금액 기준)
@@ -234,24 +255,36 @@ export default function RankingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Header />
 
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">순위</h1>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* 헤더 섹션 */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            순위
+            <span className="text-sm font-normal text-gray-500 ml-3">
+              {new Date().toLocaleDateString("ko-KR", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+              })}{" "}
+              기준
+            </span>
+          </h1>
+          <p className="text-gray-600">
+            개인별 및 지점별 실적 순위를 확인하세요
+          </p>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 개인 순위 */}
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                개인 순위
-              </h2>
-
-              {/* 개인 순위 필터 */}
-              <div className="mb-4 flex flex-wrap gap-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* 개인 순위 */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">개인 순위</h2>
+              <div className="flex items-center space-x-2">
                 <select
-                  className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white text-sm"
+                  className="bg-gray-50 border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                   value={individualFilters.year}
                   onChange={(e) =>
                     setIndividualFilters({
@@ -266,7 +299,7 @@ export default function RankingPage() {
                 </select>
 
                 <select
-                  className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white text-sm"
+                  className="bg-gray-50 border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                   value={individualFilters.month}
                   onChange={(e) =>
                     setIndividualFilters({
@@ -288,130 +321,123 @@ export default function RankingPage() {
                   <option value="11">11월</option>
                   <option value="12">12월</option>
                 </select>
-
-                <select
-                  className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white text-sm"
-                  value={individualFilters.branch}
-                  onChange={(e) =>
-                    setIndividualFilters({
-                      ...individualFilters,
-                      branch: e.target.value,
-                    })
-                  }
-                >
-                  <option value="전체 지점">전체 지점</option>
-                  <option value="AIO">AIO</option>
-                  <option value="위드업">위드업</option>
-                </select>
-
-                <select
-                  className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white text-sm"
-                  value={individualFilters.team}
-                  onChange={(e) =>
-                    setIndividualFilters({
-                      ...individualFilters,
-                      team: e.target.value,
-                    })
-                  }
-                >
-                  <option value="전체">전체</option>
-                  <option value="1팀">1팀</option>
-                  <option value="2팀">2팀</option>
-                  <option value="3팀">3팀</option>
-                  <option value="4팀">4팀</option>
-                </select>
-
-                <input
-                  type="text"
-                  placeholder="담당자명으로 검색..."
-                  className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white text-sm w-40"
-                  value={individualFilters.searchName}
-                  onChange={(e) =>
-                    setIndividualFilters({
-                      ...individualFilters,
-                      searchName: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              {/* 개인 순위 테이블 */}
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                          순위
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                          지점
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                          팀
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                          담당자
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                          고객 수
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                          총 결제금액
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredIndividualData.map((item) => (
-                        <tr key={item.manager} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                item.rank === 1
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : item.rank === 2
-                                  ? "bg-gray-100 text-gray-800"
-                                  : item.rank === 3
-                                  ? "bg-orange-100 text-orange-800"
-                                  : "bg-blue-100 text-blue-800"
-                              }`}
-                            >
-                              {item.rank}위
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                            {item.branch}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                            {item.team}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {item.manager}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                            {item.customerCount}명
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-purple-600">
-                            {item.totalPaymentAmount.toLocaleString()}원
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
               </div>
             </div>
 
-            {/* 지점 순위 */}
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                지점 순위
-              </h2>
+            {/* 검색 및 필터 */}
+            <div className="mb-6 flex flex-wrap gap-3">
+              <select
+                className="bg-gray-50 border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+                value={individualFilters.branch}
+                onChange={(e) =>
+                  setIndividualFilters({
+                    ...individualFilters,
+                    branch: e.target.value,
+                  })
+                }
+              >
+                <option value="전체 지점">전체 지점</option>
+                <option value="AIO">AIO</option>
+                <option value="위드업">위드업</option>
+              </select>
 
-              {/* 지점 순위 필터 */}
-              <div className="mb-4 flex flex-wrap gap-2">
+              <select
+                className="bg-gray-50 border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+                value={individualFilters.team}
+                onChange={(e) =>
+                  setIndividualFilters({
+                    ...individualFilters,
+                    team: e.target.value,
+                  })
+                }
+              >
+                <option value="전체">전체</option>
+                <option value="1팀">1팀</option>
+                <option value="2팀">2팀</option>
+                <option value="3팀">3팀</option>
+                <option value="4팀">4팀</option>
+              </select>
+
+              <input
+                type="text"
+                placeholder="담당자명 검색"
+                className="bg-gray-50 border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all flex-1 min-w-0"
+                value={individualFilters.searchName}
+                onChange={(e) =>
+                  setIndividualFilters({
+                    ...individualFilters,
+                    searchName: e.target.value,
+                  })
+                }
+              />
+            </div>
+
+            {/* 개인 순위 리스트 */}
+            <div className="space-y-3">
+              {filteredIndividualData.map((item, index) => (
+                <div
+                  key={item.manager}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold text-white">
+                      {item.rank === 1 ? (
+                        <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center">
+                          🥇
+                        </div>
+                      ) : item.rank === 2 ? (
+                        <div className="w-8 h-8 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full flex items-center justify-center">
+                          🥈
+                        </div>
+                      ) : item.rank === 3 ? (
+                        <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full flex items-center justify-center">
+                          🥉
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full flex items-center justify-center">
+                          {item.rank}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      {item.managerAvatar ? (
+                        <img
+                          src={item.managerAvatar}
+                          alt={`${item.manager} 프로필`}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-semibold text-sm border-2 border-white shadow-sm">
+                          {item.manager.charAt(0)}
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {item.manager}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {item.branch} • {item.team} • {item.customerCount}명
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-lg text-gray-900">
+                      {item.totalPaymentAmount.toLocaleString()}원
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 지점 순위 */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">지점 순위</h2>
+              <div className="flex items-center space-x-2">
                 <select
-                  className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white text-sm"
+                  className="bg-gray-50 border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                   value={branchFilters.year}
                   onChange={(e) =>
                     setBranchFilters({
@@ -426,7 +452,7 @@ export default function RankingPage() {
                 </select>
 
                 <select
-                  className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white text-sm"
+                  className="bg-gray-50 border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                   value={branchFilters.month}
                   onChange={(e) =>
                     setBranchFilters({
@@ -448,89 +474,83 @@ export default function RankingPage() {
                   <option value="11">11월</option>
                   <option value="12">12월</option>
                 </select>
+              </div>
+            </div>
 
-                <select
-                  className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white text-sm"
-                  value={branchFilters.branch}
-                  onChange={(e) =>
-                    setBranchFilters({
-                      ...branchFilters,
-                      branch: e.target.value,
-                    })
-                  }
+            {/* 검색 및 필터 */}
+            <div className="mb-6 flex flex-wrap gap-3">
+              <select
+                className="bg-gray-50 border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+                value={branchFilters.branch}
+                onChange={(e) =>
+                  setBranchFilters({
+                    ...branchFilters,
+                    branch: e.target.value,
+                  })
+                }
+              >
+                <option value="전체 지점">전체 지점</option>
+                <option value="AIO">AIO</option>
+                <option value="위드업">위드업</option>
+              </select>
+
+              <input
+                type="text"
+                placeholder="지점명 검색"
+                className="bg-gray-50 border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all flex-1 min-w-0"
+                value={branchFilters.searchName}
+                onChange={(e) =>
+                  setBranchFilters({
+                    ...branchFilters,
+                    searchName: e.target.value,
+                  })
+                }
+              />
+            </div>
+
+            {/* 지점 순위 리스트 */}
+            <div className="space-y-3">
+              {filteredBranchData.map((item) => (
+                <div
+                  key={item.branch}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
                 >
-                  <option value="전체 지점">전체 지점</option>
-                  <option value="AIO">AIO</option>
-                  <option value="위드업">위드업</option>
-                </select>
-
-                <input
-                  type="text"
-                  placeholder="지점명으로 검색..."
-                  className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white text-sm w-40"
-                  value={branchFilters.searchName}
-                  onChange={(e) =>
-                    setBranchFilters({
-                      ...branchFilters,
-                      searchName: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              {/* 지점 순위 테이블 */}
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                          순위
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                          지점
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                          고객 수
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                          총 결제금액
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredBranchData.map((item) => (
-                        <tr key={item.branch} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                item.rank === 1
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : item.rank === 2
-                                  ? "bg-gray-100 text-gray-800"
-                                  : item.rank === 3
-                                  ? "bg-orange-100 text-orange-800"
-                                  : "bg-blue-100 text-blue-800"
-                              }`}
-                            >
-                              {item.rank}위
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {item.branch}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                            {item.customerCount}명
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-purple-600">
-                            {item.totalPaymentAmount.toLocaleString()}원
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold text-white">
+                      {item.rank === 1 ? (
+                        <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center">
+                          🥇
+                        </div>
+                      ) : item.rank === 2 ? (
+                        <div className="w-8 h-8 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full flex items-center justify-center">
+                          🥈
+                        </div>
+                      ) : item.rank === 3 ? (
+                        <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full flex items-center justify-center">
+                          🥉
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full flex items-center justify-center">
+                          {item.rank}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {item.branch}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {item.customerCount}명
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-lg text-gray-900">
+                      {item.totalPaymentAmount.toLocaleString()}원
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>

@@ -120,6 +120,15 @@ export const loginUser = async (
             branch: existingProfile.branch,
             team: existingProfile.team,
             avatar: existingProfile.avatar,
+            hire_date: existingProfile.hire_date,
+            position: existingProfile.position,
+            contact: existingProfile.contact,
+            bank: existingProfile.bank,
+            bank_account: existingProfile.bank_account,
+            address: existingProfile.address,
+            resident_number: existingProfile.resident_number,
+            emergency_contact_a: existingProfile.emergency_contact_a,
+            emergency_contact_b: existingProfile.emergency_contact_b,
           };
 
           return {
@@ -141,6 +150,15 @@ export const loginUser = async (
         branch: newProfile.branch,
         team: newProfile.team,
         avatar: newProfile.avatar,
+        hire_date: newProfile.hire_date,
+        position: newProfile.position,
+        contact: newProfile.contact,
+        bank: newProfile.bank,
+        bank_account: newProfile.bank_account,
+        address: newProfile.address,
+        resident_number: newProfile.resident_number,
+        emergency_contact_a: newProfile.emergency_contact_a,
+        emergency_contact_b: newProfile.emergency_contact_b,
       };
 
       return {
@@ -157,6 +175,15 @@ export const loginUser = async (
       branch: profile.branch,
       team: profile.team,
       avatar: profile.avatar,
+      hire_date: profile.hire_date,
+      position: profile.position,
+      contact: profile.contact,
+      bank: profile.bank,
+      bank_account: profile.bank_account,
+      address: profile.address,
+      resident_number: profile.resident_number,
+      emergency_contact_a: profile.emergency_contact_a,
+      emergency_contact_b: profile.emergency_contact_b,
     };
 
     return {
@@ -236,6 +263,15 @@ export const getCurrentUser = async (): Promise<User | null> => {
           branch: profile.branch,
           team: profile.team,
           avatar: profile.avatar,
+          hire_date: profile.hire_date,
+          position: profile.position,
+          contact: profile.contact,
+          bank: profile.bank,
+          bank_account: profile.bank_account,
+          address: profile.address,
+          resident_number: profile.resident_number,
+          emergency_contact_a: profile.emergency_contact_a,
+          emergency_contact_b: profile.emergency_contact_b,
         };
       }
     } catch (profileError) {
@@ -276,12 +312,34 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
           branch: profile.branch,
           team: profile.team,
           avatar: profile.avatar,
+          hire_date: profile.hire_date,
+          position: profile.position,
+          contact: profile.contact,
+          bank: profile.bank,
+          bank_account: profile.bank_account,
+          address: profile.address,
+          resident_number: profile.resident_number,
+          emergency_contact_a: profile.emergency_contact_a,
+          emergency_contact_b: profile.emergency_contact_b,
         };
         console.log("Profile found, calling callback with user:", user.name);
         callback(user);
       } else {
-        console.log("No profile found, calling callback with null");
-        callback(null);
+        // 프로필이 없어도 세션이 있으면 기본 사용자 정보 반환
+        const user: User = {
+          id: session.user.id,
+          username: session.user.email!,
+          email: session.user.email!,
+          name: session.user.user_metadata?.name || "사용자",
+          branch: session.user.user_metadata?.branch || null,
+          team: session.user.user_metadata?.team || null,
+          avatar: session.user.user_metadata?.avatar_url || null,
+        };
+        console.log(
+          "No profile but session exists, calling callback with basic user:",
+          user.name
+        );
+        callback(user);
       }
     } else if (event === "SIGNED_OUT") {
       console.log("SIGNED_OUT, calling callback with null");
@@ -303,17 +361,42 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
           branch: profile.branch,
           team: profile.team,
           avatar: profile.avatar,
+          hire_date: profile.hire_date,
+          position: profile.position,
+          contact: profile.contact,
+          bank: profile.bank,
+          bank_account: profile.bank_account,
+          address: profile.address,
+          resident_number: profile.resident_number,
+          emergency_contact_a: profile.emergency_contact_a,
+          emergency_contact_b: profile.emergency_contact_b,
         };
         console.log("Token refreshed, calling callback with user:", user.name);
         callback(user);
       } else {
+        // 프로필이 없어도 세션이 있으면 기본 사용자 정보 반환
+        const user: User = {
+          id: session.user.id,
+          username: session.user.email!,
+          email: session.user.email!,
+          name: session.user.user_metadata?.name || "사용자",
+          branch: session.user.user_metadata?.branch || null,
+          team: session.user.user_metadata?.team || null,
+          avatar: session.user.user_metadata?.avatar_url || null,
+        };
         console.log(
-          "Token refreshed but no profile, calling callback with null"
+          "Token refreshed but no profile, calling callback with basic user:",
+          user.name
         );
-        callback(null);
+        callback(user);
       }
     } else if (event === "USER_UPDATED" && session?.user) {
-      // 사용자 정보 업데이트 시
+      // 비밀번호 변경 등의 USER_UPDATED 이벤트는 무시
+      // 이는 무한 루프를 방지하기 위함
+      console.log("User updated event ignored to prevent infinite loop");
+      return;
+    } else if (event === "INITIAL_SESSION" && session?.user) {
+      // 초기 세션 로드 시
       const { data: profile } = await supabase
         .from("users")
         .select("*")
@@ -330,11 +413,27 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
           team: profile.team,
           avatar: profile.avatar,
         };
-        console.log("User updated, calling callback with user:", user.name);
+        console.log(
+          "Initial session with profile, calling callback with user:",
+          user.name
+        );
         callback(user);
       } else {
-        console.log("User updated but no profile, calling callback with null");
-        callback(null);
+        // 프로필이 없어도 세션이 있으면 기본 사용자 정보 반환
+        const user: User = {
+          id: session.user.id,
+          username: session.user.email!,
+          email: session.user.email!,
+          name: session.user.user_metadata?.name || "사용자",
+          branch: session.user.user_metadata?.branch || null,
+          team: session.user.user_metadata?.team || null,
+          avatar: session.user.user_metadata?.avatar_url || null,
+        };
+        console.log(
+          "Initial session without profile, calling callback with basic user:",
+          user.name
+        );
+        callback(user);
       }
     } else {
       // 기타 이벤트의 경우 null 반환

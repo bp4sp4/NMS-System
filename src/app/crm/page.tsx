@@ -535,145 +535,152 @@ export default function CRMPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Header />
 
       <div className="flex h-screen">
         {/* 왼쪽 패널 */}
-        <div className="w-1/4 bg-white shadow-lg p-6 overflow-y-auto">
+        <div className="w-1/4 bg-gray-50 p-6 overflow-y-auto">
           {/* 담당자 정보 */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">
-              담당자 정보
-            </h3>
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <p className="text-sm text-gray-900">{user.branch}</p>
-              <p className="text-sm text-gray-900">{user.team}</p>
-              <p className="text-sm text-gray-900">{user.name}</p>
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+              <div className="flex items-center justify-around">
+                <span className="text-base font-semibold text-gray-900">
+                  {user.branch}
+                </span>
+                <div className="w-px h-4 bg-gray-300"></div>
+                <span className="text-base font-semibold text-gray-900">
+                  {user.team}
+                </span>
+                <div className="w-px h-4 bg-gray-300"></div>
+                <span className="text-lg font-bold text-gray-900">
+                  {user.name}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* 고객 정보 입력 폼 */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">
-              고객 정보
-            </h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">고객 등록</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* 과정분류 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  분류
-                </label>
-                <select
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-                  value={formData.courseType}
-                  onChange={(e) => {
-                    const newCourseType = e.target.value;
-                    const availableCourses =
-                      getCoursesByCourseType(newCourseType);
-                    const availableInstitutions =
-                      getInstitutionsByCourseType(newCourseType);
+              {/* 과정 정보 */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    분류
+                  </label>
+                  <select
+                    className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                    value={formData.courseType}
+                    onChange={(e) => {
+                      const newCourseType = e.target.value;
+                      const availableCourses =
+                        getCoursesByCourseType(newCourseType);
+                      const availableInstitutions =
+                        getInstitutionsByCourseType(newCourseType);
 
-                    setFormData({
-                      ...formData,
-                      courseType: newCourseType,
-                      course: availableCourses[0] || "사회복지사2급",
-                      institution: availableInstitutions[0] || "",
-                    });
-                  }}
-                  required
-                >
-                  <option value="학점은행제">학점은행제</option>
-                  <option value="민간 자격증">민간 자격증</option>
-                  <option value="유학">유학</option>
-                </select>
+                      setFormData({
+                        ...formData,
+                        courseType: newCourseType,
+                        course: availableCourses[0] || "사회복지사2급",
+                        institution: availableInstitutions[0] || "",
+                      });
+                    }}
+                    required
+                  >
+                    <option value="학점은행제">학점은행제</option>
+                    <option value="민간 자격증">민간 자격증</option>
+                    <option value="유학">유학</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    과정
+                  </label>
+                  <select
+                    className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                    value={formData.course}
+                    onChange={(e) =>
+                      setFormData({ ...formData, course: e.target.value })
+                    }
+                    required
+                  >
+                    <option value="">선택</option>
+                    {getCoursesByCourseType(formData.courseType).map(
+                      (course) => (
+                        <option key={course} value={course}>
+                          {course}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    기관
+                  </label>
+                  <select
+                    className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                    value={formData.institution}
+                    onChange={(e) =>
+                      setFormData({ ...formData, institution: e.target.value })
+                    }
+                    required
+                  >
+                    {getInstitutionsByCourseType(formData.courseType).map(
+                      (institution) => (
+                        <option key={institution} value={institution}>
+                          {institution}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
               </div>
 
-              {/* 과정 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  과정 *
-                </label>
-                <select
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-                  value={formData.course}
-                  onChange={(e) =>
-                    setFormData({ ...formData, course: e.target.value })
-                  }
-                  required
-                >
-                  <option value="">과정을 선택하세요</option>
-                  {getCoursesByCourseType(formData.courseType).map((course) => (
-                    <option key={course} value={course}>
-                      {course}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* 기관명 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  기관명 *
-                </label>
-                <select
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-                  value={formData.institution}
-                  onChange={(e) =>
-                    setFormData({ ...formData, institution: e.target.value })
-                  }
-                  required
-                >
-                  {getInstitutionsByCourseType(formData.courseType).map(
-                    (institution) => (
-                      <option key={institution} value={institution}>
-                        {institution}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              {/* 고객명 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  고객명 *
-                </label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-                  value={formData.customerName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, customerName: e.target.value })
-                  }
-                  required
-                />
-              </div>
-
-              {/* 연락처 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  연락처 *
-                </label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-                  value={formData.contact}
-                  onChange={(e) =>
-                    setFormData({ ...formData, contact: e.target.value })
-                  }
-                  placeholder="010-0000-0000"
-                  required
-                />
+              {/* 고객 정보 */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    고객명 *
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                    value={formData.customerName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, customerName: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    연락처 *
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                    value={formData.contact}
+                    onChange={(e) =>
+                      setFormData({ ...formData, contact: e.target.value })
+                    }
+                    placeholder="010-0000-0000"
+                    required
+                  />
+                </div>
               </div>
 
               {/* 최종학력 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   최종학력 *
                 </label>
                 <select
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                  className="w-full bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
                   value={formData.education}
                   onChange={(e) =>
                     setFormData({ ...formData, education: e.target.value })
@@ -691,13 +698,13 @@ export default function CRMPage() {
               </div>
 
               {/* 지역 */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     지역
                   </label>
                   <select
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                    className="w-full bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
                     value={formData.region}
                     onChange={(e) =>
                       setFormData({ ...formData, region: e.target.value })
@@ -713,11 +720,11 @@ export default function CRMPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     세부지역
                   </label>
                   <select
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                    className="w-full bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
                     value={formData.subRegion}
                     onChange={(e) =>
                       setFormData({ ...formData, subRegion: e.target.value })
@@ -734,12 +741,12 @@ export default function CRMPage() {
 
               {/* 결제일자 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   결제일자
                 </label>
                 <input
                   type="date"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                  className="w-full bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
                   value={formData.paymentDate}
                   onChange={(e) =>
                     setFormData({ ...formData, paymentDate: e.target.value })
@@ -749,12 +756,12 @@ export default function CRMPage() {
 
               {/* 결제금액 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   결제금액
                 </label>
                 <input
                   type="text"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                  className="w-full bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
                   value={formData.paymentAmount}
                   onChange={(e) => {
                     const value = e.target.value.replace(/[^0-9]/g, "");
@@ -763,18 +770,20 @@ export default function CRMPage() {
                   placeholder="600,000"
                 />
                 {formData.paymentAmount && (
-                  <div className="mt-1 text-sm text-blue-600 font-medium">
-                    예상 수당: {calculatedCommission.toLocaleString()}원
+                  <div className="mt-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                    <div className="text-sm text-blue-600 font-semibold">
+                      예상 수당: {calculatedCommission.toLocaleString()}원
+                    </div>
                   </div>
                 )}
               </div>
 
               {/* 버튼 */}
-              <div className="flex space-x-2 pt-4">
+              <div className="flex space-x-3 pt-6">
                 <button
                   type="button"
                   onClick={handleBulkSubmit}
-                  className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors"
+                  className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-200 transition-all font-semibold shadow-sm"
                 >
                   일괄등록
                 </button>
@@ -782,7 +791,7 @@ export default function CRMPage() {
                   <>
                     <button
                       type="submit"
-                      className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
+                      className="flex-1 bg-green-500 text-white py-3 px-4 rounded-xl hover:bg-green-600 transition-all font-semibold shadow-sm"
                     >
                       수정
                     </button>
@@ -803,7 +812,7 @@ export default function CRMPage() {
                           paymentAmount: "",
                         });
                       }}
-                      className="flex-1 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors"
+                      className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-200 transition-all font-semibold shadow-sm"
                     >
                       취소
                     </button>
@@ -811,7 +820,7 @@ export default function CRMPage() {
                 ) : (
                   <button
                     type="submit"
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                    className="flex-1 bg-blue-500 text-white py-3 px-4 rounded-xl hover:bg-blue-600 transition-all font-semibold shadow-sm"
                   >
                     등록
                   </button>
@@ -821,63 +830,65 @@ export default function CRMPage() {
           </div>
 
           {/* 기관별 적용 수당 */}
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">
-              기관별 적용 수당
-            </h3>
-            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="px-3 py-2 text-left font-medium text-gray-900 border-r border-gray-200">
-                        과정분류
-                      </th>
-                      <th className="px-3 py-2 text-left font-medium text-gray-900 border-r border-gray-200">
-                        기관명
-                      </th>
-                      <th className="px-3 py-2 text-center font-medium text-gray-900 border-r border-gray-200">
-                        기본금액
-                      </th>
-                      <th className="px-3 py-2 text-center font-medium text-gray-900">
-                        기본수당
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {commissionRates.map((rate, index) => (
-                      <tr
-                        key={index}
-                        className="border-b border-gray-100 hover:bg-gray-50"
-                      >
-                        <td className="px-3 py-2 text-gray-900 border-r border-gray-200">
-                          {rate.courseType}
-                        </td>
-                        <td className="px-3 py-2 text-gray-900 border-r border-gray-200">
-                          {rate.institution}
-                        </td>
-                        <td className="px-3 py-2 text-center text-gray-900 border-r border-gray-200">
-                          {rate.baseAmount.toLocaleString()}원
-                        </td>
-                        <td className="px-3 py-2 text-center font-medium text-blue-600">
-                          {rate.commission.toLocaleString()}원
-                        </td>
+          <div className="mt-4">
+            <details className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <summary className="px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors font-semibold text-gray-700">
+                기관별 수당 정보
+              </summary>
+              <div className="border-t border-gray-100">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="px-3 py-2 text-left font-medium text-gray-600">
+                          과정
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-600">
+                          기관
+                        </th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-600">
+                          기본금액
+                        </th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-600">
+                          수당
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {commissionRates.map((rate, index) => (
+                        <tr
+                          key={index}
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="px-3 py-2 text-gray-900">
+                            {rate.courseType}
+                          </td>
+                          <td className="px-3 py-2 text-gray-900">
+                            {rate.institution}
+                          </td>
+                          <td className="px-3 py-2 text-center text-gray-900">
+                            {rate.baseAmount.toLocaleString()}원
+                          </td>
+                          <td className="px-3 py-2 text-center font-semibold text-blue-600">
+                            {rate.commission.toLocaleString()}원
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            </details>
           </div>
         </div>
 
         {/* 오른쪽 메인 콘텐츠 */}
-        <div className="flex-1 p-6 overflow-y-auto min-w-0">
+        <div className="flex-1 p-8 overflow-y-auto min-w-0">
           {/* 필터 및 액션 */}
-          <div className="mb-6 flex justify-between items-center">
+          <div className="mb-8 flex justify-between items-center">
             <div className="flex space-x-4">
               <select
-                className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white"
+                className="bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
                 value={filters.year}
                 onChange={(e) =>
                   setFilters({ ...filters, year: e.target.value })
@@ -888,7 +899,7 @@ export default function CRMPage() {
                 <option value="2027">2027</option>
               </select>
               <select
-                className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white"
+                className="bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
                 value={filters.month}
                 onChange={(e) =>
                   setFilters({ ...filters, month: e.target.value })
@@ -911,17 +922,17 @@ export default function CRMPage() {
               <input
                 type="text"
                 placeholder="고객명, 연락처, 기관명으로 검색..."
-                className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white w-64"
+                className="bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm w-64"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex space-x-2">
+            <div className="flex space-x-3">
               {selectedItems.length > 0 && (
                 <>
                   <button
                     onClick={handleBulkDelete}
-                    className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+                    className="bg-red-500 text-white px-6 py-3 rounded-xl hover:bg-red-600 transition-all font-semibold shadow-sm"
                   >
                     선택 삭제 ({selectedItems.length})
                   </button>
@@ -935,7 +946,7 @@ export default function CRMPage() {
                         alert("다중 수정 기능은 추후 구현 예정입니다.");
                       }
                     }}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                    className="bg-blue-500 text-white px-6 py-3 rounded-xl hover:bg-blue-600 transition-all font-semibold shadow-sm"
                   >
                     {selectedItems.length === 1
                       ? "수정"
@@ -947,12 +958,12 @@ export default function CRMPage() {
           </div>
 
           {/* 데이터 테이블 */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto min-w-full">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full divide-y divide-gray-100">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       <input
                         type="checkbox"
                         checked={selectAll}
@@ -960,52 +971,54 @@ export default function CRMPage() {
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       번호
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      지점정보
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
+                      지점
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
                       팀
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
                       담당자
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      과정분류
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
+                      분류
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
                       과정
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      기관명
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
+                      기관
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
                       고객명
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
                       연락처
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      최종학력
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
+                      학력
                     </th>
-
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
                       지역
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      결제일자
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
+                      결제일
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      결제금액/수당
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
+                      금액/수당
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-100">
                   {filteredCRMData.map((item, index) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <tr
+                      key={item.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         <input
                           type="checkbox"
                           checked={selectedItems.includes(item.id)}
@@ -1013,43 +1026,43 @@ export default function CRMPage() {
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {index + 1}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.branch}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.team}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.manager}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.courseType}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.course || "미선택"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.institution}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.customerName}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.contact}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.education}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.region}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.paymentDate || "-"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         <div className="space-y-1">
                           <div className="text-gray-900">
                             {item.paymentAmount
@@ -1071,21 +1084,21 @@ export default function CRMPage() {
           </div>
 
           {/* 요약 정보 */}
-          <div className="mt-6 bg-white rounded-lg shadow p-4">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="grid grid-cols-2 gap-6">
               <div className="text-center">
-                <div className="text-lg font-semibold text-gray-900">
+                <div className="text-lg font-semibold text-gray-700 mb-2">
                   총 결제금액
                 </div>
-                <div className="text-2xl font-bold text-purple-600">
+                <div className="text-3xl font-bold text-purple-600">
                   {totalPaymentAmount.toLocaleString()}원
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-semibold text-gray-900">
+                <div className="text-lg font-semibold text-gray-700 mb-2">
                   총 수당
                 </div>
-                <div className="text-2xl font-bold text-orange-600">
+                <div className="text-3xl font-bold text-orange-600">
                   {totalCommission.toLocaleString()}원
                 </div>
               </div>

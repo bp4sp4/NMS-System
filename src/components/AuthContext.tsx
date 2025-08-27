@@ -9,7 +9,6 @@ import {
 } from "react";
 import { User } from "@/types/auth";
 import { getCurrentUser, logoutUser, onAuthStateChange } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
 
 interface AuthContextType {
   user: User | null;
@@ -46,56 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
-    const initAuth = async () => {
-      try {
-        console.log("Initializing auth...");
-
-        // 먼저 Supabase 세션 확인
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
-
-        if (error) {
-          console.error("Session check error:", error);
-          if (isMounted) {
-            setUser(null);
-            setIsLoading(false);
-          }
-          return;
-        }
-
-        if (!session) {
-          console.log("No session found during init");
-          if (isMounted) {
-            setUser(null);
-            setIsLoading(false);
-          }
-          return;
-        }
-
-        console.log("Session found during init:", session.user.email);
-
-        // 세션이 있으면 사용자 정보 가져오기
-        const currentUser = await getCurrentUser();
-        if (isMounted) {
-          console.log("Setting initial user:", currentUser?.name);
-          setUser(currentUser);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error("Error initializing auth:", error);
-        if (isMounted) {
-          setUser(null);
-          setIsLoading(false);
-        }
-      }
-    };
-
-    // 즉시 초기화 실행
-    initAuth();
-
-    // Supabase Auth 상태 변경 리스너 설정
+    // Supabase Auth 상태 변경 리스너를 먼저 설정
     const {
       data: { subscription },
     } = onAuthStateChange((user) => {
@@ -114,7 +64,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // 2초 후에도 로딩이 끝나지 않으면 강제로 false로 설정 (더 빠른 응답)
+    // 초기 세션 확인
+    const initAuth = async () => {
+      try {
+        console.log("Initializing auth...");
+        const currentUser = await getCurrentUser();
+        if (isMounted) {
+          console.log("Setting initial user:", currentUser?.name);
+          setUser(currentUser);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        if (isMounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    // 즉시 초기화 실행
+    initAuth();
+
+    // 2초 후에도 로딩이 끝나지 않으면 강제로 false로 설정
     const timeout = setTimeout(() => {
       if (isMounted && isLoading) {
         console.log("Auth timeout, forcing isLoading to false");

@@ -7,6 +7,15 @@ export interface User {
   branch?: string;
   team?: string;
   avatar?: string;
+  hire_date?: string;
+  position?: string;
+  contact?: string;
+  bank?: string;
+  bank_account?: string;
+  address?: string;
+  resident_number?: string;
+  emergency_contact_a?: string;
+  emergency_contact_b?: string;
 }
 
 export interface LoginCredentials {

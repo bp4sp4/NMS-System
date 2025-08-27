@@ -29,7 +29,7 @@ export default function Header() {
         <div className={styles.nav}>
           <div className={styles.leftSection}>
             {/* 로고 */}
-            <div className={styles.logoSection}>
+            <Link href="/" className={styles.logoSection}>
               <div className={styles.logo}>
                 <img
                   src="/images/logo2.png"
@@ -38,7 +38,7 @@ export default function Header() {
                 />
               </div>
               <span className={styles.brandName}>한평생 에듀바이저스</span>
-            </div>
+            </Link>
 
             {/* 메뉴 아이템 */}
             <div className={styles.menuItems}>
@@ -63,7 +63,22 @@ export default function Header() {
             <div className={styles.userInfo}>
               <span className={styles.branch}>{user?.branch}</span>
               <span className={styles.team}>{user?.team}</span>
-              <span className={styles.userName}>{user?.name}</span>
+              <Link href="/profile" className={styles.userNameLink}>
+                <div className={styles.userProfile}>
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt="프로필 사진"
+                      className={styles.userAvatar}
+                    />
+                  ) : (
+                    <div className={styles.userAvatarPlaceholder}>
+                      {user?.name?.charAt(0) || "U"}
+                    </div>
+                  )}
+                  <span className={styles.userName}>{user?.name}</span>
+                </div>
+              </Link>
             </div>
             <button onClick={handleLogout} className={styles.logoutButton}>
               <LogOut className={styles.logoutIcon} />

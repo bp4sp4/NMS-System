@@ -36,6 +36,8 @@ function HomeContent() {
       "user:",
       user?.name
     );
+
+    // 로딩이 완료되고 사용자가 없을 때만 리다이렉트
     if (!isLoading && !user) {
       console.log("Redirecting to login page");
       router.push("/auth/login");

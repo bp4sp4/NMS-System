@@ -11,6 +11,7 @@ interface CRMData {
   branch: string;
   team: string;
   manager: string;
+  customerType: string;
   courseType: string;
   course: string;
   institution: string;
@@ -28,7 +29,7 @@ interface CRMData {
 }
 
 export default function CRMPage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const [filters, setFilters] = useState({
     year: "2025",
@@ -40,6 +41,7 @@ export default function CRMPage() {
   const [editingItem, setEditingItem] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
+    customerType: "가망고객",
     courseType: "학점은행제",
     course: "사회복지사2급",
     institution: "한평생학점은행",
@@ -53,13 +55,11 @@ export default function CRMPage() {
   });
 
   const [crmData, setCrmData] = useState<CRMData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
 
   // 데이터베이스에서 CRM 데이터 가져오기
   const fetchCRMData = useCallback(async () => {
     if (!user?.name) return;
 
-    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from("customers")
@@ -79,6 +79,7 @@ export default function CRMPage() {
           branch: item.branch,
           team: item.team,
           manager: item.manager,
+          customerType: item.customer_type || "가망고객",
           courseType: item.course_type,
           course: item.course || "",
           institution: item.institution,
@@ -98,8 +99,6 @@ export default function CRMPage() {
       setCrmData(convertedData);
     } catch (error) {
       console.error("CRM 데이터 가져오기 오류:", error);
-    } finally {
-      setIsLoading(false);
     }
   }, [user?.name]);
 
@@ -112,10 +111,10 @@ export default function CRMPage() {
 
   // 인증 상태 확인 및 리다이렉트
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!user) {
       router.push("/auth/login");
     }
-  }, [user, authLoading, router]);
+  }, [user, router]);
 
   // 기관별 수당 정보
   const commissionRates = [
@@ -271,6 +270,7 @@ export default function CRMPage() {
             branch: user.branch || "",
             team: user.team || "",
             manager: user.name,
+            customer_type: formData.customerType,
             course_type: formData.courseType,
             course: formData.course,
             institution: formData.institution,
@@ -279,9 +279,14 @@ export default function CRMPage() {
             education: formData.education,
             region: `${formData.region} ${formData.subRegion}`,
             status: "등록완료",
-            payment_date: formData.paymentDate || null,
-            payment_amount: paymentAmount,
-            commission: commission,
+            // 가망고객일 때는 결제 정보를 저장하지 않음
+            payment_date:
+              formData.customerType === "계약고객"
+                ? formData.paymentDate || null
+                : null,
+            payment_amount:
+              formData.customerType === "계약고객" ? paymentAmount : 0,
+            commission: formData.customerType === "계약고객" ? commission : 0,
           })
           .select()
           .single();
@@ -297,6 +302,7 @@ export default function CRMPage() {
 
         // 폼 초기화
         setFormData({
+          customerType: "가망고객",
           courseType: "학점은행제",
           course: "사회복지사2급",
           institution: "한평생학점은행",
@@ -328,6 +334,7 @@ export default function CRMPage() {
     const item = userCRMData.find((data) => data.id === id);
     if (item) {
       setFormData({
+        customerType: item.customerType || "가망고객",
         courseType: item.courseType,
         course: item.course || "사회복지사2급",
         institution: item.institution,
@@ -360,6 +367,7 @@ export default function CRMPage() {
       const { error } = await supabase
         .from("customers")
         .update({
+          customer_type: formData.customerType,
           course_type: formData.courseType,
           course: formData.course,
           institution: formData.institution,
@@ -367,9 +375,14 @@ export default function CRMPage() {
           contact: formData.contact,
           education: formData.education,
           region: `${formData.region} ${formData.subRegion}`,
-          payment_date: formData.paymentDate || null,
-          payment_amount: paymentAmount,
-          commission: commission,
+          // 가망고객일 때는 결제 정보를 저장하지 않음
+          payment_date:
+            formData.customerType === "계약고객"
+              ? formData.paymentDate || null
+              : null,
+          payment_amount:
+            formData.customerType === "계약고객" ? paymentAmount : 0,
+          commission: formData.customerType === "계약고객" ? commission : 0,
         })
         .eq("id", editingItem);
 
@@ -384,6 +397,7 @@ export default function CRMPage() {
 
       // 폼 초기화
       setFormData({
+        customerType: "가망고객",
         courseType: "학점은행제",
         course: "사회복지사2급",
         institution: "한평생학점은행",
@@ -515,21 +529,6 @@ export default function CRMPage() {
     }
   };
 
-  // 로딩 중이거나 인증 로딩 중일 때
-  if (authLoading || isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">데이터를 불러오는 중...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (!user) {
     return null;
   }
@@ -564,11 +563,42 @@ export default function CRMPage() {
           <div className="mb-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">고객 등록</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* 고객 분류 */}
+              <div className="mb-3">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  고객 분류
+                </label>
+                <select
+                  className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                  value={formData.customerType}
+                  onChange={(e) => {
+                    const newCustomerType = e.target.value;
+                    setFormData({
+                      ...formData,
+                      customerType: newCustomerType,
+                      // 가망고객으로 변경되면 결제 정보 초기화
+                      paymentDate:
+                        newCustomerType === "가망고객"
+                          ? ""
+                          : formData.paymentDate,
+                      paymentAmount:
+                        newCustomerType === "가망고객"
+                          ? ""
+                          : formData.paymentAmount,
+                    });
+                  }}
+                  required
+                >
+                  <option value="가망고객">가망고객</option>
+                  <option value="계약고객">계약고객</option>
+                </select>
+              </div>
+
               {/* 과정 정보 */}
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
-                    분류
+                    과정 분류
                   </label>
                   <select
                     className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
@@ -739,44 +769,64 @@ export default function CRMPage() {
                 </div>
               </div>
 
-              {/* 결제일자 */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  결제일자
-                </label>
-                <input
-                  type="date"
-                  className="w-full bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
-                  value={formData.paymentDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, paymentDate: e.target.value })
-                  }
-                />
-              </div>
-
-              {/* 결제금액 */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  결제금액
-                </label>
-                <input
-                  type="text"
-                  className="w-full bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
-                  value={formData.paymentAmount}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/[^0-9]/g, "");
-                    setFormData({ ...formData, paymentAmount: value });
-                  }}
-                  placeholder="600,000"
-                />
-                {formData.paymentAmount && (
-                  <div className="mt-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
-                    <div className="text-sm text-blue-600 font-semibold">
-                      예상 수당: {calculatedCommission.toLocaleString()}원
-                    </div>
+              {/* 결제 정보 (계약고객일 때만 표시) */}
+              {formData.customerType === "계약고객" && (
+                <>
+                  {/* 결제일자 */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      결제일자
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                      value={formData.paymentDate}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          paymentDate: e.target.value,
+                        })
+                      }
+                    />
                   </div>
-                )}
-              </div>
+
+                  {/* 결제금액 */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      결제금액
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                      value={formData.paymentAmount}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, "");
+                        setFormData({ ...formData, paymentAmount: value });
+                      }}
+                      placeholder="600,000"
+                    />
+                    {formData.paymentAmount && (
+                      <div className="mt-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                        <div className="text-sm text-blue-600 font-semibold">
+                          예상 수당: {calculatedCommission.toLocaleString()}원
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* 가망고객일 때 안내 메시지 */}
+              {formData.customerType === "가망고객" && (
+                <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+                  <div className="text-sm text-yellow-800">
+                    💡 가망고객은 아직 계약이 진행 중인 고객입니다.
+                    <br />
+                    계약이 완료되면 고객 분류를 "계약고객"으로 변경하여 결제
+                    정보를 입력할 수 있습니다.
+                  </div>
+                </div>
+              )}
 
               {/* 버튼 */}
               <div className="flex space-x-3 pt-6">
@@ -800,6 +850,7 @@ export default function CRMPage() {
                       onClick={() => {
                         setEditingItem(null);
                         setFormData({
+                          customerType: "가망고객",
                           courseType: "학점은행제",
                           course: "사회복지사2급",
                           institution: "한평생학점은행",
@@ -984,7 +1035,10 @@ export default function CRMPage() {
                       담당자
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
-                      분류
+                      고객분류
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
+                      과정분류
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
                       과정
@@ -1037,6 +1091,9 @@ export default function CRMPage() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.manager}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
+                        {item.customerType}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.courseType}

@@ -87,6 +87,12 @@ function RegisterForm() {
     }
 
     try {
+      // 현재 도메인 기반으로 리다이렉트 URL 설정
+      const redirectUrl =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/auth/login?message=이메일 인증을 진행 해주세요.`
+          : "https://nms-system.vercel.app/auth/login?message=이메일 인증을 진행 해주세요.";
+
       // Supabase Auth로 사용자 계정 생성
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
@@ -97,6 +103,7 @@ function RegisterForm() {
             branch: formData.branch,
             team: formData.team,
           },
+          emailRedirectTo: redirectUrl,
         },
       });
 

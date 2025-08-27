@@ -92,14 +92,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 즉시 초기화 실행
     initAuth();
 
-    // 3초 후에도 로딩이 끝나지 않으면 강제로 false로 설정
+    // 1초 후에도 로딩이 끝나지 않으면 강제로 false로 설정
     const timeout = setTimeout(() => {
       if (isMounted && !authInitialized) {
         console.log("Auth timeout, forcing isLoading to false");
         setIsLoading(false);
         authInitialized = true;
       }
-    }, 3000);
+    }, 1000);
 
     // 컴포넌트 언마운트 시 구독 해제
     return () => {

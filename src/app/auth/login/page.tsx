@@ -6,6 +6,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { loginUser } from "@/lib/auth";
 import { useAuth } from "@/components/AuthContext";
+import { supabase } from "@/lib/supabase";
 import styles from "./page.module.css";
 
 function LoginForm() {
@@ -23,6 +24,9 @@ function LoginForm() {
 
   useEffect(() => {
     const messageParam = searchParams.get("message");
+    const errorParam = searchParams.get("error");
+    const errorDescriptionParam = searchParams.get("error_description");
+
     if (messageParam) {
       setMessage(messageParam);
       // 3초 후 메시지 제거
@@ -36,7 +40,35 @@ function LoginForm() {
 
       return () => clearTimeout(timer);
     }
-  }, [searchParams]);
+
+    // 이메일 인증 후 리다이렉트 처리
+    if (errorParam === "access_denied" && errorDescriptionParam) {
+      setError(errorDescriptionParam);
+      // URL에서 에러 파라미터 제거
+      const url = new URL(window.location.href);
+      url.searchParams.delete("error");
+      url.searchParams.delete("error_description");
+      window.history.replaceState({}, "", url.toString());
+    }
+
+    // 이메일 인증 성공 후 자동 로그인 처리
+    const checkEmailConfirmation = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user) {
+          // 이메일 인증 후 자동으로 로그인된 경우 홈으로 리다이렉트
+          await refreshUser();
+          router.push("/");
+        }
+      } catch (error) {
+        console.log("Session check failed:", error);
+      }
+    };
+
+    checkEmailConfirmation();
+  }, [searchParams, refreshUser, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

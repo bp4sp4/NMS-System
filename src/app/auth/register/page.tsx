@@ -42,6 +42,17 @@ function RegisterForm() {
     }
   }, [searchParams]);
 
+  // 성공 메시지 자동 제거
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage("");
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -90,6 +101,15 @@ function RegisterForm() {
       });
 
       if (error) {
+        // 이메일 중복 오류 처리
+        if (
+          error.message.includes("User already registered") ||
+          error.message.includes("already been registered")
+        ) {
+          throw new Error(
+            "이미 가입된 이메일입니다. 다른 이메일을 사용하거나 로그인해주세요."
+          );
+        }
         throw new Error(error.message);
       }
 
@@ -97,21 +117,8 @@ function RegisterForm() {
         throw new Error("회원가입에 실패했습니다.");
       }
 
-      // 회원가입 성공 시 자동으로 로그인
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (signInError) {
-        // 자동 로그인 실패 시 로그인 페이지로 이동
-        router.push(
-          "/auth/login?message=회원가입이 완료되었습니다. 로그인해주세요."
-        );
-      } else {
-        // 자동 로그인 성공 시 홈으로 이동
-        router.push("/?message=회원가입이 완료되었습니다.");
-      }
+      // 회원가입 성공 시 바로 로그인 페이지로 이동
+      router.push("/auth/login?message=이메일 인증을 진행 해주세요.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "회원가입에 실패했습니다.");
     } finally {

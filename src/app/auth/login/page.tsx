@@ -25,6 +25,16 @@ function LoginForm() {
     const messageParam = searchParams.get("message");
     if (messageParam) {
       setMessage(messageParam);
+      // 3초 후 메시지 제거
+      const timer = setTimeout(() => {
+        setMessage("");
+        // URL에서 메시지 파라미터 제거
+        const url = new URL(window.location.href);
+        url.searchParams.delete("message");
+        window.history.replaceState({}, "", url.toString());
+      }, 3000);
+
+      return () => clearTimeout(timer);
     }
   }, [searchParams]);
 
@@ -43,7 +53,20 @@ function LoginForm() {
       // Redirect to home
       router.push("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "로그인에 실패했습니다.");
+      const errorMessage =
+        err instanceof Error ? err.message : "로그인에 실패했습니다.";
+
+      // 이메일 인증 관련 오류 메시지 개선
+      if (
+        errorMessage.includes("Email not confirmed") ||
+        errorMessage.includes("이메일이 확인되지 않았습니다")
+      ) {
+        setError(
+          "이메일 인증이 필요합니다. 가입하신 이메일을 확인하여 인증을 완료해주세요."
+        );
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -66,6 +89,15 @@ function LoginForm() {
         <div>
           <h1 className={styles.title}>계정으로 로그인</h1>
         </div>
+
+        {/* Message */}
+        {message && (
+          <div className={`${styles.message} ${styles.successMessage}`}>
+            <div>
+              <h3 className={styles.successText}>{message}</h3>
+            </div>
+          </div>
+        )}
 
         {/* Login container */}
         <div className={styles.loginContainer}>
@@ -111,15 +143,7 @@ function LoginForm() {
               </div>
             </div>
 
-            {/* Messages */}
-            {message && (
-              <div className={`${styles.message} ${styles.successMessage}`}>
-                <div>
-                  <h3 className={styles.successText}>{message}</h3>
-                </div>
-              </div>
-            )}
-
+            {/* Error Message */}
             {error && (
               <div className={`${styles.message} ${styles.errorMessage}`}>
                 <div>

@@ -21,6 +21,27 @@ export const loginUser = async (
       console.error("Auth 오류:", error);
       console.error("오류 코드:", error.status);
       console.error("오류 메시지:", error.message);
+
+      // 이메일 인증 관련 오류 처리
+      if (error.message.includes("Email not confirmed")) {
+        throw new Error(
+          "이메일 인증이 필요합니다. 가입하신 이메일을 확인하여 인증을 완료해주세요."
+        );
+      }
+
+      // 사용자 존재하지 않음 오류 처리
+      if (
+        error.message.includes("Invalid login credentials") ||
+        error.message.includes("Invalid email or password")
+      ) {
+        throw new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
+      }
+
+      // 기타 오류 처리
+      if (error.message.includes("User already registered")) {
+        throw new Error("이미 가입된 이메일입니다. 로그인해주세요.");
+      }
+
       throw new Error(error.message);
     }
 
@@ -50,16 +71,21 @@ export const loginUser = async (
     if (profileError || !profile) {
       console.log("프로필이 없음, 새로 생성 시도");
 
-      // 프로필이 없으면 새로 생성
+      // 프로필이 없으면 새로 생성 (upsert 사용으로 중복 방지)
       const { data: newProfile, error: insertError } = await supabase
         .from("users")
-        .insert({
-          id: data.user.id,
-          email: data.user.email!,
-          name: data.user.user_metadata?.name || "사용자",
-          branch: data.user.user_metadata?.branch || null,
-          team: data.user.user_metadata?.team || null,
-        })
+        .upsert(
+          {
+            id: data.user.id,
+            email: data.user.email!,
+            name: data.user.user_metadata?.name || "사용자",
+            branch: data.user.user_metadata?.branch || null,
+            team: data.user.user_metadata?.team || null,
+          },
+          {
+            onConflict: "id",
+          }
+        )
         .select()
         .single();
 
@@ -68,6 +94,40 @@ export const loginUser = async (
         console.error("삽입 오류 코드:", insertError.code);
         console.error("삽입 오류 메시지:", insertError.message);
         console.error("삽입 오류 세부사항:", insertError.details);
+
+        // 중복 키 오류인 경우 다시 조회 시도
+        if (insertError.code === "23505") {
+          console.log("중복 키 오류, 기존 프로필 조회 시도");
+          const { data: existingProfile, error: retryError } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", data.user.id)
+            .single();
+
+          if (retryError || !existingProfile) {
+            throw new Error(
+              `프로필 생성에 실패했습니다: ${insertError.message}`
+            );
+          }
+
+          console.log("기존 프로필 조회 성공:", existingProfile);
+
+          const user: User = {
+            id: existingProfile.id,
+            username: existingProfile.email,
+            email: existingProfile.email,
+            name: existingProfile.name,
+            branch: existingProfile.branch,
+            team: existingProfile.team,
+            avatar: existingProfile.avatar,
+          };
+
+          return {
+            user,
+            token: data.session?.access_token || "",
+          };
+        }
+
         throw new Error(`프로필 생성에 실패했습니다: ${insertError.message}`);
       }
 

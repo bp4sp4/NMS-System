@@ -182,30 +182,21 @@ export default function CRMPage() {
 
   // 과정분류별 기관 목록
   const getInstitutionsByCourseType = (courseType: string) => {
-    console.log("과정분류:", courseType); // 디버깅용
-    let institutions: string[] = [];
-
     switch (courseType) {
       case "학점은행제":
-        institutions = [
+        return [
           "한평생학점은행",
           "올티칭학점은행",
           "서울사이버평생교육",
           "드림원격평생교육원",
         ];
-        break;
       case "민간 자격증":
-        institutions = ["한평생직업훈련"];
-        break;
+        return ["한평생직업훈련"];
       case "유학":
-        institutions = ["감자유학"];
-        break;
+        return ["감자유학"];
       default:
-        institutions = [];
+        return [];
     }
-
-    console.log("기관 목록:", institutions); // 디버깅용
-    return institutions;
   };
 
   // 등록/수정 처리

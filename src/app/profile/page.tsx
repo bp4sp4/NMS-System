@@ -71,6 +71,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
+      // 기본 정보 설정
       setFormData({
         name: user.name || "",
         branch: user.branch || "",
@@ -89,6 +90,43 @@ export default function ProfilePage() {
         confirmPassword: "",
       });
       setAvatarUrl(user.avatar || null);
+
+      // 프로필 정보 직접 조회 (로그인과 독립적으로)
+      const fetchProfileData = async () => {
+        try {
+          const { data: profile, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+
+          if (!error && profile) {
+            console.log("Profile data loaded:", profile);
+            setFormData({
+              name: profile.name || "",
+              branch: profile.branch || "",
+              team: profile.team || "",
+              hireDate: profile.hire_date || "",
+              position: profile.position || "",
+              contact: profile.contact || "",
+              bank: profile.bank || "",
+              bankAccount: profile.bank_account || "",
+              address: profile.address || "",
+              residentNumber: profile.resident_number || "",
+              emergencyContactA: profile.emergency_contact_a || "",
+              emergencyContactB: profile.emergency_contact_b || "",
+              currentPassword: "",
+              newPassword: "",
+              confirmPassword: "",
+            });
+            setAvatarUrl(profile.avatar || null);
+          }
+        } catch (error) {
+          console.error("Profile fetch error:", error);
+        }
+      };
+
+      fetchProfileData();
     }
   }, [user]);
 
@@ -129,7 +167,14 @@ export default function ProfilePage() {
       }
 
       setMessage({ type: "success", text: "프로필 사진이 업로드되었습니다." });
-      await refreshUser();
+
+      // 로컬 상태 업데이트
+      setAvatarUrl(publicUrl);
+
+      // 3초 후 성공 메시지 자동 제거
+      setTimeout(() => {
+        setMessage({ type: "", text: "" });
+      }, 3000);
     } catch (error) {
       console.error("Avatar upload error:", error);
       setMessage({ type: "error", text: "프로필 사진 업로드에 실패했습니다." });
@@ -166,7 +211,28 @@ export default function ProfilePage() {
       }
 
       setMessage({ type: "success", text: "프로필이 저장되었습니다." });
-      await refreshUser();
+
+      // 로컬 상태 업데이트
+      setFormData((prev) => ({
+        ...prev,
+        name: formData.name,
+        branch: formData.branch,
+        team: formData.team,
+        hireDate: formData.hireDate,
+        position: formData.position,
+        contact: formData.contact,
+        bank: formData.bank,
+        bankAccount: formData.bankAccount,
+        address: formData.address,
+        residentNumber: formData.residentNumber,
+        emergencyContactA: formData.emergencyContactA,
+        emergencyContactB: formData.emergencyContactB,
+      }));
+
+      // 3초 후 성공 메시지 자동 제거
+      setTimeout(() => {
+        setMessage({ type: "", text: "" });
+      }, 3000);
     } catch (error) {
       console.error("Profile update error:", error);
       setMessage({ type: "error", text: "프로필 저장에 실패했습니다." });

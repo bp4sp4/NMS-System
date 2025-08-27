@@ -8,7 +8,8 @@ import {
   ReactNode,
 } from "react";
 import { User } from "@/types/auth";
-import { getCurrentUser, logoutUser, onAuthStateChange } from "@/lib/auth";
+import { logoutUser, onAuthStateChange } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 interface AuthContextType {
   user: User | null;
@@ -25,8 +26,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
+      console.log("refreshUser called - forcing auth state refresh...");
+      // onAuthStateChange가 자동으로 처리하므로 강제로 세션 새로고침만 수행
+      const { data, error } = await supabase.auth.refreshSession();
+
+      if (error) {
+        console.error("Session refresh error:", error);
+        setUser(null);
+      }
+      // onAuthStateChange가 자동으로 사용자 상태를 업데이트함
     } catch (error) {
       console.error("Error refreshing user:", error);
       setUser(null);
@@ -68,29 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // 초기 세션 확인
-    const initAuth = async () => {
-      try {
-        console.log("Initializing auth...");
-        const currentUser = await getCurrentUser();
-        if (isMounted && !authInitialized) {
-          console.log("Setting initial user:", currentUser?.name);
-          setUser(currentUser);
-          setIsLoading(false);
-          authInitialized = true;
-        }
-      } catch (error) {
-        console.error("Error initializing auth:", error);
-        if (isMounted && !authInitialized) {
-          setUser(null);
-          setIsLoading(false);
-          authInitialized = true;
-        }
-      }
-    };
-
-    // 즉시 초기화 실행
-    initAuth();
+    // onAuthStateChange가 자동으로 초기 세션을 처리하므로 별도 초기화 불필요
+    console.log("AuthContext initialized, waiting for auth state change...");
 
     // 1초 후에도 로딩이 끝나지 않으면 강제로 false로 설정
     const timeout = setTimeout(() => {

@@ -21,6 +21,8 @@ export const loginUser = async (
       console.error("Auth 오류:", error);
       console.error("오류 코드:", error.status);
       console.error("오류 메시지:", error.message);
+      console.error("입력된 이메일:", credentials.username);
+      console.error("비밀번호 길이:", credentials.password.length);
 
       // 이메일 인증 관련 오류 처리
       if (error.message.includes("Email not confirmed")) {
@@ -102,7 +104,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
       return null;
     }
 
-    // 기본 사용자 정보만 반환 (프로필 조회 제거)
+    // 기본 사용자 정보 생성
     const basicUser: User = {
       id: session.user.id,
       username: session.user.email!,
@@ -112,6 +114,40 @@ export const getCurrentUser = async (): Promise<User | null> => {
       team: session.user.user_metadata?.team || null,
       avatar: session.user.user_metadata?.avatar_url || null,
     };
+
+    // 프로필 정보 조회 시도 (실패해도 기본 정보 반환)
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+
+      if (!profileError && profile) {
+        console.log("Profile found, using profile data:", profile.name);
+        return {
+          ...basicUser,
+          name: profile.name || basicUser.name,
+          branch: profile.branch || basicUser.branch,
+          team: profile.team || basicUser.team,
+          avatar: profile.avatar || basicUser.avatar,
+          hire_date: profile.hire_date,
+          position: profile.position,
+          contact: profile.contact,
+          bank: profile.bank,
+          bank_account: profile.bank_account,
+          address: profile.address,
+          resident_number: profile.resident_number,
+          emergency_contact_a: profile.emergency_contact_a,
+          emergency_contact_b: profile.emergency_contact_b,
+        };
+      }
+    } catch (profileError) {
+      console.log(
+        "Profile lookup failed, using basic user info:",
+        profileError
+      );
+    }
 
     console.log("Using basic user info from session:", basicUser.name);
     return basicUser;
@@ -127,7 +163,7 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
     console.log("Auth state change:", event, session?.user?.email);
 
     if (event === "SIGNED_IN" && session?.user) {
-      // 기본 사용자 정보만 사용 (프로필 조회 제거)
+      // 기본 사용자 정보 생성
       const basicUser: User = {
         id: session.user.id,
         username: session.user.email!,
@@ -137,6 +173,45 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
         team: session.user.user_metadata?.team || null,
         avatar: session.user.user_metadata?.avatar_url || null,
       };
+
+      // 프로필 정보 조회 시도 (실패해도 기본 정보 반환)
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+
+        if (!profileError && profile) {
+          const user: User = {
+            ...basicUser,
+            name: profile.name || basicUser.name,
+            branch: profile.branch || basicUser.branch,
+            team: profile.team || basicUser.team,
+            avatar: profile.avatar || basicUser.avatar,
+            hire_date: profile.hire_date,
+            position: profile.position,
+            contact: profile.contact,
+            bank: profile.bank,
+            bank_account: profile.bank_account,
+            address: profile.address,
+            resident_number: profile.resident_number,
+            emergency_contact_a: profile.emergency_contact_a,
+            emergency_contact_b: profile.emergency_contact_b,
+          };
+          console.log(
+            "SIGNED_IN with profile, calling callback with user:",
+            user.name
+          );
+          callback(user);
+          return;
+        }
+      } catch (profileError) {
+        console.log(
+          "Profile lookup failed, using basic user info:",
+          profileError
+        );
+      }
 
       console.log(
         "SIGNED_IN, calling callback with basic user:",
@@ -169,7 +244,7 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
       console.log("User updated event ignored to prevent infinite loop");
       return;
     } else if (event === "INITIAL_SESSION" && session?.user) {
-      // 기본 사용자 정보만 사용 (프로필 조회 제거)
+      // 기본 사용자 정보 생성
       const basicUser: User = {
         id: session.user.id,
         username: session.user.email!,
@@ -179,6 +254,45 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
         team: session.user.user_metadata?.team || null,
         avatar: session.user.user_metadata?.avatar_url || null,
       };
+
+      // 프로필 정보 조회 시도 (실패해도 기본 정보 반환)
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+
+        if (!profileError && profile) {
+          const user: User = {
+            ...basicUser,
+            name: profile.name || basicUser.name,
+            branch: profile.branch || basicUser.branch,
+            team: profile.team || basicUser.team,
+            avatar: profile.avatar || basicUser.avatar,
+            hire_date: profile.hire_date,
+            position: profile.position,
+            contact: profile.contact,
+            bank: profile.bank,
+            bank_account: profile.bank_account,
+            address: profile.address,
+            resident_number: profile.resident_number,
+            emergency_contact_a: profile.emergency_contact_a,
+            emergency_contact_b: profile.emergency_contact_b,
+          };
+          console.log(
+            "INITIAL_SESSION with profile, calling callback with user:",
+            user.name
+          );
+          callback(user);
+          return;
+        }
+      } catch (profileError) {
+        console.log(
+          "INITIAL_SESSION profile lookup failed, using basic user info:",
+          profileError
+        );
+      }
 
       console.log(
         "INITIAL_SESSION, calling callback with basic user:",

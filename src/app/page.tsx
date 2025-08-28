@@ -14,6 +14,7 @@ import {
   Search,
   ChevronRight,
 } from "lucide-react";
+import Link from "next/link";
 
 interface DashboardData {
   todayEmails: number;
@@ -25,7 +26,7 @@ interface DashboardData {
 }
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [dashboardData] = useState<DashboardData>({
@@ -38,10 +39,15 @@ export default function HomePage() {
   });
 
   useEffect(() => {
+    // isLoading이 false가 될 때까지 기다림
+    if (isLoading) {
+      return;
+    }
+
     if (!user) {
       router.push("/auth/login");
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -63,14 +69,14 @@ export default function HomePage() {
     return `${year}년 ${month}월 ${day}일 (${weekday}) ${hours}:${minutes}:${seconds}`;
   };
 
-  const handleClockIn = () => {
+  const handleCheckIn = () => {
+    setCurrentTime(new Date());
     // 출근 처리 로직
-    console.log("출근 처리");
   };
 
-  const handleClockOut = () => {
+  const handleCheckOut = () => {
+    setCurrentTime(new Date());
     // 퇴근 처리 로직
-    console.log("퇴근 처리");
   };
 
   if (!user) {
@@ -97,6 +103,12 @@ export default function HomePage() {
                   </h3>
                   <p className="text-sm text-gray-600">{user.branch}</p>
                 </div>
+                <Link
+                  href="/profile"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  프로필
+                </Link>
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-4">
@@ -161,14 +173,14 @@ export default function HomePage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={handleClockIn}
+                  onClick={handleCheckIn}
                   disabled={dashboardData.isClockedIn}
                   className="bg-blue-500 text-white py-3 px-4 rounded-xl font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   출근하기
                 </button>
                 <button
-                  onClick={handleClockOut}
+                  onClick={handleCheckOut}
                   disabled={!dashboardData.isClockedIn}
                   className="bg-gray-500 text-white py-3 px-4 rounded-xl font-semibold hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >

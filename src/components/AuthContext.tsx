@@ -1,14 +1,37 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { User } from "@/types/auth";
-import { onAuthStateChange } from "@/lib/auth";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import {
+  signIn as authSignIn,
+  signUp as authSignUp,
+  signOut as authSignOut,
+  getUserProfile,
+} from "@/lib/auth";
+import type { User } from "@/types/user";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  refreshUser: () => void;
-  logout: () => Promise<void>;
+  signIn: (
+    email: string,
+    password: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  signUp: (userData: {
+    email: string;
+    password: string;
+    name: string;
+    branch: string;
+    team: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  signOut: () => void;
+  register: (userData: {
+    email: string;
+    password: string;
+    name: string;
+    branch: string;
+    team: string;
+  }) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,57 +49,131 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [authInitialized, setAuthInitialized] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
+    const getAndSetUser = async () => {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
 
-    const unsubscribe = onAuthStateChange((user) => {
-      if (!mounted) return;
+      if (authUser) {
+        let userProfile = await getUserProfile(authUser.id);
 
-      setUser(user);
+        // 프로필이 없으면 기본 프로필 생성
+        if (!userProfile) {
+          try {
+            const { error } = await supabase.from("users").insert({
+              id: authUser.id,
+              email: authUser.email,
+              name: "새 사용자",
+              branch: "",
+              team: "",
+            });
 
-      // 첫 번째 인증 상태 변경 시에만 로딩 완료
-      if (!authInitialized) {
-        setAuthInitialized(true);
-        // 약간의 지연을 두어 UI가 안정적으로 렌더링되도록 함
-        setTimeout(() => {
-          if (mounted) {
-            setIsLoading(false);
+            if (error) {
+              console.error("기본 프로필 생성 실패:", error);
+            } else {
+              userProfile = await getUserProfile(authUser.id);
+            }
+          } catch (error) {
+            console.error("기본 프로필 생성 중 오류:", error);
           }
-        }, 100);
+        }
+
+        setUser(userProfile);
+      } else {
+        setUser(null);
       }
-    });
-
-    // 컴포넌트 언마운트 시 정리
-    return () => {
-      mounted = false;
-      unsubscribe.data.subscription.unsubscribe();
+      setIsLoading(false);
     };
-  }, [authInitialized]);
 
-  // refreshUser 함수 - 실제 API 호출 없이 상태만 업데이트
-  const refreshUser = () => {
-    // onAuthStateChange가 자동으로 처리하므로 별도 작업 불필요
+    getAndSetUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setIsLoading(true);
+        const authUser = session?.user ?? null;
+        if (authUser) {
+          let userProfile = await getUserProfile(authUser.id);
+
+          // 프로필이 없으면 기본 프로필 생성
+          if (!userProfile) {
+            try {
+              const { error } = await supabase.from("users").insert({
+                id: authUser.id,
+                email: authUser.email,
+                name: "새 사용자",
+                branch: "",
+                team: "",
+              });
+
+              if (error) {
+                console.error("기본 프로필 생성 실패:", error);
+              } else {
+                userProfile = await getUserProfile(authUser.id);
+              }
+            } catch (error) {
+              console.error("기본 프로필 생성 중 오류:", error);
+            }
+          }
+
+          setUser(userProfile as User | null);
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      await authSignIn(email, password);
+      return { success: true };
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "로그인 중 오류가 발생했습니다.";
+      return { success: false, error: errorMessage };
+    }
   };
 
-  // 로그아웃 함수
-  const logout = async () => {
+  const signUp = async (userData: {
+    email: string;
+    password: string;
+    name: string;
+    branch: string;
+    team: string;
+  }) => {
     try {
-      // 사용자 상태 즉시 초기화
-      setUser(null);
-      setIsLoading(false);
-      setAuthInitialized(false);
-    } catch (error) {
-      console.error("로그아웃 오류:", error);
+      await authSignUp(userData.email, userData.password, userData);
+      return { success: true };
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "회원가입 중 오류가 발생했습니다.";
+      return { success: false, error: errorMessage };
     }
+  };
+
+  const signOut = async () => {
+    await authSignOut();
+    setUser(null);
   };
 
   const value = {
     user,
     isLoading,
-    refreshUser,
-    logout,
+    signIn,
+    signUp,
+    signOut,
+    register: signUp,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

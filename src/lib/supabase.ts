@@ -13,29 +13,38 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     storageKey: "nms-auth-token",
     autoRefreshToken: true,
-    detectSessionInUrl: true,
+    detectSessionInUrl: false,
     flowType: "pkce",
     // 세션 만료 시 자동 정리
     storage: {
       getItem: (key) => {
         try {
-          return localStorage.getItem(key);
-        } catch {
+          if (typeof window !== "undefined") {
+            const item = localStorage.getItem(key);
+            return item;
+          }
+          return null;
+        } catch (error) {
+          console.error(`Storage getItem error for ${key}:`, error);
           return null;
         }
       },
       setItem: (key, value) => {
         try {
-          localStorage.setItem(key, value);
-        } catch {
-          // 스토리지 오류 시 무시
+          if (typeof window !== "undefined") {
+            localStorage.setItem(key, value);
+          }
+        } catch (error) {
+          console.error(`Storage setItem error for ${key}:`, error);
         }
       },
       removeItem: (key) => {
         try {
-          localStorage.removeItem(key);
-        } catch {
-          // 스토리지 오류 시 무시
+          if (typeof window !== "undefined") {
+            localStorage.removeItem(key);
+          }
+        } catch (error) {
+          console.error(`Storage removeItem error for ${key}:`, error);
         }
       },
     },
@@ -79,6 +88,32 @@ export interface Database {
           branch?: string;
           team?: string;
           avatar?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      user_auth: {
+        Row: {
+          id: string;
+          email: string;
+          password_hash: string;
+          user_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          password_hash: string;
+          user_id: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          password_hash?: string;
+          user_id?: string;
           created_at?: string;
           updated_at?: string;
         };

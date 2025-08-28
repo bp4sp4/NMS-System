@@ -1,6 +1,6 @@
 .container {
     min-height: 100vh;
-    background: linear-gradient(to bottom, #1e3a8a, #1e40af, #000000);
+    background: linear-gradient(to bottom, #2b7fff, #1e40af, #000000);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -42,7 +42,7 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1rem;
 }
 
 .title {
@@ -74,18 +74,6 @@
     gap: 1rem;
 }
 
-.formField {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #d1d5db;
-}
-
 .input {
     width: 100%;
     padding: 0.75rem 1rem;
@@ -108,59 +96,21 @@
     box-shadow: 0 0 0 2px #3b82f6;
 }
 
-.select {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background-color: #374151;
-    border: 1px solid #4b5563;
-    border-radius: 0.5rem;
-    color: white;
-    font-size: 0.875rem;
-    transition: all 0.2s;
-    cursor: pointer;
-}
-
-.select:focus {
-    outline: none;
-    border-color: transparent;
-    box-shadow: 0 0 0 2px #3b82f6;
-}
-
-.select option {
-    background-color: #374151;
-    color: white;
-}
-
-.passwordContainer {
-    position: relative;
-}
-
-.passwordInput {
-    padding-right: 3rem;
-}
-
-.eyeButton {
-    position: absolute;
-    top: 50%;
-    right: 0.75rem;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: #9ca3af;
-    cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 0.25rem;
-    transition: color 0.2s;
-}
-
-.eyeButton:hover {
-    color: #d1d5db;
-}
-
 .message {
     border-radius: 0.5rem;
     padding: 1rem;
     border: 1px solid;
+}
+
+.successMessage {
+    background-color: rgba(5, 122, 85, 0.5);
+    border-color: #059669;
+}
+
+.successText {
+    color: #6ee7b7;
+    font-size: 0.875rem;
+    font-weight: 500;
 }
 
 .errorMessage {
@@ -217,28 +167,25 @@
     }
 }
 
-.backLink {
+.footer {
     text-align: center;
 }
 
-.backLink a {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.footerText {
     color: #9ca3af;
     font-size: 0.875rem;
+}
+
+.footerLink {
+    color: #60a5fa;
+    font-size: 0.875rem;
+    font-weight: 500;
     text-decoration: none;
     transition: color 0.2s;
 }
 
-.backLink a:hover {
-    color: white;
-}
-
-.backIcon {
-    height: 1rem;
-    width: 1rem;
-    margin-right: 0.25rem;
+.footerLink:hover {
+    color: #93c5fd;
 }
 
 .loadingContainer {

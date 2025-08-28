@@ -1,144 +1,105 @@
-import { User, LoginCredentials, LoginResponse } from "@/types/auth";
 import { supabase } from "./supabase";
+import type { User } from "@/types/user";
 
-export const loginUser = async (
-  credentials: LoginCredentials
-): Promise<LoginResponse> => {
+// 사용자 프로필 조회 함수
+export const getUserProfile = async (userId: string): Promise<User | null> => {
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: credentials.username,
-      password: credentials.password,
-    });
+    const { data: userData, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", userId)
+      .single();
 
     if (error) {
-      // 이메일 인증 관련 오류 처리
-      if (error.message.includes("Email not confirmed")) {
-        throw new Error(
-          "이메일 인증이 필요합니다. 가입하신 이메일을 확인하여 인증을 완료해주세요."
-        );
-      }
-
-      // 사용자 존재하지 않음 오류 처리
-      if (
-        error.message.includes("Invalid login credentials") ||
-        error.message.includes("Invalid email or password")
-      ) {
-        throw new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
-      }
-
-      throw new Error(error.message);
-    }
-
-    if (!data.user) {
-      throw new Error("로그인에 실패했습니다.");
-    }
-
-    // 기본 사용자 정보만 사용 (프로필 조회 제거)
-    const user: User = {
-      id: data.user.id,
-      username: data.user.email!,
-      email: data.user.email!,
-      name: data.user.user_metadata?.name || "사용자",
-      branch: data.user.user_metadata?.branch || null,
-      team: data.user.user_metadata?.team || null,
-      avatar: data.user.user_metadata?.avatar_url || null,
-    };
-
-    return {
-      user,
-      token: data.session?.access_token || "",
-    };
-  } catch (error) {
-    console.error("로그인 함수 오류:", error);
-    throw error;
-  }
-};
-
-export const logoutUser = async (): Promise<void> => {
-  try {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("로그아웃 오류:", error);
-      throw error;
-    }
-  } catch (error) {
-    console.error("로그아웃 함수 오류:", error);
-    throw error;
-  }
-};
-
-export const getCurrentUser = async (): Promise<User | null> => {
-  try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.user) {
+      console.error("Error fetching user profile:", error);
       return null;
     }
 
-    // 기본 사용자 정보만 반환 (프로필 조회 제거)
+    if (!userData) {
+      return null;
+    }
+
     const user: User = {
-      id: session.user.id,
-      username: session.user.email!,
-      email: session.user.email!,
-      name: session.user.user_metadata?.name || "사용자",
-      branch: session.user.user_metadata?.branch || null,
-      team: session.user.user_metadata?.team || null,
-      avatar: session.user.user_metadata?.avatar_url || null,
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      branch: userData.branch,
+      team: userData.team,
+      avatar: userData.avatar,
+      hire_date: userData.hire_date,
+      bank: userData.bank,
+      bank_account: userData.bank_account,
+      address: userData.address,
+      resident_number: userData.resident_number,
+      emergency_contact: userData.emergency_contact,
+      created_at: userData.created_at,
+      updated_at: userData.updated_at,
     };
 
     return user;
   } catch (error) {
-    console.error("Error getting current user:", error);
+    console.error("getUserProfile 오류:", error);
     return null;
   }
 };
 
-// Supabase Auth 상태 변경 리스너
-export const onAuthStateChange = (callback: (user: User | null) => void) => {
-  return supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === "SIGNED_IN" && session?.user) {
-      // 기본 사용자 정보만 사용
-      const user: User = {
-        id: session.user.id,
-        username: session.user.email!,
-        email: session.user.email!,
-        name: session.user.user_metadata?.name || "사용자",
-        branch: session.user.user_metadata?.branch || null,
-        team: session.user.user_metadata?.team || null,
-        avatar: session.user.user_metadata?.avatar_url || null,
-      };
-
-      callback(user);
-    } else if (event === "SIGNED_OUT") {
-      callback(null);
-    } else if (event === "TOKEN_REFRESHED" && session?.user) {
-      // 토큰 갱신 시에도 기본 정보만 사용
-      const user: User = {
-        id: session.user.id,
-        username: session.user.email!,
-        email: session.user.email!,
-        name: session.user.user_metadata?.name || "사용자",
-        branch: session.user.user_metadata?.branch || null,
-        team: session.user.user_metadata?.team || null,
-        avatar: session.user.user_metadata?.avatar_url || null,
-      };
-
-      callback(user);
-    } else if (event === "INITIAL_SESSION" && session?.user) {
-      // 초기 세션 시에도 기본 정보만 사용
-      const user: User = {
-        id: session.user.id,
-        username: session.user.email!,
-        email: session.user.email!,
-        name: session.user.user_metadata?.name || "사용자",
-        branch: session.user.user_metadata?.branch || null,
-        team: session.user.user_metadata?.team || null,
-        avatar: session.user.user_metadata?.avatar_url || null,
-      };
-
-      callback(user);
-    }
+// Supabase Auth를 사용한 로그인 함수
+export const signIn = async (
+  email: string,
+  password: string
+): Promise<void> => {
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
   });
+
+  if (error) {
+    console.error("로그인 오류:", error);
+    throw new Error(error.message);
+  }
+};
+
+// Supabase Auth를 사용한 회원가입 함수
+export const signUp = async (
+  email: string,
+  password: string,
+  userData: Partial<User>
+): Promise<void> => {
+  // 1. Supabase Auth로 사용자 생성
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+
+  if (authError) {
+    console.error("Auth 회원가입 오류:", authError);
+    throw new Error(authError.message);
+  }
+
+  if (!authData.user) {
+    throw new Error("사용자 생성 실패");
+  }
+
+  // 2. 사용자 프로필 정보를 users 테이블에 저장
+  const { error: profileError } = await supabase.from("users").insert({
+    id: authData.user.id,
+    email: email,
+    name: userData.name || "새 사용자",
+    branch: userData.branch || "",
+    team: userData.team || "",
+  });
+
+  if (profileError) {
+    console.error("프로필 저장 오류:", profileError);
+    throw new Error(profileError.message);
+  }
+};
+
+// Supabase Auth를 사용한 로그아웃 함수
+export const signOut = async (): Promise<void> => {
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    console.error("로그아웃 오류:", error);
+    throw new Error(error.message);
+  }
 };

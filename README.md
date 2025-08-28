@@ -4,17 +4,41 @@
 
 ## 주요 기능
 
+- **관리자 승인 시스템**: 이메일 인증 대신 관리자 승인으로 회원가입
 - **로그인 시스템**: Supabase 기반 인증
 - **대시보드**: 전체 현황 및 통계
 - **순위 관리**: 개인별/지점별 순위 관리
 - **CRM**: 고객 관계 관리
 - **정산**: 매출 및 정산 관리
+- **관리자 대시보드**: 사용자 승인 및 관리
+
+## 관리자 승인 시스템
+
+### 시스템 특징
+
+- **이메일 인증 없음**: 회원가입 후 관리자 승인만으로 로그인 가능
+- **승인 상태 관리**: pending, approved, rejected, suspended 상태
+- **승인 로그**: 모든 승인/거부 이력 관리
+- **관리자 권한**: super_admin, admin 역할 구분
+
+### 사용자 상태
+
+- **pending**: 승인 대기 중 (기본값)
+- **approved**: 승인됨 (로그인 가능)
+- **rejected**: 거부됨 (로그인 불가)
+- **suspended**: 정지됨 (로그인 불가)
+
+### 초기 설정
+
+1. `admin-approval-system.sql` 실행하여 데이터베이스 스키마 생성
+2. `create-admin.sql`에서 사용자 ID를 실제 ID로 변경 후 실행
+3. 관리자 계정으로 로그인하여 `/admin` 페이지에서 사용자 승인
 
 ## 기술 스택
 
 - **Frontend**: Next.js 15, React 19, TypeScript
 - **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
+- **Authentication**: Supabase Auth (관리자 승인 시스템)
 - **Styling**: Tailwind CSS 4
 - **Icons**: Lucide React
 
@@ -42,20 +66,6 @@ npm install
 ```
 
 3. 환경 변수를 설정합니다:
-
-```bash
-# .env.local 파일 생성
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# 사이트 URL 설정 (선택사항)
-# 이 값을 설정하면 동적 감지 대신 이 값을 사용합니다
-# NEXT_PUBLIC_SITE_URL=https://your-domain.com
-
-# 예시:
-# NEXT_PUBLIC_SITE_URL=https://nms-system.vercel.app
-# NEXT_PUBLIC_SITE_URL=https://localhost:3000
-```
 
 **환경 변수 설명:**
 

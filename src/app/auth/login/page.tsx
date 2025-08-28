@@ -1,83 +1,35 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { loginUser } from "@/lib/auth";
 import { useAuth } from "@/components/AuthContext";
-import { supabase } from "@/lib/supabase";
 import styles from "./page.module.css";
 
-function LoginForm() {
-  const [credentials, setCredentials] = useState({
-    username: "", // Supabase Auth에서는 email을 사용하지만 기존 인터페이스 유지
-    password: "",
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const { user } = useAuth();
-
-  useEffect(() => {
-    const messageParam = searchParams.get("message");
-    const errorParam = searchParams.get("error");
-    const errorDescriptionParam = searchParams.get("error_description");
-
-    if (messageParam) {
-      setMessage(messageParam);
-      // 3초 후 메시지 제거
-      const timer = setTimeout(() => {
-        setMessage("");
-        // URL에서 메시지 파라미터 제거
-        const url = new URL(window.location.href);
-        url.searchParams.delete("message");
-        window.history.replaceState({}, "", url.toString());
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    }
-
-    // 이메일 인증 후 리다이렉트 처리
-    if (errorParam === "access_denied" && errorDescriptionParam) {
-      setError(errorDescriptionParam);
-      // URL에서 에러 파라미터 제거
-      const url = new URL(window.location.href);
-      url.searchParams.delete("error");
-      url.searchParams.delete("error_description");
-      window.history.replaceState({}, "", url.toString());
-    }
-
-    // 자동 로그인 체크 제거 - 로그아웃 후 자동으로 홈으로 가지 않도록 함
-  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError("");
+    setIsLoading(true);
 
     try {
-      await loginUser(credentials);
+      const result = await signIn(email, password);
 
-      router.push("/");
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "로그인에 실패했습니다.";
-
-      // 이메일 인증 관련 오류 메시지 개선
-      if (
-        errorMessage.includes("Email not confirmed") ||
-        errorMessage.includes("이메일이 확인되지 않았습니다")
-      ) {
-        setError(
-          "이메일 인증이 필요합니다. 가입하신 이메일을 확인하여 인증을 완료해주세요."
-        );
+      if (result.success) {
+        router.push("/");
       } else {
-        setError(errorMessage);
+        setError(result.error || "이메일 또는 비밀번호가 올바르지 않습니다.");
       }
+    } catch (error) {
+      setError("로그인 중 오류가 발생했습니다.");
+      console.error("로그인 오류:", error);
     } finally {
       setIsLoading(false);
     }
@@ -101,57 +53,33 @@ function LoginForm() {
           <h1 className={styles.title}>로그인</h1>
         </div>
 
-        {/* Message */}
-        {message && (
-          <div className={`${styles.message} ${styles.successMessage}`}>
-            <div>
-              <h3 className={styles.successText}>{message}</h3>
-            </div>
-          </div>
-        )}
-
         {/* Login container */}
         <div className={styles.loginContainer}>
           <form className={styles.form} onSubmit={handleSubmit}>
             {/* Input fields */}
             <div className={styles.inputGroup}>
               <input
-                id="username"
-                name="username"
+                id="email"
+                name="email"
                 type="email"
+                autoComplete="email"
                 required
                 className={styles.input}
                 placeholder="이메일을 입력하세요"
-                value={credentials.username}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, username: e.target.value })
-                }
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
-              <div className={styles.passwordContainer}>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  className={`${styles.input} ${styles.passwordInput}`}
-                  placeholder="비밀번호"
-                  value={credentials.password}
-                  onChange={(e) =>
-                    setCredentials({ ...credentials, password: e.target.value })
-                  }
-                />
-                <button
-                  type="button"
-                  className={styles.eyeButton}
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className={styles.input}
+                placeholder="비밀번호"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
 
             {/* Error Message */}
@@ -169,14 +97,7 @@ function LoginForm() {
               disabled={isLoading}
               className={styles.loginButton}
             >
-              {isLoading ? (
-                <div className={styles.loginButtonContent}>
-                  <Loader2 className={`h-5 w-5 ${styles.spinner}`} />
-                  로그인 중...
-                </div>
-              ) : (
-                "로그인"
-              )}
+              {isLoading ? "로그인 중..." : "로그인"}
             </button>
           </form>
         </div>
@@ -190,22 +111,5 @@ function LoginForm() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className={styles.loadingContainer}>
-          <div>
-            <div className={styles.loadingSpinner}></div>
-            <p className={styles.loadingText}>로딩 중...</p>
-          </div>
-        </div>
-      }
-    >
-      <LoginForm />
-    </Suspense>
   );
 }

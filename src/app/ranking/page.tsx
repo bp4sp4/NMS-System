@@ -34,7 +34,7 @@ interface FilterState {
 }
 
 export default function RankingPage() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const [individualRankingData, setIndividualRankingData] = useState<
     RankingData[]
@@ -60,10 +60,15 @@ export default function RankingPage() {
   });
 
   useEffect(() => {
+    // isLoading이 false가 될 때까지 기다림
+    if (isLoading) {
+      return;
+    }
+
     if (!user) {
       router.push("/auth/login");
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
 
   // CRM 데이터에서 순위 계산
   const fetchRankingData = async () => {

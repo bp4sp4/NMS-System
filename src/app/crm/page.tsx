@@ -29,7 +29,7 @@ interface CRMData {
 }
 
 export default function CRMPage() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const [filters, setFilters] = useState({
     year: "2025",
@@ -111,10 +111,15 @@ export default function CRMPage() {
 
   // 인증 상태 확인 및 리다이렉트
   useEffect(() => {
+    // isLoading이 false가 될 때까지 기다림
+    if (isLoading) {
+      return;
+    }
+
     if (!user) {
       router.push("/auth/login");
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
 
   // 기관별 수당 정보
   const commissionRates = [

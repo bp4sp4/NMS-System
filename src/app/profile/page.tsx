@@ -20,21 +20,18 @@ interface ProfileFormData {
   branch: string;
   team: string;
   hireDate: string;
-  position: string;
-  contact: string;
   bank: string;
   bankAccount: string;
   address: string;
   residentNumber: string;
-  emergencyContactA: string;
-  emergencyContactB: string;
+  emergencyContact: string;
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
 }
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -43,14 +40,11 @@ export default function ProfilePage() {
     branch: "",
     team: "",
     hireDate: "",
-    position: "",
-    contact: "",
     bank: "",
     bankAccount: "",
     address: "",
     residentNumber: "",
-    emergencyContactA: "",
-    emergencyContactB: "",
+    emergencyContact: "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
@@ -64,10 +58,15 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("basic");
 
   useEffect(() => {
+    // isLoading이 false가 될 때까지 기다림
+    if (isLoading) {
+      return;
+    }
+
     if (!user) {
       router.push("/auth/login");
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
 
   useEffect(() => {
     if (user) {
@@ -77,14 +76,11 @@ export default function ProfilePage() {
         branch: user.branch || "",
         team: user.team || "",
         hireDate: user.hire_date || "",
-        position: user.position || "",
-        contact: user.contact || "",
         bank: user.bank || "",
         bankAccount: user.bank_account || "",
         address: user.address || "",
         residentNumber: user.resident_number || "",
-        emergencyContactA: user.emergency_contact_a || "",
-        emergencyContactB: user.emergency_contact_b || "",
+        emergencyContact: user.emergency_contact || "",
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
@@ -101,20 +97,16 @@ export default function ProfilePage() {
             .single();
 
           if (!error && profile) {
-            console.log("Profile data loaded:", profile);
             setFormData({
               name: profile.name || "",
               branch: profile.branch || "",
               team: profile.team || "",
               hireDate: profile.hire_date || "",
-              position: profile.position || "",
-              contact: profile.contact || "",
               bank: profile.bank || "",
               bankAccount: profile.bank_account || "",
               address: profile.address || "",
               residentNumber: profile.resident_number || "",
-              emergencyContactA: profile.emergency_contact_a || "",
-              emergencyContactB: profile.emergency_contact_b || "",
+              emergencyContact: profile.emergency_contact || "",
               currentPassword: "",
               newPassword: "",
               confirmPassword: "",
@@ -195,14 +187,11 @@ export default function ProfilePage() {
           branch: formData.branch,
           team: formData.team,
           hire_date: formData.hireDate || null,
-          position: formData.position,
-          contact: formData.contact,
           bank: formData.bank,
           bank_account: formData.bankAccount,
           address: formData.address,
           resident_number: formData.residentNumber,
-          emergency_contact_a: formData.emergencyContactA,
-          emergency_contact_b: formData.emergencyContactB,
+          emergency_contact: formData.emergencyContact,
         })
         .eq("id", user.id);
 
@@ -219,14 +208,11 @@ export default function ProfilePage() {
         branch: formData.branch,
         team: formData.team,
         hireDate: formData.hireDate,
-        position: formData.position,
-        contact: formData.contact,
         bank: formData.bank,
         bankAccount: formData.bankAccount,
         address: formData.address,
         residentNumber: formData.residentNumber,
-        emergencyContactA: formData.emergencyContactA,
-        emergencyContactB: formData.emergencyContactB,
+        emergencyContact: formData.emergencyContact,
       }));
 
       // 3초 후 성공 메시지 자동 제거
@@ -515,23 +501,16 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        직급
+                        입사일자
                       </label>
-                      <select
-                        value={formData.position}
+                      <input
+                        type="date"
+                        value={formData.hireDate}
                         onChange={(e) =>
-                          setFormData({ ...formData, position: e.target.value })
+                          setFormData({ ...formData, hireDate: e.target.value })
                         }
                         className="w-full bg-white border-0 rounded-lg px-3 py-2 text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all"
-                      >
-                        <option value="">직급을 선택하세요</option>
-                        <option value="대표이사">대표이사</option>
-                        <option value="이사">이사</option>
-                        <option value="실장">실장</option>
-                        <option value="대리">대리</option>
-                        <option value="주임">주임</option>
-                        <option value="사원">사원</option>
-                      </select>
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -582,17 +561,33 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        연락처
+                        은행
                       </label>
-                      <input
-                        type="tel"
-                        value={formData.contact}
+                      <select
+                        value={formData.bank}
                         onChange={(e) =>
-                          setFormData({ ...formData, contact: e.target.value })
+                          setFormData({
+                            ...formData,
+                            bank: e.target.value,
+                          })
                         }
-                        placeholder="010-0000-0000"
                         className="w-full bg-white border-0 rounded-lg px-3 py-2 text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all"
-                      />
+                      >
+                        <option value="">은행을 선택하세요</option>
+                        <option value="KB국민은행">KB국민은행</option>
+                        <option value="신한은행">신한은행</option>
+                        <option value="우리은행">우리은행</option>
+                        <option value="하나은행">하나은행</option>
+                        <option value="NH농협은행">NH농협은행</option>
+                        <option value="IBK기업은행">IBK기업은행</option>
+                        <option value="케이뱅크">케이뱅크</option>
+                        <option value="카카오뱅크">카카오뱅크</option>
+                        <option value="토스뱅크">토스뱅크</option>
+                        <option value="새마을금고">새마을금고</option>
+                        <option value="신협">신협</option>
+                        <option value="우체국">우체국</option>
+                        <option value="기타">기타</option>
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -643,41 +638,22 @@ export default function ProfilePage() {
                   <h4 className="text-md font-medium text-gray-900 mb-4">
                     비상연락망
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        비상연락망 A
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.emergencyContactA}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            emergencyContactA: e.target.value,
-                          })
-                        }
-                        placeholder="010-0000-0000"
-                        className="w-full bg-white border-0 rounded-lg px-3 py-2 text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        비상연락망 B
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.emergencyContactB}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            emergencyContactB: e.target.value,
-                          })
-                        }
-                        placeholder="010-0000-0000"
-                        className="w-full bg-white border-0 rounded-lg px-3 py-2 text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      비상연락망
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.emergencyContact}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          emergencyContact: e.target.value,
+                        })
+                      }
+                      placeholder="010-0000-0000"
+                      className="w-full bg-white border-0 rounded-lg px-3 py-2 text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
                   </div>
                 </div>
 

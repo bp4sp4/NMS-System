@@ -1,130 +1,169 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth } from "@/components/AuthContext";
-import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import styles from "./Navigation.module.css";
+import { useAuth } from "./AuthContext";
+import { useState } from "react";
 
-export default function Header() {
-  const { user, logout: authLogout } = useAuth();
-  const pathname = usePathname();
+export default function Navigation() {
+  const { user, logout } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = async () => {
-    try {
-      // 로그아웃 버튼 비활성화
-      const logoutButton = document.querySelector(
-        "[data-logout-button]"
-      ) as HTMLButtonElement;
-      if (logoutButton) {
-        logoutButton.disabled = true;
-        logoutButton.textContent = "로그아웃 중...";
-      }
-
-      // AuthContext 상태 정리
-      await authLogout();
-
-      // Supabase 세션 정리
-      await supabase.auth.signOut();
-
-      // 로컬 스토리지 및 세션 스토리지 완전 정리
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // 쿠키 정리 (가능한 경우)
-      document.cookie.split(";").forEach(function (c) {
-        document.cookie = c
-          .replace(/^ +/, "")
-          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-      });
-
-      // 페이지 완전 새로고침으로 모든 상태 초기화
-      window.location.replace("/auth/login");
-    } catch (error) {
-      console.error("로그아웃 오류:", error);
-      // 오류가 발생해도 강제로 로그인 페이지로 이동
-      localStorage.clear();
-      sessionStorage.clear();
-      window.location.replace("/auth/login");
-    }
+    await logout();
   };
 
-  const menuItems = [
-    { href: "/", label: "홈" },
-    { href: "/ranking", label: "순위" },
-    { href: "/crm", label: "CRM" },
-    // { href: "/settlement", label: "정산" }, // 임시 비활성화
-  ];
-
   return (
-    <header className={styles.header}>
-      <div className={styles.container}>
-        <div className={styles.nav}>
-          <div className={styles.leftSection}>
-            {/* 로고 */}
-            <Link href="/" className={styles.logoSection}>
-              <div className={styles.logo}>
-                <img
-                  src="/images/logo2.png"
-                  alt="logo"
-                  className={styles.logoImage}
-                />
-              </div>
-              <span className={styles.brandName}>한평생 에듀바이저스</span>
-            </Link>
-
-            {/* 메뉴 아이템 */}
-            <div className={styles.menuItems}>
-              {menuItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`${styles.menuLink} ${
-                    pathname === item.href
-                      ? styles.menuLinkActive
-                      : styles.menuLinkInactive
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
+    <nav className="bg-white shadow-lg">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <div className="flex-shrink-0 flex items-center">
+              <Link href="/" className="text-xl font-bold text-gray-800">
+                NMS System
+              </Link>
+            </div>
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              <Link
+                href="/crm"
+                className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+              >
+                CRM
+              </Link>
+              <Link
+                href="/ranking"
+                className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+              >
+                랭킹
+              </Link>
             </div>
           </div>
 
-          {/* 사용자 정보 및 로그아웃 */}
-          <div className={styles.rightSection}>
-            <div className={styles.userInfo}>
-              <span className={styles.branch}>{user?.branch}</span>
-              <span className={styles.team}>{user?.team}</span>
-              <Link href="/profile" className={styles.userNameLink}>
-                <div className={styles.userProfile}>
-                  {user?.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt="프로필 사진"
-                      className={styles.userAvatar}
-                    />
-                  ) : (
-                    <div className={styles.userAvatarPlaceholder}>
-                      {user?.name?.charAt(0) || "U"}
-                    </div>
-                  )}
-                  <span className={styles.userName}>{user?.name}</span>
-                </div>
+          {/* Desktop Menu */}
+          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <span className="text-gray-700 text-sm">
+                  {user.name} ({user.email})
+                </span>
+                <Link
+                  href="/profile"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                >
+                  프로필
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                >
+                  로그아웃
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              >
+                로그인
               </Link>
-            </div>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="sm:hidden flex items-center">
             <button
-              onClick={handleLogout}
-              className={styles.logoutButton}
-              data-logout-button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
             >
-              <LogOut className={styles.logoutIcon} />
-              로그아웃
+              <span className="sr-only">메뉴 열기</span>
+              {/* Hamburger icon */}
+              <svg
+                className={`${isMenuOpen ? "hidden" : "block"} h-6 w-6`}
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+              {/* Close icon */}
+              <svg
+                className={`${isMenuOpen ? "block" : "hidden"} h-6 w-6`}
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
             </button>
           </div>
         </div>
       </div>
-    </header>
+
+      {/* Mobile menu */}
+      <div className={`${isMenuOpen ? "block" : "hidden"} sm:hidden`}>
+        <div className="pt-2 pb-3 space-y-1">
+          <Link
+            href="/crm"
+            className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
+          >
+            CRM
+          </Link>
+          <Link
+            href="/ranking"
+            className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
+          >
+            랭킹
+          </Link>
+        </div>
+        <div className="pt-4 pb-3 border-t border-gray-200">
+          {user ? (
+            <div className="space-y-2">
+              <div className="px-4 py-2">
+                <div className="text-base font-medium text-gray-800">
+                  {user.name}
+                </div>
+                <div className="text-sm font-medium text-gray-500">
+                  {user.email}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Link
+                  href="/profile"
+                  className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                >
+                  프로필
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                >
+                  로그아웃
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="px-4 py-2">
+              <Link
+                href="/auth/login"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium block text-center"
+              >
+                로그인
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    </nav>
   );
 }

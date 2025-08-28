@@ -39,21 +39,15 @@ export default function HomePage() {
   });
 
   useEffect(() => {
-    console.log("홈페이지 - Auth 상태:", { user, isLoading });
-
     // isLoading이 false가 될 때까지 기다림
     if (isLoading) {
-      console.log("홈페이지 - 로딩 중...");
       return;
     }
 
     // 로딩이 완료되고 사용자가 없으면 즉시 로그인 페이지로 리다이렉트
     if (!user) {
-      console.log("홈페이지 - 사용자 없음, 로그인 페이지로 리다이렉트");
-
       // 세션 데이터 재확인
       const sessionData = localStorage.getItem("nms-user-session");
-      console.log("홈페이지 - 세션 데이터 재확인:", sessionData);
 
       if (!sessionData) {
         // 즉시 로그인 페이지로 리다이렉트 (replace로 브라우저 히스토리에 남기지 않음)
@@ -61,8 +55,6 @@ export default function HomePage() {
         return;
       }
     }
-
-    console.log("홈페이지 - 사용자 있음, 대시보드 표시:", user);
   }, [user, isLoading, router]);
 
   useEffect(() => {
@@ -108,7 +100,6 @@ export default function HomePage() {
 
   // 로딩이 완료되었지만 사용자가 없으면 로딩 화면 유지 (리다이렉트 중)
   if (!user) {
-    console.log("홈페이지 렌더링 - 사용자 없음, 로딩 화면 표시");
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -118,8 +109,6 @@ export default function HomePage() {
       </div>
     );
   }
-
-  console.log("홈페이지 렌더링 - 사용자 있음, 대시보드 표시:", user);
 
   return (
     <div className="min-h-screen bg-gray-50">

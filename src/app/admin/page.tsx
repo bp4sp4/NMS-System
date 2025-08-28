@@ -5,24 +5,28 @@ import { useAuth } from "@/components/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
-interface PendingUser {
+interface User {
   id: string;
   email: string;
   name: string;
   branch: string;
   team: string;
   created_at: string;
-  is_approved: boolean;
 }
 
 export default function AdminPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [approvalNotes, setApprovalNotes] = useState<{ [key: string]: string }>(
-    {}
-  );
+  const [newUser, setNewUser] = useState({
+    email: "",
+    password: "",
+    name: "",
+    branch: "",
+    team: "",
+  });
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -38,99 +42,89 @@ export default function AdminPage() {
 
   const checkAdminRole = async () => {
     try {
-      const { data, error } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", user?.id)
-        .single();
+      // 이메일 기반으로 관리자 확인 (간단한 방법)
+      const isAdmin =
+        user?.email?.includes("admin") || user?.email === "admin@korhrd.com";
 
-      if (error || !data) {
-        console.error("사용자 정보 조회 실패:", error);
-        router.replace("/");
-        return;
-      }
-
-      if (data.role !== "admin" && data.role !== "super_admin") {
+      if (!isAdmin) {
         console.log("관리자 권한이 없습니다");
         router.replace("/");
         return;
       }
 
-      // 승인 대기 사용자 목록 조회
-      loadPendingUsers();
+      // 사용자 목록 조회
+      loadUsers();
     } catch (error) {
       console.error("관리자 권한 확인 오류:", error);
       router.replace("/");
     }
   };
 
-  const loadPendingUsers = async () => {
+  const loadUsers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.rpc("get_pending_users");
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, email, name, branch, team, created_at")
+        .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("승인 대기 사용자 조회 오류:", error);
+        console.error("사용자 목록 조회 오류:", error);
         return;
       }
 
-      setPendingUsers(data || []);
+      setUsers(data || []);
     } catch (error) {
-      console.error("승인 대기 사용자 조회 중 오류:", error);
+      console.error("사용자 목록 조회 중 오류:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = async (userId: string) => {
+  const handleCreateUser = async () => {
+    if (!newUser.email || !newUser.password || !newUser.name) {
+      alert("이메일, 비밀번호, 이름을 모두 입력해주세요.");
+      return;
+    }
+
+    setIsCreating(true);
     try {
-      const notes = approvalNotes[userId] || "";
-      const { error } = await supabase.rpc("approve_user", {
-        user_id: userId,
-        admin_id: user?.id,
-        approval_notes: notes,
-      });
+      const { createUser } = useAuth();
+      const result = await createUser(newUser);
 
-      if (error) {
-        console.error("사용자 승인 오류:", error);
-        alert("승인 중 오류가 발생했습니다.");
-        return;
+      if (result.success) {
+        alert("사용자가 생성되었습니다.");
+        setNewUser({ email: "", password: "", name: "", branch: "", team: "" });
+        loadUsers(); // 목록 새로고침
+      } else {
+        alert(`사용자 생성 실패: ${result.error}`);
       }
-
-      alert("사용자가 승인되었습니다.");
-      setApprovalNotes((prev) => ({ ...prev, [userId]: "" }));
-      loadPendingUsers(); // 목록 새로고침
     } catch (error) {
-      console.error("사용자 승인 중 오류:", error);
-      alert("승인 중 오류가 발생했습니다.");
+      console.error("사용자 생성 중 오류:", error);
+      alert("사용자 생성 중 오류가 발생했습니다.");
+    } finally {
+      setIsCreating(false);
     }
   };
 
-  const handleReject = async (userId: string) => {
-    if (!confirm("정말로 이 사용자를 거부하시겠습니까?")) {
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`정말로 "${userName}" 사용자를 삭제하시겠습니까?`)) {
       return;
     }
 
     try {
-      const notes = approvalNotes[userId] || "";
-      const { error } = await supabase.rpc("reject_user", {
-        user_id: userId,
-        admin_id: user?.id,
-        rejection_notes: notes,
-      });
+      const { removeUser } = useAuth();
+      const result = await removeUser(userId);
 
-      if (error) {
-        console.error("사용자 거부 오류:", error);
-        alert("거부 중 오류가 발생했습니다.");
-        return;
+      if (result.success) {
+        alert("사용자가 삭제되었습니다.");
+        loadUsers(); // 목록 새로고침
+      } else {
+        alert(`사용자 삭제 실패: ${result.error}`);
       }
-
-      alert("사용자가 거부되었습니다.");
-      setApprovalNotes((prev) => ({ ...prev, [userId]: "" }));
-      loadPendingUsers(); // 목록 새로고침
     } catch (error) {
-      console.error("사용자 거부 중 오류:", error);
-      alert("거부 중 오류가 발생했습니다.");
+      console.error("사용자 삭제 중 오류:", error);
+      alert("사용자 삭제 중 오류가 발생했습니다.");
     }
   };
 
@@ -148,89 +142,139 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* 새 사용자 생성 폼 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-bold text-gray-900">새 사용자 생성</h2>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <input
+                type="email"
+                placeholder="이메일"
+                value={newUser.email}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, email: e.target.value })
+                }
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+              <input
+                type="password"
+                placeholder="비밀번호"
+                value={newUser.password}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, password: e.target.value })
+                }
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+              <input
+                type="text"
+                placeholder="이름"
+                value={newUser.name}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, name: e.target.value })
+                }
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+              <input
+                type="text"
+                placeholder="지점"
+                value={newUser.branch}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, branch: e.target.value })
+                }
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+              <input
+                type="text"
+                placeholder="팀"
+                value={newUser.team}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, team: e.target.value })
+                }
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+              <button
+                onClick={handleCreateUser}
+                disabled={isCreating}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+              >
+                {isCreating ? "생성 중..." : "사용자 생성"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 사용자 목록 */}
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">관리자 승인</h1>
+            <h1 className="text-2xl font-bold text-gray-900">사용자 관리</h1>
             <p className="mt-1 text-sm text-gray-600">
-              승인 대기 중인 사용자들을 관리합니다.
+              시스템의 모든 사용자를 관리합니다.
             </p>
           </div>
 
           <div className="p-6">
-            {pendingUsers.length === 0 ? (
+            {users.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-gray-400 text-6xl mb-4">✓</div>
+                <div className="text-gray-400 text-6xl mb-4">👥</div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  승인 대기 중인 사용자가 없습니다
+                  사용자가 없습니다
                 </h3>
-                <p className="text-gray-600">
-                  모든 사용자가 승인되었거나 대기 중인 사용자가 없습니다.
-                </p>
+                <p className="text-gray-600">새 사용자를 생성해보세요.</p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {pendingUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="border border-gray-200 rounded-lg p-6 bg-gray-50"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-medium text-gray-900">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        사용자 정보
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        소속
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        가입일
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        작업
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {users.map((user) => (
+                      <tr key={user.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
                               {user.name}
-                            </h3>
-                            <p className="text-sm text-gray-600">
+                            </div>
+                            <div className="text-sm text-gray-500">
                               {user.email}
-                            </p>
-                            <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
-                              <span>지점: {user.branch}</span>
-                              <span>팀: {user.team}</span>
-                              <span>
-                                신청일:{" "}
-                                {new Date(user.created_at).toLocaleDateString()}
-                              </span>
                             </div>
                           </div>
-                        </div>
-
-                        <div className="mt-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            승인/거부 메모 (선택사항)
-                          </label>
-                          <textarea
-                            value={approvalNotes[user.id] || ""}
-                            onChange={(e) =>
-                              setApprovalNotes((prev) => ({
-                                ...prev,
-                                [user.id]: e.target.value,
-                              }))
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            rows={2}
-                            placeholder="승인 또는 거부 사유를 입력하세요..."
-                          />
-                        </div>
-                      </div>
-
-                      <div className="ml-6 flex flex-col space-y-2">
-                        <button
-                          onClick={() => handleApprove(user.id)}
-                          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                        >
-                          승인
-                        </button>
-                        <button
-                          onClick={() => handleReject(user.id)}
-                          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                        >
-                          거부
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {user.branch} / {user.team}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(user.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => handleDeleteUser(user.id, user.name)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            삭제
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>

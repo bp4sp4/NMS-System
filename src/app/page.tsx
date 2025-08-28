@@ -44,6 +44,7 @@ export default function HomePage() {
       return;
     }
 
+    // 로딩이 완료되고 사용자가 없으면 즉시 로그인 페이지로 리다이렉트
     if (!user) {
       // 환경 변수 확인 (개발 환경에서만)
       if (process.env.NODE_ENV === "development") {
@@ -56,7 +57,9 @@ export default function HomePage() {
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "설정됨" : "설정되지 않음"
         );
       }
-      router.push("/auth/login");
+      // 즉시 로그인 페이지로 리다이렉트 (replace로 브라우저 히스토리에 남기지 않음)
+      router.replace("/auth/login");
+      return;
     }
   }, [user, isLoading, router]);
 
@@ -95,12 +98,13 @@ export default function HomePage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
+          <p className="text-gray-600">인증 상태 확인 중...</p>
         </div>
       </div>
     );
   }
 
+  // 로딩이 완료되었지만 사용자가 없으면 로딩 화면 유지 (리다이렉트 중)
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

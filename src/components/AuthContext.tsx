@@ -53,19 +53,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const getAndSetUser = async () => {
       try {
+        // 먼저 로컬 스토리지에서 세션 확인 (빠른 응답)
         const {
-          data: { user: authUser },
-        } = await supabase.auth.getUser();
+          data: { session },
+        } = await supabase.auth.getSession();
 
-        if (authUser) {
-          let userProfile = await getUserProfile(authUser.id);
+        if (session?.user) {
+          // 세션이 있으면 즉시 사용자 정보 설정
+          let userProfile = await getUserProfile(session.user.id);
 
           // 프로필이 없으면 기본 프로필 생성
           if (!userProfile) {
             try {
               const { error } = await supabase.from("users").insert({
-                id: authUser.id,
-                email: authUser.email,
+                id: session.user.id,
+                email: session.user.email,
                 name: "새 사용자",
                 branch: "",
                 team: "",
@@ -74,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               if (error) {
                 console.error("기본 프로필 생성 실패:", error);
               } else {
-                userProfile = await getUserProfile(authUser.id);
+                userProfile = await getUserProfile(session.user.id);
               }
             } catch (error) {
               console.error("기본 프로필 생성 중 오류:", error);

@@ -69,6 +69,13 @@ export const signUp = async (
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        name: userData.name,
+        branch: userData.branch,
+        team: userData.team,
+      },
+    },
   });
 
   if (authError) {
@@ -91,7 +98,12 @@ export const signUp = async (
 
   if (profileError) {
     console.error("프로필 저장 오류:", profileError);
-    throw new Error(profileError.message);
+    // 프로필 저장 실패 시에도 Auth 사용자는 생성되었으므로 오류를 던지지 않음
+    // 대신 로그만 남기고 계속 진행
+    console.warn(
+      "프로필 저장 실패했지만 Auth 사용자는 생성됨:",
+      profileError.message
+    );
   }
 };
 

@@ -98,7 +98,6 @@ export default function HomePage() {
     );
   }
 
-  // 로딩이 완료되었지만 사용자가 없으면 로딩 화면 유지 (리다이렉트 중)
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

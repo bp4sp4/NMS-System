@@ -143,18 +143,32 @@ export default function RankingPage() {
       // 사용자 아바타 정보 가져오기
       const { data: usersData, error: usersError } = await supabase
         .from("users")
-        .select("name, avatar")
+        .select("id, name")
         .in("name", Array.from(managerStats.keys()));
 
       if (usersError) {
-        console.error("사용자 아바타 정보 가져오기 오류:", usersError);
+        console.error("사용자 정보 가져오기 오류:", usersError);
+      }
+
+      // 사용자 ID 목록 추출
+      const userIds = usersData?.map((user) => user.id) || [];
+
+      // user_profiles 테이블에서 아바타 정보 가져오기
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("user_profiles")
+        .select("id, avatar")
+        .in("id", userIds);
+
+      if (profilesError) {
+        console.error("사용자 아바타 정보 가져오기 오류:", profilesError);
       }
 
       // 아바타 정보를 담당자별로 매핑
       const avatarMap = new Map<string, string>();
       usersData?.forEach((user) => {
-        if (user.name && user.avatar) {
-          avatarMap.set(user.name, user.avatar);
+        const profile = profilesData?.find((p) => p.id === user.id);
+        if (user.name && profile?.avatar) {
+          avatarMap.set(user.name, profile.avatar);
         }
       });
 

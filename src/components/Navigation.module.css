@@ -104,8 +104,61 @@
     color: #111827;
     background-color: #f3f4f6;
     border-radius: 0.375rem;
-    padding: 0.25rem 0.5rem;
-    margin: -0.25rem -0.5rem;
+
+}
+
+/* 드롭다운 스타일 */
+.dropdownContainer {
+    position: relative;
+}
+
+.dropdownButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.dropdownIcon {
+    width: 1rem;
+    height: 1rem;
+    transition: transform 0.2s;
+}
+
+.dropdownIconRotated {
+    transform: rotate(180deg);
+}
+
+.dropdownMenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    min-width: 120px;
+    z-index: 50;
+    margin-top: 0.25rem;
+}
+
+.dropdownItem {
+    display: block;
+    padding: 0.5rem 1rem;
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    border-radius: 0.25rem;
+    margin: 0.25rem;
+}
+
+.dropdownItem:hover {
+    color: #111827;
+    background-color: #f3f4f6;
 }
 
 .rightSection {
@@ -196,4 +249,260 @@
     height: 1rem;
     width: 1rem;
     margin-right: 0.5rem;
+}
+
+/* Mobile Menu Styles */
+.mobileMenuButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    color: #9ca3af;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mobileMenuButton:hover {
+    color: #6b7280;
+    background-color: #f3f4f6;
+}
+
+.mobileMenuButton:focus {
+    outline: none;
+    ring: 2px;
+    ring-inset: true;
+    ring-color: #3b82f6;
+}
+
+.mobileMenuIcon {
+    height: 1.5rem;
+    width: 1.5rem;
+}
+
+.mobileMenuIconHidden {
+    display: none;
+}
+
+.mobileMenuIconVisible {
+    display: block;
+}
+
+.mobileMenuContainer {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .mobileMenuContainer {
+        display: block;
+    }
+}
+
+.mobileMenuVisible {
+    display: block;
+}
+
+.mobileMenuHidden {
+    display: none;
+}
+
+.mobileMenuItems {
+    padding-top: 0.5rem;
+    padding-bottom: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.mobileMenuItem {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    padding-left: 0.75rem;
+    padding-right: 1rem;
+    border-left: 4px solid transparent;
+    font-size: 1rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: #6b7280;
+    transition: all 0.2s;
+}
+
+.mobileMenuItem:hover {
+    background-color: #f9fafb;
+    border-left-color: #d1d5db;
+    color: #374151;
+}
+
+/* 모바일 드롭다운 스타일 */
+.mobileDropdownContainer {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.mobileDropdownButton {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    padding-left: 0.75rem;
+    padding-right: 1rem;
+    border-left: 4px solid transparent;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #6b7280;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mobileDropdownButton:hover {
+    background-color: #f9fafb;
+    border-left-color: #d1d5db;
+    color: #374151;
+}
+
+.mobileDropdownIcon {
+    width: 1rem;
+    height: 1rem;
+    transition: transform 0.2s;
+}
+
+.mobileDropdownMenu {
+    background-color: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+}
+
+.mobileDropdownItem {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    padding-left: 2rem;
+    padding-right: 1rem;
+    border-left: 4px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: #6b7280;
+    transition: all 0.2s;
+}
+
+.mobileDropdownItem:hover {
+    background-color: #f3f4f6;
+    border-left-color: #3b82f6;
+    color: #374151;
+}
+
+.mobileUserSection {
+    padding-top: 1rem;
+    padding-bottom: 0.75rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.mobileUserInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.mobileUserHeader {
+    padding: 0.5rem 1rem;
+}
+
+.mobileUserProfile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mobileUserAvatar {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mobileUserAvatarImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mobileUserDetails {
+    display: flex;
+    flex-direction: column;
+}
+
+.mobileUserName {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #111827;
+}
+
+.mobileUserEmail {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+}
+
+.mobileUserActions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.mobileUserAction {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #6b7280;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mobileUserAction:hover {
+    color: #111827;
+    background-color: #f3f4f6;
+}
+
+.mobileLoginButton {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 0.5rem 1rem;
+    margin: 0 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: white;
+    background-color: #2563eb;
+    border: none;
+    border-radius: 0.375rem;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.mobileLoginButton:hover {
+    background-color: #1d4ed8;
+}
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }

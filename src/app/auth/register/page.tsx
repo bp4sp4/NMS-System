@@ -83,12 +83,16 @@ export default function RegisterPage() {
 
       if (result.success) {
         setSuccessMessage(
-          "축하드립니다! 회원가입이 완료되었습니다. 로그인을 진행해 주세요!"
+          "축하드립니다! 회원가입이 완료되었습니다. 자동으로 로그인됩니다!"
         );
-        // 3초 후 프로필 페이지로 이동
+        // 즉시 홈페이지로 이동
+        router.push("/");
+
+        // 상태 업데이트를 위해 잠시 후 새로고침
         setTimeout(() => {
-          router.push("/auth/login");
-        }, 3000);
+          console.log("회원가입 후 새로고침 실행");
+          window.location.reload();
+        }, 500);
       } else {
         setError(result.error || "회원가입에 실패했습니다. 다시 시도해주세요.");
       }
@@ -231,7 +235,7 @@ export default function RegisterPage() {
                     className={styles.successText}
                     style={{ marginTop: "0.5rem", fontSize: "0.8rem" }}
                   >
-                    잠시 후 프로필 페이지로 이동합니다...
+                    잠시 후 로그인 페이지로 이동합니다...
                   </p>
                 </div>
               </div>

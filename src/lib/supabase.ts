@@ -3,57 +3,32 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// 환경 변수 검증
+// 환경 변수 확인
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase environment variables");
+  console.error("Supabase 환경 변수가 설정되지 않았습니다:");
+  console.error(
+    "NEXT_PUBLIC_SUPABASE_URL:",
+    supabaseUrl ? "설정됨" : "설정되지 않음"
+  );
+  console.error(
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY:",
+    supabaseAnonKey ? "설정됨" : "설정되지 않음"
+  );
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,
     storageKey: "nms-auth-token",
-    autoRefreshToken: true,
-    detectSessionInUrl: false,
-    flowType: "pkce",
-    // 세션 만료 시 자동 정리
-    storage: {
-      getItem: (key) => {
-        try {
-          if (typeof window !== "undefined") {
-            const item = localStorage.getItem(key);
-            return item;
-          }
-          return null;
-        } catch (error) {
-          console.error(`Storage getItem error for ${key}:`, error);
-          return null;
-        }
-      },
-      setItem: (key, value) => {
-        try {
-          if (typeof window !== "undefined") {
-            localStorage.setItem(key, value);
-          }
-        } catch (error) {
-          console.error(`Storage setItem error for ${key}:`, error);
-        }
-      },
-      removeItem: (key) => {
-        try {
-          if (typeof window !== "undefined") {
-            localStorage.removeItem(key);
-          }
-        } catch (error) {
-          console.error(`Storage removeItem error for ${key}:`, error);
-        }
-      },
-    },
   },
-  global: {
-    headers: {
-      "X-Client-Info": "nms-system",
-    },
-  },
+});
+
+// Supabase 연결 테스트
+supabase.auth.getSession().then(({ data, error }) => {
+  if (error) {
+    console.error("Supabase 연결 오류:", error);
+  } else {
+    console.log("Supabase 연결 성공");
+  }
 });
 
 // Database types

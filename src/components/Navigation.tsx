@@ -2,11 +2,35 @@
 
 import Link from "next/link";
 import { useAuth } from "./AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function Navigation() {
   const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      checkUserRole();
+    }
+  }, [user]);
+
+  const checkUserRole = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", user?.id)
+        .single();
+
+      if (!error && data) {
+        setUserRole(data.role);
+      }
+    } catch (error) {
+      console.error("사용자 역할 확인 오류:", error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -39,6 +63,14 @@ export default function Navigation() {
               >
                 랭킹
               </Link>
+              {(userRole === "admin" || userRole === "super_admin") && (
+                <Link
+                  href="/admin"
+                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                >
+                  관리자
+                </Link>
+              )}
             </div>
           </div>
 

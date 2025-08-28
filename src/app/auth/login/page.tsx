@@ -23,6 +23,8 @@ export default function LoginPage() {
       const result = await signIn(email, password);
 
       if (result.success) {
+        // 로그인 성공 후 홈페이지로 이동
+        console.log("로그인 성공, 홈페이지로 이동");
         router.push("/");
       } else {
         setError(result.error || "이메일 또는 비밀번호가 올바르지 않습니다.");

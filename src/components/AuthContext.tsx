@@ -51,102 +51,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const getAndSetUser = async () => {
+    // 로컬 스토리지에서 사용자 세션 확인
+    const checkUserSession = () => {
       try {
-        // 먼저 로컬 스토리지에서 세션 확인 (빠른 응답)
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        setIsLoading(true);
+        const sessionData = localStorage.getItem("nms-user-session");
+        console.log("AuthContext 초기화 - 세션 데이터:", sessionData);
 
-        if (session?.user) {
-          // 세션이 있으면 즉시 사용자 정보 설정
-          let userProfile = await getUserProfile(session.user.id);
+        if (sessionData) {
+          const userSession = JSON.parse(sessionData);
+          console.log("AuthContext - 사용자 세션 설정:", userSession);
+          setUser(userSession as User);
 
-          // 프로필이 없으면 기본 프로필 생성
-          if (!userProfile) {
-            try {
-              const { error } = await supabase.from("users").insert({
-                id: session.user.id,
-                email: session.user.email,
-                name: "새 사용자",
-                branch: "",
-                team: "",
-              });
+          // 세션 유효성 확인
+          if (userSession.loggedInAt) {
+            const loginTime = new Date(userSession.loggedInAt);
+            const now = new Date();
+            const diffHours =
+              (now.getTime() - loginTime.getTime()) / (1000 * 60 * 60);
 
-              if (error) {
-                console.error("기본 프로필 생성 실패:", error);
-              } else {
-                userProfile = await getUserProfile(session.user.id);
-              }
-            } catch (error) {
-              console.error("기본 프로필 생성 중 오류:", error);
+            // 24시간 이상 지난 세션은 삭제
+            if (diffHours > 24) {
+              console.log("세션이 만료됨, 삭제:", diffHours, "시간");
+              localStorage.removeItem("nms-user-session");
+              setUser(null);
+            } else {
+              console.log("세션 유효함:", diffHours, "시간 경과");
             }
           }
-
-          setUser(userProfile);
         } else {
+          console.log("AuthContext - 세션 데이터 없음, 사용자 null 설정");
           setUser(null);
         }
       } catch (error) {
-        console.error("AuthContext 초기화 오류:", error);
+        console.error("AuthContext - 세션 확인 오류:", error);
         setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    getAndSetUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        try {
-          setIsLoading(true);
-          const authUser = session?.user ?? null;
-          if (authUser) {
-            let userProfile = await getUserProfile(authUser.id);
-
-            // 프로필이 없으면 기본 프로필 생성
-            if (!userProfile) {
-              try {
-                const { error } = await supabase.from("users").insert({
-                  id: authUser.id,
-                  email: authUser.email,
-                  name: "새 사용자",
-                  branch: "",
-                  team: "",
-                });
-
-                if (error) {
-                  console.error("기본 프로필 생성 실패:", error);
-                } else {
-                  userProfile = await getUserProfile(authUser.id);
-                }
-              } catch (error) {
-                console.error("기본 프로필 생성 중 오류:", error);
-              }
-            }
-
-            setUser(userProfile as User | null);
-          } else {
-            setUser(null);
-          }
-        } catch (error) {
-          console.error("Auth 상태 변경 오류:", error);
-          setUser(null);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    );
-
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
+    checkUserSession();
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
       await authSignIn(email, password);
+
+      // 로그인 성공 후 사용자 상태 업데이트
+      const sessionData = localStorage.getItem("nms-user-session");
+      console.log("로그인 후 세션 데이터:", sessionData);
+
+      if (sessionData) {
+        const userSession = JSON.parse(sessionData);
+        console.log("사용자 세션 설정:", userSession);
+        setUser(userSession as User);
+
+        // 상태 업데이트 확인을 위한 추가 로그
+        setTimeout(() => {
+          console.log("AuthContext 상태 업데이트 확인:", {
+            user: userSession,
+            isLoading: false,
+          });
+        }, 100);
+      } else {
+        console.log("세션 데이터가 없습니다");
+      }
+
       return { success: true };
     } catch (error: unknown) {
       const errorMessage =
@@ -170,6 +141,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         branch: userData.branch,
         team: userData.team,
       });
+
+      // 회원가입 성공 후 사용자 상태 업데이트
+      const sessionData = localStorage.getItem("nms-user-session");
+      if (sessionData) {
+        const userSession = JSON.parse(sessionData);
+        setUser(userSession as User);
+      }
+
       return { success: true };
     } catch (error: unknown) {
       const errorMessage =
@@ -183,6 +162,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const signOut = async () => {
     await authSignOut();
     setUser(null);
+    // 로컬 스토리지에서 세션 제거
+    localStorage.removeItem("nms-user-session");
   };
 
   const value = {

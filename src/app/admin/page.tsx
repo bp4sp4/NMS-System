@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -15,7 +15,7 @@ interface User {
 }
 
 export default function AdminPage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, createUser, removeUser } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,19 +28,7 @@ export default function AdminPage() {
   });
   const [isCreating, setIsCreating] = useState(false);
 
-  useEffect(() => {
-    if (isLoading) return;
-
-    if (!user) {
-      router.replace("/auth/login");
-      return;
-    }
-
-    // 관리자 권한 확인
-    checkAdminRole();
-  }, [user, isLoading, router]);
-
-  const checkAdminRole = async () => {
+  const checkAdminRole = useCallback(async () => {
     try {
       // 이메일 기반으로 관리자 확인 (간단한 방법)
       const isAdmin =
@@ -58,9 +46,9 @@ export default function AdminPage() {
       console.error("관리자 권한 확인 오류:", error);
       router.replace("/");
     }
-  };
+  }, [user, router]);
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -79,7 +67,19 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (!user) {
+      router.replace("/auth/login");
+      return;
+    }
+
+    // 관리자 권한 확인
+    checkAdminRole();
+  }, [user, isLoading, router, checkAdminRole]);
 
   const handleCreateUser = async () => {
     if (!newUser.email || !newUser.password || !newUser.name) {
@@ -89,7 +89,6 @@ export default function AdminPage() {
 
     setIsCreating(true);
     try {
-      const { createUser } = useAuth();
       const result = await createUser(newUser);
 
       if (result.success) {
@@ -113,7 +112,6 @@ export default function AdminPage() {
     }
 
     try {
-      const { removeUser } = useAuth();
       const result = await removeUser(userId);
 
       if (result.success) {
@@ -130,22 +128,22 @@ export default function AdminPage() {
 
   if (isLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+          <p className="mt-4 text-gray-300">로딩 중...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-black py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 새 사용자 생성 폼 */}
-        <div className="bg-white shadow rounded-lg mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900">새 사용자 생성</h2>
+        <div className="bg-gray-900 shadow-lg rounded-lg mb-8 border border-gray-700">
+          <div className="px-6 py-4 border-b border-gray-700">
+            <h2 className="text-xl font-bold text-white">새 사용자 생성</h2>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -156,7 +154,7 @@ export default function AdminPage() {
                 onChange={(e) =>
                   setNewUser({ ...newUser, email: e.target.value })
                 }
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <input
                 type="password"
@@ -165,7 +163,7 @@ export default function AdminPage() {
                 onChange={(e) =>
                   setNewUser({ ...newUser, password: e.target.value })
                 }
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <input
                 type="text"
@@ -174,7 +172,7 @@ export default function AdminPage() {
                 onChange={(e) =>
                   setNewUser({ ...newUser, name: e.target.value })
                 }
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <input
                 type="text"
@@ -183,7 +181,7 @@ export default function AdminPage() {
                 onChange={(e) =>
                   setNewUser({ ...newUser, branch: e.target.value })
                 }
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <input
                 type="text"
@@ -192,12 +190,12 @@ export default function AdminPage() {
                 onChange={(e) =>
                   setNewUser({ ...newUser, team: e.target.value })
                 }
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <button
                 onClick={handleCreateUser}
                 disabled={isCreating}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50"
               >
                 {isCreating ? "생성 중..." : "사용자 생성"}
               </button>
@@ -206,10 +204,10 @@ export default function AdminPage() {
         </div>
 
         {/* 사용자 목록 */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">사용자 관리</h1>
-            <p className="mt-1 text-sm text-gray-600">
+        <div className="bg-gray-900 shadow-lg rounded-lg border border-gray-700">
+          <div className="px-6 py-4 border-b border-gray-700">
+            <h1 className="text-2xl font-bold text-white">사용자 관리</h1>
+            <p className="mt-1 text-sm text-gray-400">
               시스템의 모든 사용자를 관리합니다.
             </p>
           </div>
@@ -217,56 +215,56 @@ export default function AdminPage() {
           <div className="p-6">
             {users.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-gray-400 text-6xl mb-4">👥</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <div className="text-gray-500 text-6xl mb-4">👥</div>
+                <h3 className="text-lg font-medium text-white mb-2">
                   사용자가 없습니다
                 </h3>
-                <p className="text-gray-600">새 사용자를 생성해보세요.</p>
+                <p className="text-gray-400">새 사용자를 생성해보세요.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-gray-700">
+                  <thead className="bg-gray-800">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                         사용자 정보
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                         소속
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                         가입일
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                         작업
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-gray-900 divide-y divide-gray-700">
                     {users.map((user) => (
-                      <tr key={user.id}>
+                      <tr key={user.id} className="hover:bg-gray-800">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-medium text-white">
                               {user.name}
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-gray-400">
                               {user.email}
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                          <div className="text-sm text-gray-300">
                             {user.branch} / {user.team}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                           {new Date(user.created_at).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button
                             onClick={() => handleDeleteUser(user.id, user.name)}
-                            className="text-red-600 hover:text-red-900"
+                            className="text-red-400 hover:text-red-300"
                           >
                             삭제
                           </button>

@@ -52,47 +52,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const getAndSetUser = async () => {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
 
-      if (authUser) {
-        let userProfile = await getUserProfile(authUser.id);
-
-        // 프로필이 없으면 기본 프로필 생성
-        if (!userProfile) {
-          try {
-            const { error } = await supabase.from("users").insert({
-              id: authUser.id,
-              email: authUser.email,
-              name: "새 사용자",
-              branch: "",
-              team: "",
-            });
-
-            if (error) {
-              console.error("기본 프로필 생성 실패:", error);
-            } else {
-              userProfile = await getUserProfile(authUser.id);
-            }
-          } catch (error) {
-            console.error("기본 프로필 생성 중 오류:", error);
-          }
-        }
-
-        setUser(userProfile);
-      } else {
-        setUser(null);
-      }
-      setIsLoading(false);
-    };
-
-    getAndSetUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setIsLoading(true);
-        const authUser = session?.user ?? null;
         if (authUser) {
           let userProfile = await getUserProfile(authUser.id);
 
@@ -117,11 +81,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             }
           }
 
-          setUser(userProfile as User | null);
+          setUser(userProfile);
         } else {
           setUser(null);
         }
+      } catch (error) {
+        console.error("AuthContext 초기화 오류:", error);
+        setUser(null);
+      } finally {
         setIsLoading(false);
+      }
+    };
+
+    getAndSetUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        try {
+          setIsLoading(true);
+          const authUser = session?.user ?? null;
+          if (authUser) {
+            let userProfile = await getUserProfile(authUser.id);
+
+            // 프로필이 없으면 기본 프로필 생성
+            if (!userProfile) {
+              try {
+                const { error } = await supabase.from("users").insert({
+                  id: authUser.id,
+                  email: authUser.email,
+                  name: "새 사용자",
+                  branch: "",
+                  team: "",
+                });
+
+                if (error) {
+                  console.error("기본 프로필 생성 실패:", error);
+                } else {
+                  userProfile = await getUserProfile(authUser.id);
+                }
+              } catch (error) {
+                console.error("기본 프로필 생성 중 오류:", error);
+              }
+            }
+
+            setUser(userProfile as User | null);
+          } else {
+            setUser(null);
+          }
+        } catch (error) {
+          console.error("Auth 상태 변경 오류:", error);
+          setUser(null);
+        } finally {
+          setIsLoading(false);
+        }
       }
     );
 

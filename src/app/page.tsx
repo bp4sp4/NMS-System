@@ -45,6 +45,17 @@ export default function HomePage() {
     }
 
     if (!user) {
+      // 환경 변수 확인 (개발 환경에서만)
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          "Supabase URL:",
+          process.env.NEXT_PUBLIC_SUPABASE_URL ? "설정됨" : "설정되지 않음"
+        );
+        console.log(
+          "Supabase Key:",
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "설정됨" : "설정되지 않음"
+        );
+      }
       router.push("/auth/login");
     }
   }, [user, isLoading, router]);
@@ -79,8 +90,26 @@ export default function HomePage() {
     // 퇴근 처리 로직
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">로그인 페이지로 이동 중...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

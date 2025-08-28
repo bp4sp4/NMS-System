@@ -165,7 +165,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     team: string;
   }) => {
     try {
-      await authSignUp(userData.email, userData.password, userData);
+      await authSignUp(userData.email, userData.password, {
+        name: userData.name,
+        branch: userData.branch,
+        team: userData.team,
+      });
       return { success: true };
     } catch (error: unknown) {
       const errorMessage =

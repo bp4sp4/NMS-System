@@ -63,7 +63,11 @@ export const signIn = async (
 export const signUp = async (
   email: string,
   password: string,
-  userData: Partial<User>
+  userData: {
+    name: string;
+    branch: string;
+    team: string;
+  }
 ): Promise<void> => {
   // 1. Supabase Auth로 사용자 생성
   const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -91,9 +95,9 @@ export const signUp = async (
   const { error: profileError } = await supabase.from("users").insert({
     id: authData.user.id,
     email: email,
-    name: userData.name || "새 사용자",
-    branch: userData.branch || "",
-    team: userData.team || "",
+    name: userData.name,
+    branch: userData.branch,
+    team: userData.team,
   });
 
   if (profileError) {

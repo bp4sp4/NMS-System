@@ -31,7 +31,7 @@ interface ProfileFormData {
 }
 
 export default function ProfilePage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, updateUser } = useAuth();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -90,28 +90,39 @@ export default function ProfilePage() {
       // 프로필 정보 직접 조회 (로그인과 독립적으로)
       const fetchProfileData = async () => {
         try {
-          const { data: profile, error } = await supabase
+          // 기본 사용자 정보 조회
+          const { data: userData, error: userError } = await supabase
             .from("users")
             .select("*")
             .eq("id", user.id)
             .single();
 
-          if (!error && profile) {
+          // 개인정보 조회
+          const { data: profileData, error: profileError } = await supabase
+            .from("user_profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+
+          console.log("사용자 데이터:", userData);
+          console.log("프로필 데이터:", profileData);
+
+          if (!userError && userData) {
             setFormData({
-              name: profile.name || "",
-              branch: profile.branch || "",
-              team: profile.team || "",
-              hireDate: profile.hire_date || "",
-              bank: profile.bank || "",
-              bankAccount: profile.bank_account || "",
-              address: profile.address || "",
-              residentNumber: profile.resident_number || "",
-              emergencyContact: profile.emergency_contact || "",
+              name: userData.name || "",
+              branch: userData.branch || "",
+              team: userData.team || "",
+              hireDate: profileData?.hire_date || "",
+              bank: profileData?.bank || "",
+              bankAccount: profileData?.bank_account || "",
+              address: profileData?.address || "",
+              residentNumber: profileData?.resident_number || "",
+              emergencyContact: profileData?.emergency_contact || "",
               currentPassword: "",
               newPassword: "",
               confirmPassword: "",
             });
-            setAvatarUrl(profile.avatar || null);
+            setAvatarUrl(profileData?.avatar || null);
           }
         } catch (error) {
           console.error("Profile fetch error:", error);
@@ -128,40 +139,106 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
+    // 파일 크기 제한 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage({ type: "error", text: "파일 크기는 5MB 이하여야 합니다." });
+      return;
+    }
+
+    // 파일 타입 확인
+    if (!file.type.startsWith("image/")) {
+      setMessage({ type: "error", text: "이미지 파일만 업로드 가능합니다." });
+      return;
+    }
+
     setIsUploading(true);
+    setMessage({ type: "", text: "" });
+
     try {
+      console.log("아바타 업로드 시작:", { file, user });
+
       const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log("업로드 경로:", filePath);
+
+      // 1. Supabase Storage에 파일 업로드
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
 
       if (uploadError) {
-        throw uploadError;
+        console.error("Storage 업로드 오류:", uploadError);
+
+        // RLS 정책 오류인 경우 대안 방법 제시
+        if (uploadError.message.includes("row-level security")) {
+          setMessage({
+            type: "error",
+            text: "Storage 권한 설정이 필요합니다. 관리자에게 문의하거나 임시로 기본 아바타를 사용하세요.",
+          });
+
+          // 임시로 기본 아바타 설정
+          const defaultAvatar =
+            "https://via.placeholder.com/150x150?text=Avatar";
+          setAvatarUrl(defaultAvatar);
+
+          // 데이터베이스에 기본 아바타 저장
+          const { error: updateError } = await supabase
+            .from("user_profiles")
+            .update({
+              avatar: defaultAvatar,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", user.id);
+
+          if (!updateError) {
+            setMessage({
+              type: "success",
+              text: "기본 아바타가 설정되었습니다. Storage 설정 후 다시 시도하세요.",
+            });
+          }
+          return;
+        }
+
+        throw new Error(`파일 업로드 실패: ${uploadError.message}`);
       }
 
+      console.log("Storage 업로드 성공:", uploadData);
+
+      // 2. 공개 URL 가져오기
       const {
         data: { publicUrl },
       } = supabase.storage.from("avatars").getPublicUrl(filePath);
 
-      setAvatarUrl(publicUrl);
+      console.log("공개 URL:", publicUrl);
 
-      // 데이터베이스에 아바타 URL 업데이트
+      // 3. 데이터베이스에 아바타 URL 업데이트
       const { error: updateError } = await supabase
-        .from("users")
-        .update({ avatar: publicUrl })
+        .from("user_profiles")
+        .update({
+          avatar: publicUrl,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", user.id);
 
       if (updateError) {
-        throw updateError;
+        console.error("데이터베이스 업데이트 오류:", updateError);
+        throw new Error(`프로필 업데이트 실패: ${updateError.message}`);
       }
 
-      setMessage({ type: "success", text: "프로필 사진이 업로드되었습니다." });
+      console.log("데이터베이스 업데이트 성공");
 
-      // 로컬 상태 업데이트
+      // 4. 로컬 상태 업데이트
       setAvatarUrl(publicUrl);
+
+      // 5. AuthContext의 사용자 정보 업데이트 (avatar는 별도 처리)
+      // updateUser({ avatar: publicUrl }); // User 타입에 avatar가 없으므로 제거
+
+      setMessage({ type: "success", text: "프로필 사진이 업로드되었습니다." });
 
       // 3초 후 성공 메시지 자동 제거
       setTimeout(() => {
@@ -169,7 +246,11 @@ export default function ProfilePage() {
       }, 3000);
     } catch (error) {
       console.error("Avatar upload error:", error);
-      setMessage({ type: "error", text: "프로필 사진 업로드에 실패했습니다." });
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "프로필 사진 업로드에 실패했습니다.";
+      setMessage({ type: "error", text: errorMessage });
     } finally {
       setIsUploading(false);
     }
@@ -180,12 +261,24 @@ export default function ProfilePage() {
 
     setIsSaving(true);
     try {
-      const { error } = await supabase
+      // 기본 사용자 정보 업데이트
+      const { error: userError } = await supabase
         .from("users")
         .update({
           name: formData.name,
           branch: formData.branch,
           team: formData.team,
+        })
+        .eq("id", user.id);
+
+      if (userError) {
+        throw userError;
+      }
+
+      // 개인정보 업데이트
+      const { error: profileError } = await supabase
+        .from("user_profiles")
+        .update({
           hire_date: formData.hireDate || null,
           bank: formData.bank,
           bank_account: formData.bankAccount,
@@ -195,8 +288,8 @@ export default function ProfilePage() {
         })
         .eq("id", user.id);
 
-      if (error) {
-        throw error;
+      if (profileError) {
+        throw profileError;
       }
 
       setMessage({ type: "success", text: "프로필이 저장되었습니다." });
@@ -214,6 +307,13 @@ export default function ProfilePage() {
         residentNumber: formData.residentNumber,
         emergencyContact: formData.emergencyContact,
       }));
+
+      // AuthContext의 사용자 정보도 업데이트
+      updateUser({
+        name: formData.name,
+        branch: formData.branch,
+        team: formData.team,
+      });
 
       // 3초 후 성공 메시지 자동 제거
       setTimeout(() => {
@@ -244,17 +344,16 @@ export default function ProfilePage() {
     setMessage({ type: "", text: "" });
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        throw new Error("세션이 없습니다. 다시 로그인해주세요.");
-      }
-
-      const { error } = await supabase.auth.updateUser({
-        password: formData.newPassword,
-      });
+      // 비밀번호 변경 로직 (커스텀 인증 시스템)
+      const { error } = await supabase
+        .from("user_passwords")
+        .update({
+          password_hash: btoa(
+            btoa(formData.newPassword + "NMS_2024_SECURE_SALT") + "_SECURE"
+          ),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", user.id);
 
       if (error) {
         throw error;
@@ -501,19 +600,6 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        입사일자
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.hireDate}
-                        onChange={(e) =>
-                          setFormData({ ...formData, hireDate: e.target.value })
-                        }
-                        className="w-full bg-white border-0 rounded-lg px-3 py-2 text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         은행
                       </label>
                       <select
@@ -558,36 +644,6 @@ export default function ProfilePage() {
                         placeholder="계좌번호를 입력하세요"
                         className="w-full bg-white border-0 rounded-lg px-3 py-2 text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        은행
-                      </label>
-                      <select
-                        value={formData.bank}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            bank: e.target.value,
-                          })
-                        }
-                        className="w-full bg-white border-0 rounded-lg px-3 py-2 text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all"
-                      >
-                        <option value="">은행을 선택하세요</option>
-                        <option value="KB국민은행">KB국민은행</option>
-                        <option value="신한은행">신한은행</option>
-                        <option value="우리은행">우리은행</option>
-                        <option value="하나은행">하나은행</option>
-                        <option value="NH농협은행">NH농협은행</option>
-                        <option value="IBK기업은행">IBK기업은행</option>
-                        <option value="케이뱅크">케이뱅크</option>
-                        <option value="카카오뱅크">카카오뱅크</option>
-                        <option value="토스뱅크">토스뱅크</option>
-                        <option value="새마을금고">새마을금고</option>
-                        <option value="신협">신협</option>
-                        <option value="우체국">우체국</option>
-                        <option value="기타">기타</option>
-                      </select>
                     </div>
                   </div>
                 </div>

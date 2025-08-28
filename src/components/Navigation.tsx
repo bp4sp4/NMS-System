@@ -4,33 +4,54 @@ import Link from "next/link";
 import { useAuth } from "./AuthContext";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { User } from "lucide-react";
 
 export default function Navigation() {
   const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
-      checkUserRole();
+      // 관리자 권한 확인 (이메일 기반 또는 is_admin 컬럼 기반)
+      const checkAdminStatus = () => {
+        // 방법 1: 이메일 기반 확인
+        const isAdminByEmail =
+          user.email?.includes("admin") || user.email === "admin@korhrd.com";
+
+        // 방법 2: is_admin 컬럼 확인 (있는 경우)
+        const isAdminByFlag =
+          user.is_admin === true || user.is_super_admin === true;
+
+        setIsAdmin(isAdminByEmail || isAdminByFlag);
+      };
+
+      checkAdminStatus();
+
+      // 사용자 아바타 가져오기
+      const fetchUserAvatar = async () => {
+        try {
+          const { data, error } = await supabase
+            .from("user_profiles")
+            .select("avatar")
+            .eq("id", user.id)
+            .single();
+
+          if (!error && data?.avatar) {
+            setUserAvatar(data.avatar);
+          }
+        } catch (error) {
+          console.error("아바타 조회 오류:", error);
+        }
+      };
+
+      fetchUserAvatar();
+    } else {
+      setIsAdmin(false);
+      setUserAvatar(null);
     }
   }, [user]);
-
-  const checkUserRole = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", user?.id)
-        .single();
-
-      if (!error && data) {
-        setUserRole(data.role);
-      }
-    } catch (error) {
-      console.error("사용자 역할 확인 오류:", error);
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -63,7 +84,7 @@ export default function Navigation() {
               >
                 랭킹
               </Link>
-              {(userRole === "admin" || userRole === "super_admin") && (
+              {isAdmin && (
                 <Link
                   href="/admin"
                   className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
@@ -79,14 +100,31 @@ export default function Navigation() {
             {user ? (
               <div className="flex items-center space-x-4">
                 <span className="text-gray-700 text-sm">
-                  {user.name} ({user.email})
+                  {user.name || "사용자"} ({user.email})
                 </span>
-                <Link
-                  href="/profile"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                >
-                  프로필
-                </Link>
+
+                {/* 프로필 사진 */}
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                    {userAvatar ? (
+                      <img
+                        src={userAvatar}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                        style={{ width: "1.5rem", height: "1.5rem" }}
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-gray-400" />
+                    )}
+                  </div>
+                  <Link
+                    href="/profile"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    프로필
+                  </Link>
+                </div>
+
                 <button
                   onClick={handleLogout}
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
@@ -161,16 +199,41 @@ export default function Navigation() {
           >
             랭킹
           </Link>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
+            >
+              관리자
+            </Link>
+          )}
         </div>
         <div className="pt-4 pb-3 border-t border-gray-200">
           {user ? (
             <div className="space-y-2">
               <div className="px-4 py-2">
-                <div className="text-base font-medium text-gray-800">
-                  {user.name}
-                </div>
-                <div className="text-sm font-medium text-gray-500">
-                  {user.email}
+                <div className="flex items-center space-x-3">
+                  {/* 모바일 프로필 사진 */}
+                  <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                    {userAvatar ? (
+                      <img
+                        src={userAvatar}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                        style={{ width: "1.5rem", height: "1.5rem" }}
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-gray-400" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-base font-medium text-gray-800">
+                      {user.name || "사용자"}
+                    </div>
+                    <div className="text-sm font-medium text-gray-500">
+                      {user.email}
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="space-y-1">

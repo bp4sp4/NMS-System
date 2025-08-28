@@ -20,6 +20,7 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
     }
 
     const user: User = {
+      avatar: null,
       id: userData.id,
       email: userData.email,
       name: userData.name,

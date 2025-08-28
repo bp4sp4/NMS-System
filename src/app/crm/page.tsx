@@ -55,6 +55,8 @@ export default function CRMPage() {
   });
 
   const [crmData, setCrmData] = useState<CRMData[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // 데이터베이스에서 CRM 데이터 가져오기
   const fetchCRMData = useCallback(async () => {
@@ -492,6 +494,17 @@ export default function CRMPage() {
       item.courseType.toLowerCase().includes(searchLower)
     );
   });
+
+  // CRM 데이터 페이지네이션 계산
+  const totalPages = Math.ceil(filteredCRMData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentCrmItems = filteredCRMData.slice(startIndex, endIndex);
+
+  // 페이지 변경 함수
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   // 고객 수 계산 (사용자별)
   const totalCustomers = userCRMData.length;
@@ -940,6 +953,8 @@ export default function CRMPage() {
 
         {/* 오른쪽 메인 콘텐츠 */}
         <div className="flex-1 p-8 overflow-y-auto min-w-0">
+          {/* 요약 정보 - 맨 위로 이동 */}
+
           {/* 필터 및 액션 */}
           <div className="mb-8 flex justify-between items-center">
             <div className="flex space-x-4">
@@ -978,10 +993,26 @@ export default function CRMPage() {
               <input
                 type="text"
                 placeholder="고객명, 연락처, 기관명으로 검색..."
-                className="bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm w-64"
+                className="bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm w-80 text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+
+              {/* 수익 정보 - 검색 필드 옆에 작게 표시 */}
+              <div className="flex gap-4 items-center">
+                <div className="flex items-center gap-1 text-lg text-gray-600">
+                  <span className="font-medium">총결제:</span>
+                  <span className="font-semibold text-gray-900">
+                    {totalPaymentAmount.toLocaleString()}원
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 text-lg text-gray-600">
+                  <span className="font-medium">총수당:</span>
+                  <span className="font-semibold text-gray-900">
+                    {totalCommission.toLocaleString()}원
+                  </span>
+                </div>
+              </div>
             </div>
             <div className="flex space-x-3">
               {selectedItems.length > 0 && (
@@ -1072,7 +1103,7 @@ export default function CRMPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {filteredCRMData.map((item, index) => (
+                  {currentCrmItems.map((item, index) => (
                     <tr
                       key={item.id}
                       className="hover:bg-gray-50 transition-colors"
@@ -1086,7 +1117,7 @@ export default function CRMPage() {
                         />
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
-                        {index + 1}
+                        {startIndex + index + 1}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.branch}
@@ -1145,27 +1176,56 @@ export default function CRMPage() {
             </div>
           </div>
 
-          {/* 요약 정보 */}
-          <div className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="text-center">
-                <div className="text-lg font-semibold text-gray-700 mb-2">
-                  총 결제금액
-                </div>
-                <div className="text-3xl font-bold text-purple-600">
-                  {totalPaymentAmount.toLocaleString()}원
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-semibold text-gray-700 mb-2">
-                  총 수당
-                </div>
-                <div className="text-3xl font-bold text-orange-600">
-                  {totalCommission.toLocaleString()}원
-                </div>
+          {/* CRM 데이터 페이지네이션 */}
+          {filteredCRMData.length > 0 && totalPages > 1 && (
+            <div className="mt-6 flex justify-center">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  |◀
+                </button>
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  &lt;
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`px-3 py-2 text-sm font-medium rounded-md ${
+                        currentPage === page
+                          ? "bg-blue-600 text-white"
+                          : "text-gray-500 bg-white border border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  &gt;
+                </button>
+                <button
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ▶|
+                </button>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

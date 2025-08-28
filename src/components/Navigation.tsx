@@ -79,6 +79,12 @@ export default function Navigation() {
               <span className={styles.brandName}>한평생 에듀바이저스</span>
             </Link>
             <div className={styles.menuItems}>
+              <Link
+                href="/"
+                className={`${styles.menuLink} ${styles.menuLinkInactive}`}
+              >
+                홈
+              </Link>
               {/* 고객관리 드롭다운 */}
               <div className={styles.dropdownContainer}>
                 <button
@@ -105,6 +111,15 @@ export default function Navigation() {
                     </Link>
                     <Link href="/crm-db" className={styles.dropdownItem}>
                       CRM-DB
+                    </Link>
+                    <Link href="/kakao-send" className={styles.dropdownItem}>
+                      카톡 발송
+                    </Link>
+                    <Link
+                      href="/kakao-settings"
+                      className={styles.dropdownItem}
+                    >
+                      카톡 설정
                     </Link>
                   </div>
                 )}
@@ -220,6 +235,9 @@ export default function Navigation() {
         } ${styles.mobileMenuContainer}`}
       >
         <div className={styles.mobileMenuItems}>
+          <Link href="/" className={styles.mobileMenuItem}>
+            홈
+          </Link>
           {/* 모바일에서도 드롭다운 메뉴 */}
           <div className={styles.mobileDropdownContainer}>
             <button
@@ -240,6 +258,15 @@ export default function Navigation() {
                 </Link>
                 <Link href="/crm-db" className={styles.mobileDropdownItem}>
                   CRM-DB
+                </Link>
+                <Link href="/kakao-send" className={styles.mobileDropdownItem}>
+                  카톡 발송
+                </Link>
+                <Link
+                  href="/kakao-settings"
+                  className={styles.mobileDropdownItem}
+                >
+                  카톡 설정
                 </Link>
               </div>
             )}

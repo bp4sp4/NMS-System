@@ -1,0 +1,530 @@
+.container {
+    min-height: 100vh;
+    background: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* 헤더 */
+.header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 1.5rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.headerContent {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.backButton {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #4a5568;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.backButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.headerButtons {
+    display: flex;
+    gap: 1rem;
+}
+
+
+
+/* 메인 콘텐츠 */
+.mainContent {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 2rem;
+    min-height: 70vh;
+}
+
+/* 고객 섹션 */
+.customerSection {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.sectionTitle {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.customerCount {
+    font-size: 0.875rem;
+    color: #1e1e1e;
+    font-weight: 500;
+}
+
+.customerControls {
+    margin-bottom: 1rem;
+}
+
+.searchBox {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.searchInput {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 16px;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    background: white;
+}
+
+.searchButton {
+    padding: 1rem;
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    color: white;
+    font-weight: 600;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+}
+
+.searchButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(251, 191, 36, 0.4);
+}
+
+.actionButtons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.actionButton {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.actionButton:hover {
+    background-color: #2563eb;
+}
+
+.registerButton {
+    padding: 0.5rem 1rem;
+    background-color: #fbbf24;
+    color: white;
+    border: 1px solid #f59e0b;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-weight: 500;
+}
+
+.registerButton:hover {
+    background-color: #f59e0b;
+}
+
+.customerList {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.tableHeader {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr 1fr 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background-color: #dbeafe;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #3b82f6;
+    color: #1e40af;
+}
+
+.customerRow {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr 1fr 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid #e0e7ff;
+    font-size: 0.875rem;
+    background-color: white;
+    color: #1e1e1e;
+}
+
+.customerRow:hover {
+    background-color: #f0f9ff;
+}
+
+.customerRow:last-child {
+    border-bottom: none;
+}
+
+.customerName {
+    font-weight: 500;
+}
+
+.customerContact {
+    font-family: monospace;
+}
+
+.customerType {
+    padding: 0.125rem 0.5rem;
+    background-color: #f3f4f6;
+    color: #374151;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+.contractCustomer {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.customerCourse {
+    font-style: italic;
+}
+
+.customerDate {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+/* 중앙 액션 섹션 */
+.actionSection {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    justify-content: center;
+    align-items: center;
+}
+
+.addButton,
+.removeButton {
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 120px;
+    min-height: 120px;
+    justify-content: center;
+}
+
+.buttonIcon {
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.buttonText {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.addButton:hover,
+.removeButton:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+}
+
+.addButton:disabled,
+.removeButton:disabled {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 4px 15px rgba(156, 163, 175, 0.3);
+}
+
+/* 발송 대상 섹션 */
+.dispatchSection {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dispatchControls {
+    margin-bottom: 1rem;
+}
+
+.dispatchCount {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #1e1e1e;
+    margin-bottom: 1rem;
+}
+
+.listButtons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.previousListButton {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
+}
+
+.previousListButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4);
+}
+
+.failedListButton {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+}
+
+.failedListButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+}
+
+.resetButton {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.resetButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+}
+
+.dispatchList {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.dispatchRow {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr 1fr 1fr auto;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid #bbf7d0;
+    font-size: 0.875rem;
+    background-color: white;
+    color: #1e1e1e;
+}
+
+.dispatchRow:hover {
+    background-color: #f0fdf4;
+}
+
+.dispatchRow:last-child {
+    border-bottom: none;
+}
+
+.removeTargetButton {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.removeTargetButton:hover {
+    background-color: #dc2626;
+}
+
+/* 하단 버튼 */
+.footer {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.nextButton {
+    padding: 1.25rem 3rem;
+    background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 1.125rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(236, 72, 153, 0.3);
+    letter-spacing: 0.025em;
+}
+
+.nextButton:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 35px rgba(236, 72, 153, 0.4);
+}
+
+/* 로딩 */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    color: #6b7280;
+    font-size: 1rem;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1200px) {
+    .layout {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .actionSection {
+        flex-direction: row;
+        justify-content: center;
+    }
+
+    .addButton,
+    .removeButton {
+        writing-mode: horizontal-tb;
+        transform: none;
+        min-height: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .headerContent {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .headerButtons {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .mainContent {
+        padding: 1rem;
+    }
+
+    .tableHeader,
+    .customerRow,
+    .dispatchRow {
+        grid-template-columns: auto 1fr 1fr;
+        font-size: 0.75rem;
+    }
+
+    .customerContact,
+    .customerCourse,
+    .customerDate {
+        display: none;
+    }
+}

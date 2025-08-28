@@ -229,12 +229,126 @@
     color: #374151;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     transition: all 0.2s ease;
-    width: 16rem;
+    width: 20rem;
+    font-size: 0.875rem;
 }
 
 .searchInput:focus {
     outline: none;
     box-shadow: 0 0 0 2px #3b82f6, 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 빠른 통계 스타일 */
+.quickStats {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.quickStatItem {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.quickStatLabel {
+    font-weight: 500;
+}
+
+.quickStatValue {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+/* 업셀링 스타일 */
+.upsellingContainer {
+    position: relative;
+}
+
+.upsellingButton {
+    background-color: #10b981;
+    color: white;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.upsellingButton:hover {
+    background-color: #059669;
+}
+
+.upsellingDropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    margin-top: 0.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    min-width: 600px;
+}
+
+.upsellingOption {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 0.875rem;
+    color: #374151;
+    background-color: #f9fafb;
+    border-radius: 0.375rem;
+    border: 1px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+.upsellingOption:hover {
+    background-color: #e5e7eb;
+    border-color: #d1d5db;
+}
+
+.selectedUpselling {
+    display: flex;
+    align-items: center;
+    background-color: #dbeafe;
+    color: #1e40af;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    gap: 0.5rem;
+}
+
+.selectedUpsellingText {
+    flex: 1;
+}
+
+.clearUpsellingButton {
+    background: none;
+    border: none;
+    color: #1e40af;
+    cursor: pointer;
+    padding: 0.125rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+.clearUpsellingButton:hover {
+    background-color: #bfdbfe;
 }
 
 .deleteButton {
@@ -252,6 +366,23 @@
 
 .deleteButton:hover {
     background-color: #dc2626;
+}
+
+.kakaoSendButton {
+    background-color: #fbbf24;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    border: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.kakaoSendButton:hover {
+    background-color: #f59e0b;
 }
 
 /* 테이블 스타일 */
@@ -435,6 +566,335 @@
 .emptyDescription {
     color: #6b7280;
     font-size: 0.875rem;
+}
+
+/* 모달 스타일 */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    background-color: white;
+    border-radius: 1rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    width: 95%;
+    max-width: 1200px;
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modalTitle {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.modalCloseButton {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s ease;
+}
+
+.modalCloseButton:hover {
+    background-color: #f3f4f6;
+}
+
+.modalBody {
+    padding: 1.5rem;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.modalFooter {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* 카카오톡 모달 레이아웃 */
+.kakaoModalLayout {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 2rem;
+    height: 100%;
+}
+
+.sectionTitle {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1e40af;
+    margin-bottom: 1rem;
+    text-align: center;
+    padding: 0.5rem;
+    background-color: #dbeafe;
+    border-radius: 0.375rem;
+    border: 1px solid #3b82f6;
+}
+
+.dispatchTitle {
+    color: #065f46;
+    background-color: #d1fae5;
+    border: 1px solid #10b981;
+}
+
+/* 카카오톡 친구 섹션 */
+.kakaoFriendsSection {
+    border: 2px solid #3b82f6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background-color: #f8fafc;
+}
+
+.friendsControls {
+    margin-bottom: 1rem;
+}
+
+.friendsDropdown {
+    width: 100%;
+    padding: 0.5rem;
+    border: 2px solid #3b82f6;
+    border-radius: 0.375rem;
+    margin-bottom: 0.5rem;
+    background-color: white;
+}
+
+.friendsCount {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: #1e1e1e;
+}
+
+.searchBox {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.searchBox .searchInput {
+    flex: 1;
+    padding: 0.5rem;
+    border: 2px solid #fbbf24;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    background-color: white;
+}
+
+.searchButton {
+    padding: 0.5rem;
+    background-color: #fbbf24;
+    border: 1px solid #f59e0b;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    color: white;
+    font-weight: 600;
+}
+
+.friendsActions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.actionButton {
+    padding: 0.5rem 1rem;
+    background-color: #3b82f6;
+    color: white;
+    border: 1px solid #2563eb;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-weight: 500;
+}
+
+.actionButton:hover {
+    background-color: #2563eb;
+}
+
+.countDropdown {
+    padding: 0.5rem;
+    border: 2px solid #3b82f6;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    background-color: white;
+}
+
+.friendsList {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.friendsTableHeader {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background-color: #dbeafe;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #3b82f6;
+    color: #1e40af;
+}
+
+.friendRow {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid #e0e7ff;
+    font-size: 0.875rem;
+    background-color: white;
+    color: #1e1e1e;
+}
+
+.friendRow:hover {
+    background-color: #f0f9ff;
+}
+
+.friendRow:last-child {
+    border-bottom: none;
+}
+
+/* 중앙 추가 버튼 */
+.addButtonSection {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.addToListButton {
+    padding: 1rem 1.5rem;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+}
+
+.addToListButton:hover {
+    background-color: #2563eb;
+}
+
+/* 발송 대상 섹션 */
+.dispatchSection {
+    border: 2px solid #10b981;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background-color: #f0fdf4;
+}
+
+.dispatchControls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.dispatchCount {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #1e1e1e;
+}
+
+.dispatchActions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.dispatchList {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.dispatchTableHeader {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background-color: #d1fae5;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #10b981;
+    color: #065f46;
+}
+
+.dispatchRow {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid #bbf7d0;
+    font-size: 0.875rem;
+    background-color: white;
+    color: #1e1e1e;
+}
+
+.dispatchRow:hover {
+    background-color: #f0fdf4;
+}
+
+.emptyRow {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid #bbf7d0;
+    min-height: 2.5rem;
+    background-color: #f9fafb;
+}
+
+.emptyRow:last-child {
+    border-bottom: none;
+}
+
+.nextButton {
+    padding: 0.75rem 2rem;
+    background-color: #10b981;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.nextButton:hover {
+    background-color: #059669;
 }
 
 /* 반응형 디자인 */

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { ArrowLeft, Users, Settings } from "lucide-react";
 
 interface User {
   id: string;
@@ -138,143 +139,175 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* 새 사용자 생성 폼 */}
-        <div className="bg-gray-900 shadow-lg rounded-lg mb-8 border border-gray-700">
-          <div className="px-6 py-4 border-b border-gray-700">
-            <h2 className="text-xl font-bold text-white">새 사용자 생성</h2>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <input
-                type="email"
-                placeholder="이메일"
-                value={newUser.email}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, email: e.target.value })
-                }
-                className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <input
-                type="password"
-                placeholder="비밀번호"
-                value={newUser.password}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, password: e.target.value })
-                }
-                className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <input
-                type="text"
-                placeholder="이름"
-                value={newUser.name}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, name: e.target.value })
-                }
-                className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <input
-                type="text"
-                placeholder="지점"
-                value={newUser.branch}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, branch: e.target.value })
-                }
-                className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <input
-                type="text"
-                placeholder="팀"
-                value={newUser.team}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, team: e.target.value })
-                }
-                className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+    <div className="min-h-screen bg-black">
+      {/* 헤더 */}
+      <div className="bg-gray-900 border-b border-gray-700">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
               <button
-                onClick={handleCreateUser}
-                disabled={isCreating}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50"
+                onClick={() => router.push("/")}
+                className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
               >
-                {isCreating ? "생성 중..." : "사용자 생성"}
+                <ArrowLeft className="w-5 h-5" />
+                <span>뒤로가기</span>
               </button>
+              <div className="w-px h-6 bg-gray-700"></div>
+              <div className="flex items-center space-x-2">
+                <Settings className="w-6 h-6 text-blue-500" />
+                <h1 className="text-xl font-bold text-white">관리자 페이지</h1>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 text-gray-300">
+                <Users className="w-5 h-5" />
+                <span className="text-sm">총 {users.length}명의 사용자</span>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* 사용자 목록 */}
-        <div className="bg-gray-900 shadow-lg rounded-lg border border-gray-700">
-          <div className="px-6 py-4 border-b border-gray-700">
-            <h1 className="text-2xl font-bold text-white">사용자 관리</h1>
-            <p className="mt-1 text-sm text-gray-400">
-              시스템의 모든 사용자를 관리합니다.
-            </p>
+      <div className="py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* 새 사용자 생성 폼 */}
+          <div className="bg-gray-900 shadow-lg rounded-lg mb-8 border border-gray-700">
+            <div className="px-6 py-4 border-b border-gray-700">
+              <h2 className="text-xl font-bold text-white">새 사용자 생성</h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <input
+                  type="email"
+                  placeholder="이메일"
+                  value={newUser.email}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, email: e.target.value })
+                  }
+                  className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <input
+                  type="password"
+                  placeholder="비밀번호"
+                  value={newUser.password}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, password: e.target.value })
+                  }
+                  className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <input
+                  type="text"
+                  placeholder="이름"
+                  value={newUser.name}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, name: e.target.value })
+                  }
+                  className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <input
+                  type="text"
+                  placeholder="지점"
+                  value={newUser.branch}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, branch: e.target.value })
+                  }
+                  className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <input
+                  type="text"
+                  placeholder="팀"
+                  value={newUser.team}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, team: e.target.value })
+                  }
+                  className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <button
+                  onClick={handleCreateUser}
+                  disabled={isCreating}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50"
+                >
+                  {isCreating ? "생성 중..." : "사용자 생성"}
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="p-6">
-            {users.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-gray-500 text-6xl mb-4">👥</div>
-                <h3 className="text-lg font-medium text-white mb-2">
-                  사용자가 없습니다
-                </h3>
-                <p className="text-gray-400">새 사용자를 생성해보세요.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-700">
-                  <thead className="bg-gray-800">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                        사용자 정보
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                        소속
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                        가입일
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                        작업
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-gray-900 divide-y divide-gray-700">
-                    {users.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-800">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-white">
-                              {user.name}
-                            </div>
-                            <div className="text-sm text-gray-400">
-                              {user.email}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-300">
-                            {user.branch} / {user.team}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                          {new Date(user.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => handleDeleteUser(user.id, user.name)}
-                            className="text-red-400 hover:text-red-300"
-                          >
-                            삭제
-                          </button>
-                        </td>
+          {/* 사용자 목록 */}
+          <div className="bg-gray-900 shadow-lg rounded-lg border border-gray-700">
+            <div className="px-6 py-4 border-b border-gray-700">
+              <h1 className="text-2xl font-bold text-white">사용자 관리</h1>
+              <p className="mt-1 text-sm text-gray-400">
+                시스템의 모든 사용자를 관리합니다.
+              </p>
+            </div>
+
+            <div className="p-6">
+              {users.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-gray-500 text-6xl mb-4">👥</div>
+                  <h3 className="text-lg font-medium text-white mb-2">
+                    사용자가 없습니다
+                  </h3>
+                  <p className="text-gray-400">새 사용자를 생성해보세요.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-700">
+                    <thead className="bg-gray-800">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                          사용자 정보
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                          소속
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                          가입일
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                          작업
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody className="bg-gray-900 divide-y divide-gray-700">
+                      {users.map((user) => (
+                        <tr key={user.id} className="hover:bg-gray-800">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-white">
+                                {user.name}
+                              </div>
+                              <div className="text-sm text-gray-400">
+                                {user.email}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-300">
+                              {user.branch} / {user.team}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                            {new Date(user.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() =>
+                                handleDeleteUser(user.id, user.name)
+                              }
+                              className="text-red-400 hover:text-red-300"
+                            >
+                              삭제
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

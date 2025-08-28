@@ -38,6 +38,11 @@ export default function CRMDBPage() {
     customerType: "전체",
     courseType: "전체",
   });
+
+  // 업셀링 상태
+  const [isUpsellingOpen, setIsUpsellingOpen] = useState(false);
+  const [selectedUpsellingCourse, setSelectedUpsellingCourse] = useState("");
+
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -65,6 +70,7 @@ export default function CRMDBPage() {
 
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
+  const [crmCurrentPage, setCrmCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   // 데이터베이스에서 CRM 데이터 가져오기
@@ -137,6 +143,24 @@ export default function CRMDBPage() {
   // 사용자별 데이터 필터링
   const userCRMData = crmData.filter((item) => item.manager === user?.name);
 
+  // 업셀링 과정 목록
+  const upsellingCourses = [
+    "사회복지사2급",
+    "보육교사2급",
+    "평생교육사2급",
+    "한국어교원2급",
+    "아동학사",
+    "아동전문학사",
+    "사회복지학사",
+    "사회복지전문학사",
+  ];
+
+  // 업셀링 과정 선택 처리
+  const handleUpsellingCourseSelect = (course: string) => {
+    setSelectedUpsellingCourse(course);
+    setIsUpsellingOpen(false);
+  };
+
   // 필터링된 데이터
   const filteredCRMData = userCRMData.filter((item) => {
     const searchLower = searchTerm.toLowerCase();
@@ -153,7 +177,18 @@ export default function CRMDBPage() {
     const matchesCourseType =
       filters.courseType === "전체" || item.courseType === filters.courseType;
 
-    return matchesSearch && matchesCustomerType && matchesCourseType;
+    // 업셀링 필터링: 선택된 과정을 제외한 계약고객만 표시
+    const matchesUpselling = selectedUpsellingCourse
+      ? item.customerType === "계약고객" &&
+        item.course !== selectedUpsellingCourse
+      : true;
+
+    return (
+      matchesSearch &&
+      matchesCustomerType &&
+      matchesCourseType &&
+      matchesUpselling
+    );
   });
 
   // 통계 계산
@@ -205,9 +240,19 @@ export default function CRMDBPage() {
   const endIndex = startIndex + itemsPerPage;
   const currentKakaoItems = kakaoHistory.slice(startIndex, endIndex);
 
+  // CRM 데이터 페이지네이션 계산
+  const crmTotalPages = Math.ceil(filteredCRMData.length / itemsPerPage);
+  const crmStartIndex = (crmCurrentPage - 1) * itemsPerPage;
+  const crmEndIndex = crmStartIndex + itemsPerPage;
+  const currentCrmItems = filteredCRMData.slice(crmStartIndex, crmEndIndex);
+
   // 페이지 변경 함수
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleCrmPageChange = (page: number) => {
+    setCrmCurrentPage(page);
   };
 
   // 페이지네이션 번호 생성
@@ -351,29 +396,6 @@ export default function CRMDBPage() {
               </button>
             </div>
           </div>
-
-          {/* 수익 통계 */}
-          <div className={styles.revenueSection}>
-            <h3 className={styles.statsTitle}>수익 통계</h3>
-            <div className={styles.revenueGrid}>
-              <div className={styles.revenueItem}>
-                <div className={styles.revenueLabel}>총 결제금액</div>
-                <div
-                  className={`${styles.revenueValue} ${styles.paymentAmount}`}
-                >
-                  {totalPaymentAmount.toLocaleString()}원
-                </div>
-              </div>
-              <div className={styles.revenueItem}>
-                <div className={styles.revenueLabel}>총 수당</div>
-                <div
-                  className={`${styles.revenueValue} ${styles.commissionAmount}`}
-                >
-                  {totalCommission.toLocaleString()}원
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* 오른쪽 메인 콘텐츠 */}
@@ -436,6 +458,44 @@ export default function CRMDBPage() {
                 <option value="민간 자격증">민간 자격증</option>
                 <option value="유학">유학</option>
               </select>
+
+              {/* 업셀링 버튼 */}
+              <div className={styles.upsellingContainer}>
+                <button
+                  className={styles.upsellingButton}
+                  onClick={() => setIsUpsellingOpen(!isUpsellingOpen)}
+                >
+                  업셀링
+                </button>
+                {isUpsellingOpen && (
+                  <div className={styles.upsellingDropdown}>
+                    {upsellingCourses.map((course) => (
+                      <div
+                        key={course}
+                        className={styles.upsellingOption}
+                        onClick={() => handleUpsellingCourseSelect(course)}
+                      >
+                        {course}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 선택된 업셀링 과정 표시 */}
+              {selectedUpsellingCourse && (
+                <div className={styles.selectedUpselling}>
+                  <span className={styles.selectedUpsellingText}>
+                    {selectedUpsellingCourse} 제외
+                  </span>
+                  <button
+                    className={styles.clearUpsellingButton}
+                    onClick={() => setSelectedUpsellingCourse("")}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
               <input
                 type="text"
                 placeholder="고객명, 연락처, 기관명으로 검색..."
@@ -445,6 +505,12 @@ export default function CRMDBPage() {
               />
             </div>
             <div className={styles.actionButtons}>
+              <button
+                onClick={() => router.push("/kakao-send")}
+                className={styles.kakaoSendButton}
+              >
+                카톡 발송
+              </button>
               {selectedItems.length > 0 && (
                 <button
                   onClick={handleBulkDelete}
@@ -495,7 +561,7 @@ export default function CRMDBPage() {
                     </tr>
                   </thead>
                   <tbody className={styles.tableBody}>
-                    {filteredCRMData.map((item, index) => (
+                    {currentCrmItems.map((item, index) => (
                       <tr
                         key={item.id}
                         className={
@@ -512,7 +578,9 @@ export default function CRMDBPage() {
                             className={styles.checkbox}
                           />
                         </td>
-                        <td className={styles.tableCell}>{index + 1}</td>
+                        <td className={styles.tableCell}>
+                          {crmStartIndex + index + 1}
+                        </td>
                         <td className={styles.tableCell}>{item.branch}</td>
                         <td className={styles.tableCell}>{item.team}</td>
                         <td className={styles.tableCell}>{item.manager}</td>
@@ -562,6 +630,57 @@ export default function CRMDBPage() {
               </div>
             )}
           </div>
+
+          {/* CRM 데이터 페이지네이션 */}
+          {!isLoadingData &&
+            filteredCRMData.length > 0 &&
+            crmTotalPages > 1 && (
+              <div className={styles.pagination}>
+                <button
+                  className={styles.paginationButton}
+                  onClick={() => handleCrmPageChange(1)}
+                  disabled={crmCurrentPage === 1}
+                >
+                  |◀
+                </button>
+                <button
+                  className={styles.paginationButton}
+                  onClick={() => handleCrmPageChange(crmCurrentPage - 1)}
+                  disabled={crmCurrentPage === 1}
+                >
+                  &lt;
+                </button>
+                {Array.from({ length: crmTotalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      className={`${styles.paginationButton} ${
+                        crmCurrentPage === page
+                          ? styles.paginationButtonActive
+                          : ""
+                      }`}
+                      onClick={() => handleCrmPageChange(page)}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+                <button
+                  className={styles.paginationButton}
+                  onClick={() => handleCrmPageChange(crmCurrentPage + 1)}
+                  disabled={crmCurrentPage === crmTotalPages}
+                >
+                  &gt;
+                </button>
+                <button
+                  className={styles.paginationButton}
+                  onClick={() => handleCrmPageChange(crmTotalPages)}
+                  disabled={crmCurrentPage === crmTotalPages}
+                >
+                  ▶|
+                </button>
+              </div>
+            )}
 
           {/* 데이터가 없을 때 */}
           {!isLoadingData && filteredCRMData.length === 0 && (

@@ -5,11 +5,15 @@ import { useAuth } from "./AuthContext";
 import { useState } from "react";
 
 export default function Navigation() {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("로그아웃 오류:", error);
+    }
   };
 
   return (

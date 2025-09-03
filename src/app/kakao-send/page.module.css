@@ -36,18 +36,14 @@
 }
 
 .backButton:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    background-color: #f3f4f6;
+
 }
 
 .title {
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #1e1e1e;
     margin: 0;
     letter-spacing: -0.025em;
 }
@@ -125,7 +121,8 @@
     border: 2px solid rgba(102, 126, 234, 0.2);
     border-radius: 16px;
     font-size: 1rem;
-    background: rgba(255, 255, 255, 0.9);
+
+    color: #1e1e1e;
     backdrop-filter: blur(10px);
     transition: all 0.3s ease;
     font-weight: 500;
@@ -140,7 +137,7 @@
 
 .searchButton {
     padding: 1rem;
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    background: #2b7fff;
     border: none;
     border-radius: 16px;
     cursor: pointer;
@@ -148,12 +145,13 @@
     font-weight: 600;
     font-size: 1.2rem;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+    box-shadow: 0 4px 15px rgba(43, 127, 255, 0.3);
 }
 
 .searchButton:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(251, 191, 36, 0.4);
+
+
+    background: #1a6bff;
 }
 
 .actionButtons {
@@ -164,7 +162,7 @@
 
 .actionButton {
     padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #2b7fff;
     color: white;
     border: none;
     border-radius: 12px;
@@ -172,11 +170,11 @@
     cursor: pointer;
     transition: all 0.3s ease;
     font-weight: 600;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 15px rgba(43, 127, 255, 0.3);
 }
 
 .actionButton:hover {
-    background-color: #2563eb;
+    background-color: #1a6bff;
 }
 
 .registerButton {
@@ -275,14 +273,14 @@
 .addButton,
 .removeButton {
     padding: 1.5rem 2rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #2b7fff;
     color: white;
     border: none;
     border-radius: 20px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 8px 25px rgba(43, 127, 255, 0.3);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -305,7 +303,8 @@
 .addButton:hover,
 .removeButton:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 12px 35px rgba(43, 127, 255, 0.4);
+    background: #1a6bff;
 }
 
 .addButton:disabled,
@@ -343,60 +342,6 @@
     display: flex;
     gap: 0.5rem;
     margin-bottom: 1rem;
-}
-
-.previousListButton {
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
-}
-
-.previousListButton:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4);
-}
-
-.failedListButton {
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
-}
-
-.failedListButton:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
-}
-
-.resetButton {
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-}
-
-.resetButton:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
 }
 
 .dispatchList {
@@ -453,7 +398,7 @@
 
 .nextButton {
     padding: 1.25rem 3rem;
-    background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+    background: #2b7fff;
     color: white;
     border: none;
     border-radius: 20px;
@@ -461,13 +406,13 @@
     font-size: 1.125rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 8px 25px rgba(236, 72, 153, 0.3);
+
     letter-spacing: 0.025em;
 }
 
 .nextButton:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 35px rgba(236, 72, 153, 0.4);
+
+    background: #1a6bff;
 }
 
 /* 로딩 */

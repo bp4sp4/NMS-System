@@ -156,8 +156,8 @@ export default function RankingPage() {
       // user_profiles 테이블에서 아바타 정보 가져오기
       const { data: profilesData, error: profilesError } = await supabase
         .from("user_profiles")
-        .select("id, avatar")
-        .in("id", userIds);
+        .select("user_id, avatar")
+        .in("user_id", userIds);
 
       if (profilesError) {
         console.error("사용자 아바타 정보 가져오기 오류:", profilesError);
@@ -166,7 +166,7 @@ export default function RankingPage() {
       // 아바타 정보를 담당자별로 매핑
       const avatarMap = new Map<string, string>();
       usersData?.forEach((user) => {
-        const profile = profilesData?.find((p) => p.id === user.id);
+        const profile = profilesData?.find((p) => p.user_id === user.id);
         if (user.name && profile?.avatar) {
           avatarMap.set(user.name, profile.avatar);
         }

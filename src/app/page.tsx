@@ -4,6 +4,8 @@ import { useAuth } from "@/components/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Header from "@/components/Navigation";
+import ProfileAvatar from "@/components/ProfileAvatar";
+import { getRecentPosts } from "@/lib/board";
 import {
   Clock,
   Mail,
@@ -25,10 +27,25 @@ interface DashboardData {
   isClockedIn: boolean;
 }
 
+interface Post {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  created_at: string;
+  author: string;
+  position: string;
+  branch: string;
+  team: string;
+}
+
 export default function HomePage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [recentPosts, setRecentPosts] = useState<Post[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("전체");
   const [dashboardData] = useState<DashboardData>({
     todayEmails: 0,
     pendingDocuments: 0,
@@ -63,6 +80,53 @@ export default function HomePage() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // 최근 게시글 가져오기
+  useEffect(() => {
+    const fetchRecentPosts = async () => {
+      try {
+        setPostsLoading(true);
+        console.log("메인 페이지: 최근 게시글 조회 시작...");
+
+        const result = await getRecentPosts(5);
+        console.log("메인 페이지: getRecentPosts 결과:", result);
+
+        if (result.success && result.posts) {
+          console.log("메인 페이지: 게시글 데이터:", result.posts);
+          setRecentPosts(result.posts);
+        } else {
+          console.error("메인 페이지: 게시글 조회 실패:", result.error);
+        }
+      } catch (error) {
+        console.error("메인 페이지: 게시글 조회 중 오류:", error);
+      } finally {
+        setPostsLoading(false);
+      }
+    };
+
+    if (user) {
+      console.log("메인 페이지: 사용자 확인됨, 게시글 조회 시작");
+      fetchRecentPosts();
+    } else {
+      console.log("메인 페이지: 사용자 정보 없음");
+    }
+  }, [user]);
+
+  // 카테고리별 게시글 필터링
+  const filteredPosts = recentPosts.filter((post) => {
+    if (selectedCategory === "전체") return true;
+
+    switch (selectedCategory) {
+      case "공지사항":
+        return post.category === "공지사항";
+      case "업무 공지":
+        return post.category === "업무 공지";
+      case "회사 알림":
+        return post.category === "회사 알림";
+      default:
+        return true;
+    }
+  });
 
   const formatDate = (date: Date) => {
     const year = date.getFullYear();
@@ -120,18 +184,19 @@ export default function HomePage() {
             {/* 사용자 프로필 카드 */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                  {user.name?.charAt(0) || "U"}
-                </div>
+                <ProfileAvatar user={user} size="lg" showStatus={true} />
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900">
-                    {user.name} 사원
+                    {user.name} {user.position || "사원"}
                   </h3>
                   <p className="text-sm text-gray-600">{user.branch}</p>
+                  {user.team && (
+                    <p className="text-xs text-gray-500 mt-1">{user.team}</p>
+                  )}
                 </div>
                 <Link
                   href="/profile"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
                 >
                   프로필
                 </Link>
@@ -240,89 +305,108 @@ export default function HomePage() {
             {/* 전사게시판 */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
               <div className="p-6 border-b border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  전사게시판 최근글
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    전사게시판 최근글
+                  </h3>
+                  <div className="flex items-center space-x-3">
+                    <Link
+                      href="/board"
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+                    >
+                      전체보기 →
+                    </Link>
+                  </div>
+                </div>
               </div>
 
               {/* 탭 네비게이션 */}
               <div className="flex border-b border-gray-100">
-                {["전체", "공지사항", "업무 공지", "회사 알림"].map(
-                  (tab, index) => (
-                    <button
-                      key={tab}
-                      className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-                        index === 0
-                          ? "text-blue-600 border-b-2 border-blue-600"
-                          : "text-gray-500 hover:text-gray-700"
-                      }`}
-                    >
-                      {tab}
-                    </button>
-                  )
-                )}
+                {["전체", "공지사항", "업무 공지", "회사 알림"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setSelectedCategory(tab)}
+                    className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+                      selectedCategory === tab
+                        ? "text-blue-600 border-b-2 border-blue-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
               </div>
 
               {/* 게시글 목록 */}
-              <div className="p-6 space-y-4">
-                {[
-                  {
-                    title: "사원증 및 명함 신청 접수(~8/29)",
-                    author: "정채림 사원",
-                    date: "2025-08-25 15:33",
-                    category: "공지사항",
-                  },
-                  {
-                    title: "2025 승진 공고문 [1]",
-                    author: "정채림 사원",
-                    date: "2025-07-21 15:32",
-                    category: "공지사항",
-                  },
-                  {
-                    title:
-                      "사원증 및 명함이 필요한 직원은 7월 11일(금)까지 전자결재로 신청서 제출해 주세요.",
-                    author: "유현모 실장",
-                    date: "2025-07-07 10:41",
-                    category: "회사 알림",
-                  },
-                  {
-                    title: "25년 여름휴가 일정 안내",
-                    author: "유현모 실장",
-                    date: "2025-06-12 18:13",
-                    category: "공지사항",
-                  },
-                  {
-                    title:
-                      "금일 급여명세서가 배부되었습니다 수정 요청 또는 문의사항은 금일 17시까지 회신 바랍니다",
-                    author: "유현모 실장",
-                    date: "2025-06-10 15:25",
-                    category: "회사 알림",
-                  },
-                ].map((post, index) => (
-                  <div key={index} className="group cursor-pointer">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
-                          {post.title}
-                        </h4>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <span className="text-xs text-gray-500">
-                            {post.author}
-                          </span>
-                          <span className="text-xs text-gray-400">•</span>
-                          <span className="text-xs text-gray-500">
-                            {post.date}
-                          </span>
-                          <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
-                            {post.category}
-                          </span>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0 ml-2" />
-                    </div>
+              <div className="p-6 space-y-3">
+                {postsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-500 text-sm">
+                      게시글을 불러오는 중...
+                    </p>
                   </div>
-                ))}
+                ) : filteredPosts.length > 0 ? (
+                  filteredPosts.map((post, index) => {
+                    const date = new Date(post.created_at);
+                    const formattedDate = `${date.getFullYear()}-${String(
+                      date.getMonth() + 1
+                    ).padStart(2, "0")}-${String(date.getDate()).padStart(
+                      2,
+                      "0"
+                    )} ${String(date.getHours()).padStart(2, "0")}:${String(
+                      date.getMinutes()
+                    ).padStart(2, "0")}`;
+
+                    return (
+                      <Link key={post.id} href={`/board/${post.id}`}>
+                        <div className="group cursor-pointer p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-relaxed mb-2">
+                                {post.title}
+                              </h4>
+                              <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                <span className="font-medium text-gray-700">
+                                  {post.author}
+                                </span>
+                                <span className="text-gray-400">•</span>
+                                <span>{formattedDate}</span>
+                              </div>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0 ml-2 mt-1" />
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8">
+                    <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500 text-sm">
+                      {selectedCategory === "전체"
+                        ? "등록된 게시글이 없습니다."
+                        : `${selectedCategory} 카테고리의 게시글이 없습니다.`}
+                    </p>
+                    <p className="text-gray-400 text-xs mt-1">
+                      첫 번째 게시글을 작성해보세요!
+                    </p>
+                  </div>
+                )}
               </div>
+
+              {/* 더보기 버튼 */}
+              {filteredPosts.length > 0 && (
+                <div className="p-4 border-t border-gray-100">
+                  <Link
+                    href="/board"
+                    className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 py-3 px-4 rounded-xl text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <span>더 많은 게시글 보기</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* 캘린더 */}

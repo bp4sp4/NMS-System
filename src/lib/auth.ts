@@ -11,7 +11,6 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
       .single();
 
     if (error) {
-      console.error("Error fetching user profile:", error);
       return null;
     }
 
@@ -38,7 +37,6 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
 
     return user;
   } catch (error) {
-    console.error("getUserProfile 오류:", error);
     return null;
   }
 };
@@ -55,7 +53,6 @@ const hashPassword = (password: string): string => {
   // 추가 보안을 위해 반복
   const finalHash = btoa(hash + "_SECURE");
 
-  console.log("비밀번호 해시:", { password, finalHash });
   return finalHash;
 };
 
@@ -63,12 +60,6 @@ const hashPassword = (password: string): string => {
 const verifyPassword = (password: string, hashedPassword: string): boolean => {
   const inputHash = hashPassword(password);
   const isValid = inputHash === hashedPassword;
-  console.log("비밀번호 검증:", {
-    password,
-    inputHash,
-    storedHash: hashedPassword,
-    isValid,
-  });
   return isValid;
 };
 
@@ -109,8 +100,6 @@ export const signIn = async (
   email: string,
   password: string
 ): Promise<void> => {
-  console.log("로그인 시도:", { email, password });
-
   try {
     // 1. 사용자 정보 조회
     const { data: user, error: userError } = await supabase
@@ -120,16 +109,12 @@ export const signIn = async (
       .single();
 
     if (userError) {
-      console.error("사용자 조회 오류:", userError);
       throw new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
     }
 
     if (!user) {
-      console.error("사용자를 찾을 수 없음:", email);
       throw new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
     }
-
-    console.log("사용자 찾음:", user);
 
     // 2. 비밀번호 확인
     const { data: passwordData, error: passwordError } = await supabase
@@ -139,24 +124,17 @@ export const signIn = async (
       .single();
 
     if (passwordError) {
-      console.error("비밀번호 정보 조회 오류:", passwordError);
       throw new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
     }
 
     if (!passwordData) {
-      console.error("비밀번호 정보 없음");
       throw new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
     }
-
-    console.log("비밀번호 데이터:", passwordData);
 
     // 비밀번호 검증
     if (!verifyPassword(password, passwordData.password_hash)) {
-      console.error("비밀번호 불일치");
       throw new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
     }
-
-    console.log("비밀번호 검증 완료");
 
     // 3. 로그인 시도 기록 (보안 강화)
     try {
@@ -168,7 +146,7 @@ export const signIn = async (
         user_agent: navigator.userAgent,
       });
     } catch (logError) {
-      console.warn("로그인 시도 기록 실패:", logError);
+      // 로그인 시도 기록 실패는 치명적이지 않음
     }
 
     // 4. 로컬 스토리지에 사용자 정보 저장
@@ -182,7 +160,6 @@ export const signIn = async (
     };
 
     localStorage.setItem("nms-user-session", JSON.stringify(userSession));
-    console.log("로그인 성공:", userSession);
   } catch (error) {
     // 실패한 로그인 시도 기록
     try {
@@ -193,10 +170,9 @@ export const signIn = async (
         user_agent: navigator.userAgent,
       });
     } catch (logError) {
-      console.warn("로그인 실패 기록 실패:", logError);
+      // 로그인 실패 기록 실패는 치명적이지 않음
     }
 
-    console.error("로그인 함수 전체 오류:", error);
     throw error;
   }
 };
@@ -205,9 +181,7 @@ export const signIn = async (
 export const signOut = async (): Promise<void> => {
   try {
     localStorage.removeItem("nms-user-session");
-    console.log("로그아웃 완료");
   } catch (error) {
-    console.error("로그아웃 오류:", error);
     throw new Error("로그아웃 중 오류가 발생했습니다.");
   }
 };
@@ -220,8 +194,6 @@ export const createUserByAdmin = async (userData: {
   branch: string;
   team: string;
 }): Promise<{ success: boolean; userId?: string; error?: string }> => {
-  console.log("관리자 사용자 생성:", userData.email);
-
   try {
     // 비밀번호 강도 검증
     const passwordValidation = validatePasswordStrength(userData.password);
@@ -262,14 +234,11 @@ export const createUserByAdmin = async (userData: {
       .single();
 
     if (userError) {
-      console.error("사용자 정보 저장 오류:", userError);
       return {
         success: false,
         error: `사용자 정보 저장에 실패했습니다: ${userError.message}`,
       };
     }
-
-    console.log("사용자 정보 저장 성공:", savedUser);
 
     // 4. 개인정보 테이블에 기본 레코드 생성
     const { data: savedProfile, error: profileError } = await supabase
@@ -281,10 +250,7 @@ export const createUserByAdmin = async (userData: {
       .single();
 
     if (profileError) {
-      console.warn("개인정보 테이블 생성 실패:", profileError);
       // 개인정보 테이블 생성 실패는 치명적이지 않음
-    } else {
-      console.log("개인정보 테이블 생성 성공:", savedProfile);
     }
 
     // 5. 비밀번호 저장 (안전한 해시 사용)
@@ -297,7 +263,6 @@ export const createUserByAdmin = async (userData: {
       });
 
     if (passwordError) {
-      console.error("비밀번호 저장 오류:", passwordError);
       // 비밀번호 저장 실패 시 사용자 삭제
       await supabase.from("users").delete().eq("id", userId);
       return {
@@ -306,11 +271,8 @@ export const createUserByAdmin = async (userData: {
       };
     }
 
-    console.log("비밀번호 저장 성공");
-
     return { success: true, userId };
   } catch (error) {
-    console.error("사용자 생성 전체 오류:", error);
     return { success: false, error: "사용자 생성 중 오류가 발생했습니다." };
   }
 };
@@ -324,13 +286,11 @@ export const getAllUsers = async (): Promise<User[] | null> => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("사용자 목록 조회 오류:", error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error("사용자 목록 조회 중 오류:", error);
     return null;
   }
 };
@@ -347,18 +307,14 @@ export const deleteUser = async (
       .eq("id", userId);
 
     if (userError) {
-      console.error("사용자 정보 삭제 오류:", userError);
       return {
         success: false,
         error: `사용자 정보 삭제에 실패했습니다: ${userError.message}`,
       };
     }
 
-    console.log("사용자 삭제 성공");
-
     return { success: true };
   } catch (error) {
-    console.error("사용자 삭제 중 오류:", error);
     return { success: false, error: "사용자 삭제 중 오류가 발생했습니다." };
   }
 };

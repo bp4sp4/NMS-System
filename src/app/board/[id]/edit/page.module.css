@@ -1,0 +1,472 @@
+/* 게시글 수정 페이지 스타일 */
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.backButton {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+.backButton:hover {
+    background-color: #f3f4f6;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e1e1e;
+    margin: 0;
+}
+
+/* 폼 스타일 */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+}
+
+.label {
+    display: block;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e1e1e;
+    margin-bottom: 0.75rem;
+}
+
+.required {
+    color: #ef4444;
+}
+
+/* 입력 필드 스타일 */
+.input {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    font-size: 1.125rem;
+    border: 2px solid #d1d5db;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    background-color: white;
+    color: #1e1e1e;
+}
+
+.input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input::placeholder {
+    color: #9ca3af;
+}
+
+.textarea {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    line-height: 1.6;
+    border: 2px solid #d1d5db;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    background-color: white;
+    color: #1e1e1e;
+    resize: none;
+    min-height: 400px;
+}
+
+.textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.textarea::placeholder {
+    color: #9ca3af;
+}
+
+/* 셀렉트 박스 스타일 */
+.select {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    border: 2px solid #d1d5db;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    background-color: white;
+    color: #1e1e1e;
+    cursor: pointer;
+}
+
+.select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 체크박스 스타일 */
+.checkboxGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.checkbox {
+    width: 1rem;
+    height: 1rem;
+    color: #3b82f6;
+    border-color: #d1d5db;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+.checkbox:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.checkboxLabel {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #1e1e1e;
+    cursor: pointer;
+}
+
+/* 기존 첨부파일 스타일 */
+.existingAttachments {
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+}
+
+.existingAttachmentsTitle {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.75rem;
+}
+
+.attachmentList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.attachmentItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e5e7eb;
+}
+
+.attachmentInfo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.attachmentIcon {
+    width: 2rem;
+    height: 2rem;
+    background-color: #dbeafe;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1e40af;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.attachmentDetails {
+    display: flex;
+    flex-direction: column;
+}
+
+.attachmentName {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1e1e1e;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attachmentSize {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.attachmentActions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.deleteAttachmentButton {
+    color: #ef4444;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.deleteAttachmentButton:hover {
+    color: #dc2626;
+    background-color: #fef2f2;
+}
+
+.deleteAttachmentButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.attachmentNote {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+/* 파일 첨부 스타일 */
+.fileSection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.fileUploadRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.fileInput {
+    display: none;
+}
+
+.fileButton {
+    padding: 0.5rem 1rem;
+    background-color: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+}
+
+.fileButton:hover {
+    background-color: #e5e7eb;
+}
+
+.fileInfo {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* 첨부된 파일 목록 */
+.attachedFiles {
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+}
+
+.attachedFilesTitle {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.75rem;
+}
+
+.fileList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.fileItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e5e7eb;
+}
+
+.fileIcon {
+    width: 2rem;
+    height: 2rem;
+    background-color: #dbeafe;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1e40af;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.fileDetails {
+    display: flex;
+    flex-direction: column;
+}
+
+.fileName {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1e1e1e;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fileSize {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.removeButton {
+    color: #ef4444;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.removeButton:hover {
+    color: #dc2626;
+    background-color: #fef2f2;
+}
+
+.removeButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 오류 메시지 */
+.errorMessage {
+    padding: 1rem;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.5rem;
+}
+
+.errorText {
+    color: #dc2626;
+    font-size: 0.875rem;
+}
+
+/* 버튼 그룹 */
+.buttonGroup {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.cancelButton {
+    padding: 0.5rem 1.5rem;
+    border: 1px solid #d1d5db;
+    color: #374151;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    background-color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cancelButton:hover {
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.cancelButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.submitButton {
+    padding: 0.5rem 1.5rem;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.submitButton:hover {
+    background-color: #2563eb;
+}
+
+.submitButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 로딩 스피너 */
+.loadingSpinner {
+    border: 2px solid #e5e7eb;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    width: 1rem;
+    height: 1rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}

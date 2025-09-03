@@ -97,32 +97,74 @@ export default function ProfilePage() {
             .eq("id", user.id)
             .single();
 
-          // 개인정보 조회
-          const { data: profileData, error: profileError } = await supabase
+          // 개인정보 조회 - user_profiles 테이블에 레코드가 없을 수 있으므로 upsert 방식으로 처리
+          let { data: profileData, error: profileError } = await supabase
             .from("user_profiles")
             .select("*")
-            .eq("id", user.id)
+            .eq("user_id", user.id)
             .single();
 
-          console.log("사용자 데이터:", userData);
-          console.log("프로필 데이터:", profileData);
+          // user_profiles에 레코드가 없는 경우 생성
+          if (profileError && profileError.code === "PGRST116") {
+            const { data: newProfile, error: insertError } = await supabase
+              .from("user_profiles")
+              .insert({
+                user_id: user.id,
+                avatar: null,
+                hire_date: null,
+                bank: null,
+                bank_account: null,
+                address: null,
+                resident_number: null,
+                emergency_contact: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              })
+              .select()
+              .single();
+
+            if (insertError) {
+              profileData = null;
+            } else {
+              profileData = newProfile;
+            }
+          } else if (profileError) {
+            profileData = null;
+          }
 
           if (!userError && userData) {
-            setFormData({
-              name: userData.name || "",
-              branch: userData.branch || "",
-              team: userData.team || "",
-              hireDate: profileData?.hire_date || "",
-              bank: profileData?.bank || "",
-              bankAccount: profileData?.bank_account || "",
-              address: profileData?.address || "",
-              residentNumber: profileData?.resident_number || "",
-              emergencyContact: profileData?.emergency_contact || "",
-              currentPassword: "",
-              newPassword: "",
-              confirmPassword: "",
+            setFormData((prevData) => {
+              const newProfileData = {
+                name: userData.name || prevData.name,
+                branch: userData.branch || prevData.branch,
+                team: userData.team || prevData.team,
+              };
+
+              if (profileData) {
+                Object.assign(newProfileData, {
+                  hireDate: profileData.hire_date || prevData.hireDate,
+                  bank: profileData.bank || prevData.bank,
+                  bankAccount: profileData.bank_account || prevData.bankAccount,
+                  address: profileData.address || prevData.address,
+                  residentNumber:
+                    profileData.resident_number || prevData.residentNumber,
+                  emergencyContact:
+                    profileData.emergency_contact || prevData.emergencyContact,
+                });
+              }
+
+              return {
+                ...prevData,
+                ...newProfileData,
+                currentPassword: "",
+                newPassword: "",
+                confirmPassword: "",
+              };
             });
-            setAvatarUrl(profileData?.avatar || null);
+
+            if (profileData) {
+              setAvatarUrl(profileData.avatar || null);
+            }
           }
         } catch (error) {
           console.error("Profile fetch error:", error);
@@ -155,13 +197,9 @@ export default function ProfilePage() {
     setMessage({ type: "", text: "" });
 
     try {
-      console.log("아바타 업로드 시작:", { file, user });
-
       const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      console.log("업로드 경로:", filePath);
+      const filePath = fileName; // avatars/ 접두사 제거
 
       // 1. Supabase Storage에 파일 업로드
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -193,7 +231,7 @@ export default function ProfilePage() {
               avatar: defaultAvatar,
               updated_at: new Date().toISOString(),
             })
-            .eq("id", user.id);
+            .eq("user_id", user.id);
 
           if (!updateError) {
             setMessage({
@@ -207,30 +245,37 @@ export default function ProfilePage() {
         throw new Error(`파일 업로드 실패: ${uploadError.message}`);
       }
 
-      console.log("Storage 업로드 성공:", uploadData);
-
       // 2. 공개 URL 가져오기
       const {
         data: { publicUrl },
       } = supabase.storage.from("avatars").getPublicUrl(filePath);
 
-      console.log("공개 URL:", publicUrl);
-
-      // 3. 데이터베이스에 아바타 URL 업데이트
+      // 3. 데이터베이스에 아바타 URL 업데이트 (upsert 방식으로 변경)
       const { error: updateError } = await supabase
         .from("user_profiles")
-        .update({
-          avatar: publicUrl,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id);
+        .upsert(
+          {
+            user_id: user.id,
+            avatar: publicUrl,
+            updated_at: new Date().toISOString(),
+            // 기존 데이터가 있다면 유지, 없다면 기본값 설정
+            hire_date: null,
+            bank: null,
+            bank_account: null,
+            address: null,
+            resident_number: null,
+            emergency_contact: null,
+            created_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "user_id",
+          }
+        );
 
       if (updateError) {
         console.error("데이터베이스 업데이트 오류:", updateError);
         throw new Error(`프로필 업데이트 실패: ${updateError.message}`);
       }
-
-      console.log("데이터베이스 업데이트 성공");
 
       // 4. 로컬 상태 업데이트
       setAvatarUrl(publicUrl);
@@ -275,18 +320,27 @@ export default function ProfilePage() {
         throw userError;
       }
 
-      // 개인정보 업데이트
+      // 개인정보 업데이트 (upsert 방식으로 변경)
       const { error: profileError } = await supabase
         .from("user_profiles")
-        .update({
-          hire_date: formData.hireDate || null,
-          bank: formData.bank,
-          bank_account: formData.bankAccount,
-          address: formData.address,
-          resident_number: formData.residentNumber,
-          emergency_contact: formData.emergencyContact,
-        })
-        .eq("id", user.id);
+        .upsert(
+          {
+            user_id: user.id,
+            hire_date: formData.hireDate || null,
+            bank: formData.bank,
+            bank_account: formData.bankAccount,
+            address: formData.address,
+            resident_number: formData.residentNumber,
+            emergency_contact: formData.emergencyContact,
+            updated_at: new Date().toISOString(),
+            // 기존 데이터가 있다면 유지, 없다면 기본값 설정
+            avatar: avatarUrl,
+            created_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "user_id",
+          }
+        );
 
       if (profileError) {
         throw profileError;

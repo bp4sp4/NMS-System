@@ -138,6 +138,25 @@ export default function KakaoSendPage() {
     );
   };
 
+  const handleNext = () => {
+    if (dispatchTargets.length === 0) {
+      alert("발송할 고객을 선택해주세요.");
+      return;
+    }
+
+    // 선택된 고객 데이터를 localStorage에 저장
+    const customerData = dispatchTargets.map((customer) => ({
+      id: customer.id,
+      name: customer.customerName,
+      phone: customer.contact,
+      type: customer.customerType,
+      course: customer.course,
+    }));
+
+    localStorage.setItem("selectedCustomers", JSON.stringify(customerData));
+    router.push("/kakao-send/message");
+  };
+
   // 검색 필터링
   const filteredCustomers = crmData.filter(
     (customer) =>
@@ -174,7 +193,7 @@ export default function KakaoSendPage() {
           >
             ← 뒤로가기
           </button>
-          <h1 className={styles.title}>카톡 대량 발송</h1>
+          <h1 className={styles.title}>메시지 발송</h1>
         </div>
       </div>
 
@@ -199,13 +218,12 @@ export default function KakaoSendPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className={styles.searchInput}
                 />
-                <button className={styles.searchButton}>🔍</button>
+                <button className={styles.searchButton}>검색</button>
               </div>
 
               <div className={styles.actionButtons}>
                 <button className={styles.actionButton}>삭제</button>
                 <button className={styles.actionButton}>수정</button>
-                <button className={styles.registerButton}>고객 등록</button>
               </div>
             </div>
 
@@ -288,9 +306,7 @@ export default function KakaoSendPage() {
           <div className={styles.dispatchSection}>
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>02. 발송 대상 체크</h2>
-              <button className={styles.resetButton}>초기화</button>
             </div>
-
             <div className={styles.dispatchControls}>
               <div className={styles.dispatchCount}>
                 발송대상 : {dispatchTargets.length}명
@@ -304,17 +320,8 @@ export default function KakaoSendPage() {
                   onChange={(e) => setDispatchSearchTerm(e.target.value)}
                   className={styles.searchInput}
                 />
-                <button className={styles.searchButton}>🔍</button>
+                <button className={styles.searchButton}>검색</button>
               </div>
-            </div>
-
-            <div className={styles.listButtons}>
-              <button className={styles.previousListButton}>
-                이전 발송 리스트
-              </button>
-              <button className={styles.failedListButton}>
-                이전 실패 리스트
-              </button>
             </div>
 
             <div className={styles.dispatchList}>
@@ -362,10 +369,7 @@ export default function KakaoSendPage() {
 
       {/* 하단 버튼 */}
       <div className={styles.footer}>
-        <button
-          className={styles.nextButton}
-          onClick={() => router.push("/kakao-send/message")}
-        >
+        <button className={styles.nextButton} onClick={handleNext}>
           다음 →
         </button>
       </div>

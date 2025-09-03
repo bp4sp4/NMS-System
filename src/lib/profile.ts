@@ -49,7 +49,7 @@ export const getUserAvatar = async (userId: string): Promise<string | null> => {
     const { data, error } = await supabase
       .from("user_profiles")
       .select("avatar")
-      .eq("id", userId)
+      .eq("user_id", userId)
       .single();
 
     if (error) {
@@ -67,18 +67,52 @@ export const getUserAvatar = async (userId: string): Promise<string | null> => {
 // 기본 사용자 정보 조회
 export const getUserBasicInfo = async (userId: string) => {
   try {
-    const { data, error } = await supabase
+    // 1단계: 기본 사용자 정보 조회
+    const { data: userData, error: userError } = await supabase
       .from("users")
       .select("id, email, name, branch, team")
       .eq("id", userId)
       .single();
 
-    if (error) {
-      console.error("사용자 정보 조회 오류:", error);
+    if (userError) {
+      console.error("사용자 정보 조회 오류:", userError);
       return null;
     }
 
-    return data;
+    // 2단계: 직급 정보 조회
+    const { data: positionData, error: positionError } = await supabase
+      .from("user_positions")
+      .select("position_id")
+      .eq("user_id", userId)
+      .single();
+
+    if (positionError && positionError.code !== "PGRST116") {
+      // PGRST116은 데이터가 없는 경우
+      console.error("직급 정보 조회 오류:", positionError);
+    }
+
+    // 3단계: 직급 마스터 정보 조회
+    let positionName = null;
+    if (positionData?.position_id) {
+      const { data: masterData, error: masterError } = await supabase
+        .from("positions")
+        .select("name")
+        .eq("id", positionData.position_id)
+        .single();
+
+      if (masterError) {
+        console.error("직급 마스터 조회 오류:", masterError);
+      } else {
+        positionName = masterData?.name;
+      }
+    }
+
+    // 4단계: 데이터 합치기
+    return {
+      ...userData,
+      position: positionName,
+      avatar: null, // User 타입에 필요한 avatar 속성 추가
+    };
   } catch (error) {
     console.error("사용자 정보 조회 중 오류:", error);
     return null;
@@ -128,7 +162,7 @@ export const updateUserProfile = async (
     const { error } = await supabase
       .from("user_profiles")
       .update(data)
-      .eq("id", userId);
+      .eq("user_id", userId);
 
     if (error) {
       throw error;
@@ -159,7 +193,7 @@ export const getFullUserProfile = async (userId: string) => {
     const { data: profileData, error: profileError } = await supabase
       .from("user_profiles")
       .select("*")
-      .eq("id", userId)
+      .eq("user_id", userId)
       .single();
 
     if (profileError) {

@@ -37,7 +37,7 @@ export default function Navigation() {
           const { data, error } = await supabase
             .from("user_profiles")
             .select("avatar")
-            .eq("id", user.id)
+            .eq("user_id", user.id)
             .single();
 
           if (!error && data?.avatar) {
@@ -113,7 +113,7 @@ export default function Navigation() {
                       CRM-DB
                     </Link>
                     <Link href="/kakao-send" className={styles.dropdownItem}>
-                      카톡 발송
+                      메시지 발송
                     </Link>
                     <Link
                       href="/kakao-settings"
@@ -129,6 +129,12 @@ export default function Navigation() {
                 className={`${styles.menuLink} ${styles.menuLinkInactive}`}
               >
                 랭킹
+              </Link>
+              <Link
+                href="/board"
+                className={`${styles.menuLink} ${styles.menuLinkInactive}`}
+              >
+                게시판
               </Link>
               {isAdmin && (
                 <Link
@@ -260,7 +266,7 @@ export default function Navigation() {
                   CRM-DB
                 </Link>
                 <Link href="/kakao-send" className={styles.mobileDropdownItem}>
-                  카톡 발송
+                  메시지 발송
                 </Link>
                 <Link
                   href="/kakao-settings"

@@ -5,6 +5,7 @@ export interface User {
   name: string;
   branch: string;
   team: string;
+  position?: string | null;
   hire_date?: string | null;
   bank?: string | null;
   bank_account?: string | null;

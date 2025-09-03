@@ -9,6 +9,7 @@ import {
   getAllUsers,
   deleteUser,
 } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 import type { User } from "@/types/user";
 
 interface AuthContextType {
@@ -48,49 +49,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // 로컬 스토리지에서 사용자 세션 확인
-    const checkUserSession = () => {
-      try {
-        setIsLoading(true);
+    const initializeAuth = () => {
+      if (typeof window !== "undefined") {
         const sessionData = localStorage.getItem("nms-user-session");
-        console.log("AuthContext 초기화 - 세션 데이터:", sessionData);
 
         if (sessionData) {
-          const userSession = JSON.parse(sessionData);
-          console.log("AuthContext - 사용자 세션 설정:", userSession);
+          try {
+            const userSession = JSON.parse(sessionData);
 
-          // 세션 유효성 확인
-          if (userSession.loggedInAt) {
-            const loginTime = new Date(userSession.loggedInAt);
-            const now = new Date();
+            // 세션 만료 시간 확인 (24시간)
+            const sessionTime = new Date(
+              userSession.loggedInAt || userSession.created_at
+            );
+            const currentTime = new Date();
             const diffHours =
-              (now.getTime() - loginTime.getTime()) / (1000 * 60 * 60);
+              (currentTime.getTime() - sessionTime.getTime()) /
+              (1000 * 60 * 60);
 
-            // 24시간 이상 지난 세션은 삭제
             if (diffHours > 24) {
-              console.log("세션이 만료됨, 삭제:", diffHours, "시간");
+              // 세션이 만료된 경우
               localStorage.removeItem("nms-user-session");
               setUser(null);
             } else {
-              console.log("세션 유효함:", diffHours, "시간 경과");
-              setUser(userSession as User);
+              // 세션이 유효한 경우
+              setUser(userSession);
             }
-          } else {
-            setUser(userSession as User);
+          } catch (error) {
+            // 세션 데이터 파싱 실패 시 제거
+            localStorage.removeItem("nms-user-session");
+            setUser(null);
           }
         } else {
-          console.log("AuthContext - 세션 데이터 없음, 사용자 null 설정");
           setUser(null);
         }
-      } catch (error) {
-        console.error("AuthContext - 세션 확인 오류:", error);
-        setUser(null);
-      } finally {
+
         setIsLoading(false);
       }
     };
 
-    checkUserSession();
+    initializeAuth();
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -101,7 +98,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const sessionData = localStorage.getItem("nms-user-session");
       if (sessionData) {
         const userSession = JSON.parse(sessionData);
-        setUser(userSession as User);
+
+        // 직급 정보를 포함한 완전한 사용자 정보 조회
+        try {
+          const { getUserBasicInfo } = await import("@/lib/profile");
+          const fullUserInfo = await getUserBasicInfo(userSession.id);
+          if (fullUserInfo) {
+            setUser(fullUserInfo);
+            // 로컬 스토리지도 업데이트
+            localStorage.setItem(
+              "nms-user-session",
+              JSON.stringify(fullUserInfo)
+            );
+          } else {
+            setUser(userSession as User);
+          }
+        } catch (profileError) {
+          console.error("직급 정보 조회 실패, 기본 정보로 설정:", profileError);
+          setUser(userSession as User);
+        }
       }
 
       return { success: true };

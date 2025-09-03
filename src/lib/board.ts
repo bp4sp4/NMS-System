@@ -825,6 +825,68 @@ export const deleteComment = async (
   }
 };
 
+// 댓글 수정
+export const updateComment = async (
+  commentId: string,
+  content: string
+): Promise<{ success: boolean; comment?: any; error?: string }> => {
+  try {
+    const { data: comment, error } = await supabase
+      .from("post_comments")
+      .update({
+        content: content.trim(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", commentId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("댓글 수정 오류:", error);
+      return { success: false, error: "댓글 수정에 실패했습니다." };
+    }
+
+    // 수정된 댓글 정보에 사용자 정보 추가
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("name, branch, team")
+      .eq("id", comment.user_id)
+      .single();
+
+    if (userError) {
+      console.error("사용자 정보 조회 오류:", userError);
+    }
+
+    // 직급 정보 조회
+    let positionName = "직급 미설정";
+    if (userData) {
+      const { data: positionData, error: positionError } = await supabase
+        .from("user_positions")
+        .select("positions!user_positions_position_id_fkey(name)")
+        .eq("user_id", comment.user_id)
+        .single();
+
+      if (!positionError && (positionData as any)?.positions?.name) {
+        positionName = (positionData as any).positions.name;
+      } else if ((userData as any).position) {
+        positionName = (userData as any).position;
+      }
+    }
+
+    const commentWithUser = {
+      ...comment,
+      user_name: userData?.name || "알 수 없음",
+      user_position: positionName,
+      user_team: userData?.team || "팀 미설정",
+    };
+
+    return { success: true, comment: commentWithUser };
+  } catch (error) {
+    console.error("댓글 수정 중 오류:", error);
+    return { success: false, error: "댓글 수정 중 오류가 발생했습니다." };
+  }
+};
+
 // 홈페이지용 게시글 인터페이스
 interface HomePagePost {
   id: string;

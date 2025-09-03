@@ -10,17 +10,9 @@ import {
   deleteAttachment,
   createComment,
   deleteComment,
+  updateComment,
 } from "@/lib/board";
-import {
-  ArrowLeft,
-  Edit,
-  Trash2,
-  Eye,
-  Pin,
-  X,
-  MessageCircle,
-  Send,
-} from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Eye, Pin, X } from "lucide-react";
 import { Post, PostAttachment } from "@/types/board";
 
 export default function PostDetailPage() {
@@ -190,26 +182,37 @@ export default function PostDetailPage() {
       return;
     }
 
+    if (!editingCommentId) {
+      alert("수정할 댓글을 찾을 수 없습니다.");
+      return;
+    }
+
     try {
-      // 실제 수정 API는 나중에 구현
-      // 현재는 로컬 상태만 업데이트
-      setPost((prev: any) =>
-        prev
-          ? {
-              ...prev,
-              comments:
-                prev.comments?.map((comment: any) =>
-                  comment.id === editingCommentId
-                    ? { ...comment, content: editingCommentContent.trim() }
-                    : comment
-                ) || [],
-            }
-          : null
+      const result = await updateComment(
+        editingCommentId,
+        editingCommentContent.trim()
       );
 
-      setEditingCommentId(null);
-      setEditingCommentContent("");
-      alert("댓글이 수정되었습니다.");
+      if (result.success && result.comment) {
+        // 로컬 상태에서 댓글 업데이트
+        setPost((prev: any) =>
+          prev
+            ? {
+                ...prev,
+                comments:
+                  prev.comments?.map((comment: any) =>
+                    comment.id === editingCommentId ? result.comment : comment
+                  ) || [],
+              }
+            : null
+        );
+
+        setEditingCommentId(null);
+        setEditingCommentContent("");
+        alert("댓글이 수정되었습니다.");
+      } else {
+        alert(result.error || "댓글 수정에 실패했습니다.");
+      }
     } catch (error) {
       console.error("댓글 수정 오류:", error);
       alert("댓글 수정 중 오류가 발생했습니다.");

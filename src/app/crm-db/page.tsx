@@ -257,7 +257,7 @@ export default function CRMDBPage() {
 
   // 페이지네이션 번호 생성
   const getPageNumbers = () => {
-    const pages = [];
+    const pages: number[] = [];
     const maxVisiblePages = 10;
 
     if (totalPages <= maxVisiblePages) {

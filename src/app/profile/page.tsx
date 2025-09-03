@@ -89,8 +89,12 @@ export default function ProfilePage() {
             .eq("id", user.id)
             .single();
 
-          // 개인정보 조회 - user_profiles 테이블에 레코드가 없을 수 있으므로 upsert 방식으로 처리
-          let { data: profileData, error: profileError } = await supabase
+          let { data: profileData } = await supabase
+            .from("user_profiles")
+            .select("*")
+            .eq("user_id", user.id)
+            .single();
+          const { error: profileError } = await supabase
             .from("user_profiles")
             .select("*")
             .eq("user_id", user.id)

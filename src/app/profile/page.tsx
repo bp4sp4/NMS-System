@@ -5,15 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Navigation";
-import {
-  Camera,
-  Upload,
-  Save,
-  Lock,
-  User,
-  MessageSquare,
-  Settings,
-} from "lucide-react";
+import { Upload, Save, Lock, User, MessageSquare } from "lucide-react";
 
 interface ProfileFormData {
   name: string;

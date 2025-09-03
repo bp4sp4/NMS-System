@@ -2,13 +2,13 @@
 
 import { useAuth } from "@/components/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Header from "@/components/Navigation";
 import { createPost, canWritePost } from "@/lib/board";
 import { ArrowLeft, Save, X } from "lucide-react";
 import styles from "./page.module.css";
 
-export default function WritePostPage() {
+function WritePostForm() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -201,25 +201,11 @@ export default function WritePostPage() {
                 </option>
               ))}
             </select>
-            {!canWrite && (
-              <p className="mt-1 text-sm text-red-600">
-                해당 카테고리에 글을 쓸 권한이 없습니다.
-              </p>
-            )}
           </div>
 
-          {/* 첨부파일 개수 표시 */}
-          {attachedFiles.length > 0 && (
-            <div className="text-sm text-blue-600 font-medium">
-              📎 첨부파일 {attachedFiles.length}개 선택됨
-            </div>
-          )}
-
-          {/* 제목 */}
+          {/* 제목 입력 */}
           <div className={styles.formGroup}>
-            <label className={styles.label}>
-              제목 <span className={styles.required}>*</span>
-            </label>
+            <label className={styles.label}>제목</label>
             <input
               type="text"
               value={formData.title}
@@ -233,11 +219,9 @@ export default function WritePostPage() {
             />
           </div>
 
-          {/* 내용 */}
+          {/* 내용 입력 */}
           <div className={styles.formGroup}>
-            <label className={styles.label}>
-              내용 <span className={styles.required}>*</span>
-            </label>
+            <label className={styles.label}>내용</label>
             <textarea
               value={formData.content}
               onChange={(e) =>
@@ -245,112 +229,92 @@ export default function WritePostPage() {
               }
               className={styles.textarea}
               placeholder="내용을 입력하세요"
+              rows={10}
               disabled={loading}
               required
             />
           </div>
 
-          {/* 고정 여부 */}
-          <div className={styles.checkboxGroup}>
-            <input
-              type="checkbox"
-              id="is_pinned"
-              checked={formData.is_pinned}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  is_pinned: e.target.checked,
-                }))
-              }
-              className={styles.checkbox}
-              disabled={loading}
-            />
-            <label htmlFor="is_pinned" className={styles.checkboxLabel}>
-              상단 고정
+          {/* 고정글 설정 */}
+          <div className={styles.formGroup}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={formData.is_pinned}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    is_pinned: e.target.checked,
+                  }))
+                }
+                className={styles.checkbox}
+                disabled={loading}
+              />
+              <span>고정글으로 설정</span>
             </label>
           </div>
 
-          <div>
-            <label className="block text-base font-semibold text-gray-800 mb-3">
-              파일 첨부
-            </label>
-            <div className="space-y-3">
-              {/* 파일 업로드 버튼 */}
-              <div className="flex items-center space-x-3">
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileAttach}
-                  className="hidden"
-                  id="file-upload"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif"
-                  disabled={loading}
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg cursor-pointer transition-colors border border-gray-300"
-                >
-                  파일 선택
-                </label>
-                <span className="text-sm text-gray-500">
-                  최대 5개, 총 10MB까지 (PDF, Word, Excel, PPT, 이미지 등)
-                </span>
-              </div>
+          {/* 파일 첨부 */}
+          <div className={styles.formGroup}>
+            <label className={styles.label}>파일 첨부</label>
+            <input
+              type="file"
+              onChange={handleFileAttach}
+              multiple
+              className={styles.fileInput}
+              disabled={loading}
+            />
+            <p className={styles.fileHelp}>
+              최대 5개 파일, 총 10MB까지 첨부 가능합니다.
+            </p>
 
-              {/* 첨부된 파일 목록 */}
-              {attachedFiles.length > 0 && (
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">
-                    첨부된 파일 ({attachedFiles.length}개)
-                  </h4>
-                  <div className="space-y-2">
-                    {attachedFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-gray-200"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <span className="text-blue-600 text-xs font-medium">
-                              {file.name.split(".").pop()?.toUpperCase() ||
-                                "FILE"}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-800 truncate max-w-xs">
-                              {file.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {formatFileSize(file.size)}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleFileRemove(index)}
-                          className="text-red-500 hover:text-red-700 p-1 rounded transition-colors"
-                          disabled={loading}
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
+            {/* 첨부된 파일 목록 */}
+            {attachedFiles.length > 0 && (
+              <div className="space-y-2">
+                {attachedFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-gray-200"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span className="text-blue-600 text-xs font-medium">
+                          {file.name.split(".").pop()?.toUpperCase() || "FILE"}
+                        </span>
                       </div>
-                    ))}
+                      <div>
+                        <p className="text-sm font-medium text-gray-800 truncate max-w-xs">
+                          {file.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {formatFileSize(file.size)}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleFileRemove(index)}
+                      className="text-red-500 hover:text-red-700 p-1 rounded transition-colors"
+                      disabled={loading}
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
                   </div>
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 오류 메시지 */}
@@ -392,5 +356,13 @@ export default function WritePostPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function WritePostPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <WritePostForm />
+    </Suspense>
   );
 }

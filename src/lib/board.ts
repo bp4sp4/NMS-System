@@ -1,12 +1,5 @@
 import { supabase } from "./supabase";
-import {
-  Post,
-  PostAttachment,
-  PostComment,
-  CreatePostData,
-  CreateCommentData,
-} from "@/types/board";
-import { User } from "@/types/user";
+import { Post, CreatePostData, CreateCommentData } from "@/types/board";
 
 // 사용자가 특정 카테고리에 글을 쓸 수 있는지 확인
 export const canWritePost = async (
@@ -33,17 +26,16 @@ export const canWritePost = async (
     if (positionError) return false;
 
     // 3. 해당 카테고리의 직급별 권한 확인
-    const { data: positionPermission, error: positionPermissionError } =
-      await supabase
-        .from("post_category_permissions")
-        .select("*")
-        .eq("category_name", category)
-        .eq("position_id", positionData.position_id)
-        .eq("can_write", true)
-        .single();
+    const { data: positionPermission } = await supabase
+      .from("post_category_permissions")
+      .select("*")
+      .eq("category_name", category)
+      .eq("position_id", positionData.position_id)
+      .eq("can_write", true)
+      .single();
 
     // 4. 해당 카테고리의 팀별 권한 확인 (특별 권한)
-    const { data: teamPermission, error: teamPermissionError } = await supabase
+    const { data: teamPermission } = await supabase
       .from("post_category_permissions")
       .select("*")
       .eq("category_name", category)
@@ -161,9 +153,6 @@ export const getPosts = async (
     );
     const positionNamesMap = new Map(
       positionMaster?.map((pos) => [pos.id, pos.name]) || []
-    );
-    const attachmentsMap = new Map(
-      attachmentsData?.map((att) => [att.post_id, att]) || []
     );
 
     return postsData.map((post) => {
@@ -373,7 +362,7 @@ export const getPostById = async (postId: string): Promise<Post | null> => {
     }
 
     // 댓글 정보 정리 (사용자 정보는 별도로 조회)
-    const formattedComments = [];
+    const formattedComments: any[] = [];
     if (commentsData) {
       for (const comment of commentsData) {
         try {

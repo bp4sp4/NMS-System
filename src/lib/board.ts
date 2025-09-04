@@ -21,6 +21,7 @@ export const canWritePost = async (
       .from("user_positions")
       .select("position_id")
       .eq("user_id", userId)
+      .limit(1)
       .single();
 
     if (positionError) return false;
@@ -296,10 +297,17 @@ export const getPostById = async (postId: string): Promise<Post | null> => {
       .from("user_positions")
       .select("position_id")
       .eq("user_id", postData.author_id)
+      .limit(1)
       .single();
 
     if (positionError) {
       console.error("직급 정보 조회 오류:", positionError);
+      console.error("직급 정보 조회 오류 상세:", {
+        message: positionError.message,
+        details: positionError.details,
+        hint: positionError.hint,
+        code: positionError.code,
+      });
     }
 
     // 4단계: 직급 마스터 정보 조회

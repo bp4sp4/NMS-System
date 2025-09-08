@@ -1,6 +1,6 @@
 // src/lib/sms.js
-const axios = require("axios");
-const crypto = require("crypto");
+import axios from "axios";
+import crypto from "crypto";
 
 export async function sendSMS(phoneNumber, message) {
   try {

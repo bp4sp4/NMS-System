@@ -27,6 +27,11 @@ interface CRMDBData {
   paymentDate: string;
   paymentAmount: number;
   commission: number;
+  // 학점은행제 계약고객용 필드들
+  subjectTheoryCount: number;
+  subjectFaceToFaceCount: number;
+  subjectPracticeCount: number;
+  inflowPath: string;
 }
 
 export default function CRMDBPage() {
@@ -112,6 +117,11 @@ export default function CRMDBPage() {
           paymentDate: item.payment_date || "",
           paymentAmount: item.payment_amount || 0,
           commission: item.commission || 0,
+          // 학점은행제 계약고객용 필드들
+          subjectTheoryCount: item.subject_theory_count || 0,
+          subjectFaceToFaceCount: item.subject_face_to_face_count || 0,
+          subjectPracticeCount: item.subject_practice_count || 0,
+          inflowPath: item.inflow_path || "기타",
         })) || [];
 
       setCrmData(convertedData);
@@ -556,6 +566,8 @@ export default function CRMDBPage() {
                       <th className={styles.tableHeaderCell}>연락처</th>
                       <th className={styles.tableHeaderCell}>학력</th>
                       <th className={styles.tableHeaderCell}>지역</th>
+                      <th className={styles.tableHeaderCell}>유입경로</th>
+                      <th className={styles.tableHeaderCell}>과목분류</th>
                       <th className={styles.tableHeaderCell}>결제일</th>
                       <th className={styles.tableHeaderCell}>금액/수당</th>
                     </tr>
@@ -606,6 +618,35 @@ export default function CRMDBPage() {
                         <td className={styles.tableCell}>{item.contact}</td>
                         <td className={styles.tableCell}>{item.education}</td>
                         <td className={styles.tableCell}>{item.region}</td>
+                        <td className={styles.tableCell}>
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            {item.inflowPath}
+                          </span>
+                        </td>
+                        <td className={styles.tableCell}>
+                          {item.courseType === "학점은행제" &&
+                          item.customerType === "계약고객" ? (
+                            <div className="space-y-1">
+                              <div className="text-xs">
+                                이론: {item.subjectTheoryCount}
+                              </div>
+                              <div className="text-xs">
+                                대면: {item.subjectFaceToFaceCount}
+                              </div>
+                              <div className="text-xs">
+                                실습: {item.subjectPracticeCount}
+                              </div>
+                              <div className="text-xs font-semibold text-blue-600">
+                                총:{" "}
+                                {item.subjectTheoryCount +
+                                  item.subjectFaceToFaceCount +
+                                  item.subjectPracticeCount}
+                              </div>
+                            </div>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
                         <td className={styles.tableCell}>
                           {item.paymentDate || "-"}
                         </td>

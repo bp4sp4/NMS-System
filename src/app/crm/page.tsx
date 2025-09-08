@@ -26,6 +26,11 @@ interface CRMData {
   paymentDate: string;
   paymentAmount: number;
   commission: number;
+  // 학점은행제 계약고객용 필드들
+  subjectTheoryCount: number;
+  subjectFaceToFaceCount: number;
+  subjectPracticeCount: number;
+  inflowPath: string;
 }
 
 export default function CRMPage() {
@@ -52,6 +57,11 @@ export default function CRMPage() {
     subRegion: "도봉구",
     paymentDate: "",
     paymentAmount: "",
+    // 학점은행제 계약고객용 필드들
+    subjectTheoryCount: 0,
+    subjectFaceToFaceCount: 0,
+    subjectPracticeCount: 0,
+    inflowPath: "기타",
   });
 
   const [crmData, setCrmData] = useState<CRMData[]>([]);
@@ -96,6 +106,11 @@ export default function CRMPage() {
           paymentDate: item.payment_date || "",
           paymentAmount: item.payment_amount || 0,
           commission: item.commission || 0,
+          // 학점은행제 계약고객용 필드들
+          subjectTheoryCount: item.subject_theory_count || 0,
+          subjectFaceToFaceCount: item.subject_face_to_face_count || 0,
+          subjectPracticeCount: item.subject_practice_count || 0,
+          inflowPath: item.inflow_path || "기타",
         })) || [];
 
       setCrmData(convertedData);
@@ -294,6 +309,23 @@ export default function CRMPage() {
             payment_amount:
               formData.customerType === "계약고객" ? paymentAmount : 0,
             commission: formData.customerType === "계약고객" ? commission : 0,
+            // 학점은행제 계약고객일 때만 과목분류 정보 저장
+            subject_theory_count:
+              formData.customerType === "계약고객" &&
+              formData.courseType === "학점은행제"
+                ? formData.subjectTheoryCount
+                : 0,
+            subject_face_to_face_count:
+              formData.customerType === "계약고객" &&
+              formData.courseType === "학점은행제"
+                ? formData.subjectFaceToFaceCount
+                : 0,
+            subject_practice_count:
+              formData.customerType === "계약고객" &&
+              formData.courseType === "학점은행제"
+                ? formData.subjectPracticeCount
+                : 0,
+            inflow_path: formData.inflowPath,
           })
           .select()
           .single();
@@ -320,6 +352,10 @@ export default function CRMPage() {
           subRegion: "도봉구",
           paymentDate: "",
           paymentAmount: "",
+          subjectTheoryCount: 0,
+          subjectFaceToFaceCount: 0,
+          subjectPracticeCount: 0,
+          inflowPath: "기타",
         });
 
         alert("고객 정보가 성공적으로 등록되었습니다.");
@@ -352,6 +388,10 @@ export default function CRMPage() {
         subRegion: item.region.split(" ")[1] || "도봉구",
         paymentDate: item.paymentDate,
         paymentAmount: item.paymentAmount.toString(),
+        subjectTheoryCount: item.subjectTheoryCount,
+        subjectFaceToFaceCount: item.subjectFaceToFaceCount,
+        subjectPracticeCount: item.subjectPracticeCount,
+        inflowPath: item.inflowPath,
       });
       setEditingItem(id);
     }
@@ -390,6 +430,23 @@ export default function CRMPage() {
           payment_amount:
             formData.customerType === "계약고객" ? paymentAmount : 0,
           commission: formData.customerType === "계약고객" ? commission : 0,
+          // 학점은행제 계약고객일 때만 과목분류 정보 저장
+          subject_theory_count:
+            formData.customerType === "계약고객" &&
+            formData.courseType === "학점은행제"
+              ? formData.subjectTheoryCount
+              : 0,
+          subject_face_to_face_count:
+            formData.customerType === "계약고객" &&
+            formData.courseType === "학점은행제"
+              ? formData.subjectFaceToFaceCount
+              : 0,
+          subject_practice_count:
+            formData.customerType === "계약고객" &&
+            formData.courseType === "학점은행제"
+              ? formData.subjectPracticeCount
+              : 0,
+          inflow_path: formData.inflowPath,
         })
         .eq("id", editingItem);
 
@@ -415,6 +472,10 @@ export default function CRMPage() {
         subRegion: "도봉구",
         paymentDate: "",
         paymentAmount: "",
+        subjectTheoryCount: 0,
+        subjectFaceToFaceCount: 0,
+        subjectPracticeCount: 0,
+        inflowPath: "기타",
       });
 
       alert("고객 정보가 성공적으로 수정되었습니다.");
@@ -787,6 +848,26 @@ export default function CRMPage() {
                 </div>
               </div>
 
+              {/* 유입경로 */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  유입경로
+                </label>
+                <select
+                  className="w-full bg-white border-0 rounded-xl px-4 py-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                  value={formData.inflowPath}
+                  onChange={(e) =>
+                    setFormData({ ...formData, inflowPath: e.target.value })
+                  }
+                >
+                  <option value="기타">기타</option>
+                  <option value="제휴카페">제휴카페</option>
+                  <option value="블로그">블로그</option>
+                  <option value="인스타">인스타</option>
+                  <option value="유튜브">유튜브</option>
+                </select>
+              </div>
+
               {/* 결제 정보 (계약고객일 때만 표시) */}
               {formData.customerType === "계약고객" && (
                 <>
@@ -831,6 +912,81 @@ export default function CRMPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* 과목분류 (학점은행제 계약고객일 때만 표시) */}
+                  {formData.courseType === "학점은행제" && (
+                    <div className=" ">
+                      <h4 className="text-sm font-semibold  mb-3">
+                        과목분류 (학점은행제)
+                      </h4>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium  mb-1">
+                            이론과목
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-green-500 focus:bg-white transition-all shadow-sm"
+                            value={formData.subjectTheoryCount}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                subjectTheoryCount:
+                                  parseInt(e.target.value) || 0,
+                              })
+                            }
+                            placeholder="0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium  mb-1">
+                            대면과목
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-green-500 focus:bg-white transition-all shadow-sm"
+                            value={formData.subjectFaceToFaceCount}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                subjectFaceToFaceCount:
+                                  parseInt(e.target.value) || 0,
+                              })
+                            }
+                            placeholder="0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium  mb-1">
+                            실습과목
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-green-500 focus:bg-white transition-all shadow-sm"
+                            value={formData.subjectPracticeCount}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                subjectPracticeCount:
+                                  parseInt(e.target.value) || 0,
+                              })
+                            }
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs ">
+                        총 과목수:{" "}
+                        {formData.subjectTheoryCount +
+                          formData.subjectFaceToFaceCount +
+                          formData.subjectPracticeCount}
+                        과목
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -879,6 +1035,10 @@ export default function CRMPage() {
                           subRegion: "도봉구",
                           paymentDate: "",
                           paymentAmount: "",
+                          subjectTheoryCount: 0,
+                          subjectFaceToFaceCount: 0,
+                          subjectPracticeCount: 0,
+                          inflowPath: "기타",
                         });
                       }}
                       className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-200 transition-all font-semibold shadow-sm"
@@ -1095,6 +1255,12 @@ export default function CRMPage() {
                       지역
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
+                      유입경로
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
+                      과목분류
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
                       결제일
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
@@ -1151,6 +1317,35 @@ export default function CRMPage() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.region}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          {item.inflowPath}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
+                        {item.courseType === "학점은행제" &&
+                        item.customerType === "계약고객" ? (
+                          <div className="space-y-1">
+                            <div className="text-xs">
+                              이론: {item.subjectTheoryCount}
+                            </div>
+                            <div className="text-xs">
+                              대면: {item.subjectFaceToFaceCount}
+                            </div>
+                            <div className="text-xs">
+                              실습: {item.subjectPracticeCount}
+                            </div>
+                            <div className="text-xs font-semibold text-blue-600">
+                              총:{" "}
+                              {item.subjectTheoryCount +
+                                item.subjectFaceToFaceCount +
+                                item.subjectPracticeCount}
+                            </div>
+                          </div>
+                        ) : (
+                          "-"
+                        )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.paymentDate || "-"}

@@ -1,0 +1,370 @@
+/* 근태현황 페이지 스타일 */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+/* 헤더 */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 20px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #212529;
+    margin: 0;
+}
+
+.dateNavigation {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.navButton {
+    background: none;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 16px;
+    color: #495057;
+    transition: all 0.2s;
+}
+
+.navButton:hover {
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
+}
+
+.currentMonth {
+    font-size: 18px;
+    font-weight: 600;
+    color: #212529;
+    min-width: 100px;
+    text-align: center;
+}
+
+.todayButton {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.todayButton:hover {
+    background-color: #0056b3;
+}
+
+.downloadButton {
+    background: none;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #495057;
+    transition: all 0.2s;
+}
+
+.downloadButton:hover {
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
+}
+
+/* 직원 정보 */
+.employeeInfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    font-size: 16px;
+    color: #495057;
+}
+
+.infoIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    background-color: #6c757d;
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* 통계 카드 */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.statCard {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.statLabel {
+    font-size: 14px;
+    color: #6c757d;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.statValue {
+    font-size: 18px;
+    font-weight: 700;
+    color: #007bff;
+}
+
+/* 주차별 섹션 */
+.weeklySection {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.weekCard {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.weekHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.weekHeader:hover {
+    background-color: #e9ecef;
+}
+
+.weekTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #212529;
+}
+
+.weekIcon {
+    font-size: 14px;
+    color: #007bff;
+}
+
+.weekSummary {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.weekContent {
+    padding: 20px;
+}
+
+/* 테이블 */
+.attendanceTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.attendanceTable th,
+.attendanceTable td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.attendanceTable th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+}
+
+.attendanceTable td {
+    font-size: 14px;
+    color: #212529;
+}
+
+.attendanceTable tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* 타임라인 */
+.timelineSection {
+    margin-top: 20px;
+}
+
+.timelineRow {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+}
+
+.timelineDate {
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    min-width: 60px;
+}
+
+.timeline {
+    flex: 1;
+}
+
+.timelineBar {
+    display: flex;
+    height: 20px;
+    background-color: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.timelineHour {
+    flex: 1;
+    height: 100%;
+    border-right: 1px solid #dee2e6;
+}
+
+.timelineHour:last-child {
+    border-right: none;
+}
+
+.workPeriod {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+}
+
+.nonWorkPeriod {
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(45deg,
+            #f8f9fa,
+            #f8f9fa 2px,
+            #e9ecef 2px,
+            #e9ecef 4px);
+}
+
+.timelineLabels {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.workLabel {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.breakLabel {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* 로딩 */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    font-size: 16px;
+    color: #6c757d;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+
+    .dateNavigation {
+        justify-content: center;
+    }
+
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .statCard {
+        padding: 16px;
+    }
+
+    .weekHeader {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    .attendanceTable {
+        font-size: 12px;
+    }
+
+    .attendanceTable th,
+    .attendanceTable td {
+        padding: 8px;
+    }
+
+    .timelineRow {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .attendanceTable {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}

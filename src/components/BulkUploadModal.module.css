@@ -1,0 +1,620 @@
+/* 일괄등록 모달 스타일 */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.closeButton:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+/* 업로드 단계 */
+.uploadStep {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.uploadArea {
+    text-align: center;
+    padding: 48px 24px;
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    background: #fafafa;
+    transition: all 0.3s;
+}
+
+.uploadArea:hover {
+    border-color: #3b82f6;
+    background: #f0f9ff;
+}
+
+.uploadIcon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.uploadArea h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 8px 0;
+}
+
+.uploadArea p {
+    color: #6b7280;
+    margin: 0 0 24px 0;
+}
+
+.fileInput {
+    display: none;
+}
+
+.uploadButton {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.uploadButton:hover {
+    background: #2563eb;
+}
+
+.templateSection {
+    background: #f3f4f6;
+    padding: 24px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.templateSection h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 8px 0;
+}
+
+.templateSection p {
+    color: #6b7280;
+    margin: 0 0 16px 0;
+    font-size: 14px;
+}
+
+.templateButton {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.templateButton:hover {
+    background: #059669;
+}
+
+.templateButtons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.templateInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.templateInfoItem {
+    padding: 8px 12px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.csvTips {
+    margin-top: 16px;
+    padding: 16px;
+    background: #f0f9ff;
+    border-radius: 8px;
+    border: 1px solid #bae6fd;
+}
+
+.csvTips h5 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0369a1;
+}
+
+.csvTips ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 13px;
+    color: #0c4a6e;
+}
+
+.csvTips li {
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+
+/* 미리보기 단계 */
+.previewStep {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.previewHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.previewHeader h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.previewStats {
+    display: flex;
+    gap: 16px;
+    font-size: 14px;
+}
+
+.errorCount {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.errorSection {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.errorSection h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #dc2626;
+    margin: 0 0 12px 0;
+}
+
+.errorList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.errorItem {
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+    padding: 8px;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid #fecaca;
+}
+
+.errorRow {
+    color: #dc2626;
+    font-weight: 600;
+    min-width: 40px;
+}
+
+.errorField {
+    color: #7f1d1d;
+    font-weight: 500;
+    min-width: 80px;
+}
+
+.errorMessage {
+    color: #991b1b;
+}
+
+.previewTable {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.previewTable {
+    overflow-x: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.previewTable table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1400px;
+    table-layout: auto;
+}
+
+.previewTable th,
+.previewTable td {
+    padding: 8px 6px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+    border-right: 1px solid #f3f4f6;
+    font-size: 12px;
+    white-space: nowrap !important;
+    min-width: fit-content;
+    overflow: visible;
+    word-break: keep-all;
+    line-height: 1.2;
+}
+
+/* 과목분류 스타일 */
+.subjectClassification {
+    white-space: nowrap !important;
+    font-size: 12px;
+    color: #495057;
+    display: inline-block;
+    min-width: max-content;
+}
+
+/* 금액/수당 스타일 */
+.paymentInfo {
+    white-space: nowrap !important;
+    font-size: 12px;
+    color: #495057;
+    display: inline-block;
+    min-width: max-content;
+}
+
+/* 컬럼별 너비는 내용에 따라 자동 조정 */
+
+/* 유입경로 */
+
+.previewTable th {
+    background: #f9fafb !important;
+    font-weight: 600 !important;
+    color: #374151 !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1 !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+    word-break: keep-all !important;
+    line-height: 1.2 !important;
+    height: auto !important;
+    min-height: 40px !important;
+}
+
+.previewTable td {
+    color: #111827;
+}
+
+.previewTable th:last-child,
+.previewTable td:last-child {
+    border-right: none;
+}
+
+.customerType {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.contractCustomer {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.prospectCustomer {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.inflowPath {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    font-size: 11px;
+    color: #374151;
+}
+
+.moreData {
+    text-align: center;
+    padding: 12px;
+    color: #6b7280;
+    font-size: 14px;
+    margin: 0;
+    background: #f9fafb;
+}
+
+.previewActions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.backButton {
+    background: #f3f4f6;
+    color: #374151;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.backButton:hover {
+    background: #e5e7eb;
+}
+
+.submitButton {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.submitButton:hover:not(:disabled) {
+    background: #2563eb;
+}
+
+.submitButton:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* 처리 중 단계 */
+.processingStep {
+    text-align: center;
+    padding: 48px 24px;
+}
+
+.processingIcon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.processingStep h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 8px 0;
+}
+
+.processingStep p {
+    color: #6b7280;
+    margin: 0;
+}
+
+/* 결과 단계 */
+.resultStep {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.resultHeader {
+    text-align: center;
+    padding: 24px;
+    background: #f0f9ff;
+    border-radius: 12px;
+    border: 1px solid #bae6fd;
+}
+
+.resultHeader h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 16px 0;
+}
+
+.resultStats {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+}
+
+.successStat,
+.failedStat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.statNumber {
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.successStat .statNumber {
+    color: #10b981;
+}
+
+.failedStat .statNumber {
+    color: #dc2626;
+}
+
+.statLabel {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.resultActions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.closeResultButton {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.closeResultButton:hover {
+    background: #2563eb;
+}
+
+.uploadMoreButton {
+    background: #f3f4f6;
+    color: #374151;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.uploadMoreButton:hover {
+    background: #e5e7eb;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .modal {
+        width: 95%;
+        margin: 20px;
+    }
+
+    .content {
+        padding: 16px;
+    }
+
+    .uploadArea {
+        padding: 32px 16px;
+    }
+
+    .previewHeader {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .previewStats {
+        align-self: flex-end;
+    }
+
+    .previewActions {
+        flex-direction: column;
+    }
+
+    .resultStats {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .resultActions {
+        flex-direction: column;
+    }
+
+    .templateButtons {
+        flex-direction: column;
+    }
+
+    .templateInfo {
+        font-size: 12px;
+    }
+
+    .previewTable table {
+        min-width: 1000px;
+    }
+
+    .previewTable th,
+    .previewTable td {
+        padding: 6px 4px;
+        font-size: 11px;
+    }
+
+    /* 모바일에서도 컬럼 너비는 내용에 따라 자동 조정 */
+}

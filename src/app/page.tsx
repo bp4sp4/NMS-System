@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import Header from "@/components/Navigation";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { getRecentPosts } from "@/lib/board";
+import { checkIn, checkOut, getTodayAttendance } from "@/lib/attendance";
+import type { Attendance } from "@/types/attendance";
 import {
   Clock,
   Mail,
@@ -46,6 +48,15 @@ export default function HomePage() {
   const [recentPosts, setRecentPosts] = useState<Post[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("전체");
+  const [todayAttendance, setTodayAttendance] = useState<Attendance | null>(
+    null
+  );
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
   const [dashboardData] = useState<DashboardData>({
     todayEmails: 0,
     pendingDocuments: 0,
@@ -80,6 +91,36 @@ export default function HomePage() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // 오늘 출근 기록 가져오기
+  useEffect(() => {
+    const fetchTodayAttendance = async () => {
+      if (!user) return;
+
+      try {
+        const attendance = await getTodayAttendance(user.id);
+        setTodayAttendance(attendance);
+      } catch (error) {
+        console.error("오늘 출근 기록 조회 오류:", error);
+        setMessage({
+          type: "error",
+          text: "출근 기록을 불러오는 중 오류가 발생했습니다.",
+        });
+      }
+    };
+
+    fetchTodayAttendance();
+  }, [user]);
+
+  // 메시지 자동 제거
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
 
   // 최근 게시글 가져오기
   useEffect(() => {
@@ -141,14 +182,54 @@ export default function HomePage() {
     return `${year}년 ${month}월 ${day}일 (${weekday}) ${hours}:${minutes}:${seconds}`;
   };
 
-  const handleCheckIn = () => {
-    setCurrentTime(new Date());
-    // 출근 처리 로직
+  const handleCheckIn = async () => {
+    if (!user) return;
+
+    setAttendanceLoading(true);
+    try {
+      const result = await checkIn(user.id);
+
+      if (result.success) {
+        setTodayAttendance(result.data || null);
+        setMessage({ type: "success", text: "출근이 완료되었습니다!" });
+        setCurrentTime(new Date());
+      } else {
+        setMessage({
+          type: "error",
+          text: result.error || "출근 처리 중 오류가 발생했습니다.",
+        });
+      }
+    } catch (error) {
+      console.error("출근 처리 오류:", error);
+      setMessage({ type: "error", text: "출근 처리 중 오류가 발생했습니다." });
+    } finally {
+      setAttendanceLoading(false);
+    }
   };
 
-  const handleCheckOut = () => {
-    setCurrentTime(new Date());
-    // 퇴근 처리 로직
+  const handleCheckOut = async () => {
+    if (!user) return;
+
+    setAttendanceLoading(true);
+    try {
+      const result = await checkOut(user.id);
+
+      if (result.success) {
+        setTodayAttendance(result.data || null);
+        setMessage({ type: "success", text: "퇴근이 완료되었습니다!" });
+        setCurrentTime(new Date());
+      } else {
+        setMessage({
+          type: "error",
+          text: result.error || "퇴근 처리 중 오류가 발생했습니다.",
+        });
+      }
+    } catch (error) {
+      console.error("퇴근 처리 오류:", error);
+      setMessage({ type: "error", text: "퇴근 처리 중 오류가 발생했습니다." });
+    } finally {
+      setAttendanceLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -173,9 +254,97 @@ export default function HomePage() {
     );
   }
 
+  // 출근 상태에 따른 UI 데이터 계산
+  const getAttendanceDisplayData = () => {
+    if (!todayAttendance) {
+      return {
+        clockInTime: "미등록",
+        clockOutTime: "미등록",
+        workHours: "0h 0m",
+        isClockedIn: false,
+        canCheckIn: true,
+        canCheckOut: false,
+        status: "미출근",
+        progressPercentage: 0,
+        currentWorkHours: 0,
+      };
+    }
+
+    const clockInTime = todayAttendance.check_in_time
+      ? new Date(todayAttendance.check_in_time).toLocaleTimeString("ko-KR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "미등록";
+
+    const clockOutTime = todayAttendance.check_out_time
+      ? new Date(todayAttendance.check_out_time).toLocaleTimeString("ko-KR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "미등록";
+
+    // 현재 근무시간 계산
+    let currentWorkHours = 0;
+    if (todayAttendance.work_hours) {
+      // 퇴근한 경우
+      currentWorkHours = todayAttendance.work_hours;
+    } else if (todayAttendance.check_in_time) {
+      // 출근했지만 퇴근하지 않은 경우 - 실시간 계산
+      const checkInTime = new Date(todayAttendance.check_in_time);
+      const now = new Date();
+      currentWorkHours =
+        (now.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
+    }
+
+    const workHours = `${Math.floor(currentWorkHours)}h ${Math.round(
+      (currentWorkHours % 1) * 60
+    )}m`;
+
+    // 진행률 계산 (8시간 기준)
+    const progressPercentage = Math.min((currentWorkHours / 8) * 100, 100);
+
+    const isClockedIn = !!todayAttendance.check_in_time;
+    const isClockedOut = !!todayAttendance.check_out_time;
+
+    return {
+      clockInTime,
+      clockOutTime,
+      workHours,
+      isClockedIn,
+      canCheckIn: !isClockedIn,
+      canCheckOut: isClockedIn && !isClockedOut,
+      status:
+        todayAttendance.status === "present"
+          ? "정상 출근"
+          : todayAttendance.status === "late"
+          ? "지각"
+          : todayAttendance.status === "early_leave"
+          ? "조기 퇴근"
+          : "결근",
+      progressPercentage,
+      currentWorkHours,
+    };
+  };
+
+  const attendanceData = getAttendanceDisplayData();
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+
+      {/* 메시지 표시 */}
+      {message && (
+        <div
+          className={`fixed top-20 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg ${
+            message.type === "success"
+              ? "bg-green-500 text-white"
+              : "bg-red-500 text-white"
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -231,19 +400,28 @@ export default function HomePage() {
                   {formatDate(currentTime)}
                 </p>
                 <div className="text-3xl font-bold text-blue-600 mb-2">
-                  {dashboardData.workHours}
+                  {attendanceData.workHours}
+                </div>
+                <div className="text-sm text-gray-500 mb-2">
+                  상태: {attendanceData.status}
                 </div>
 
                 {/* 근무 시간 진행률 */}
                 <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
                   <div
-                    className="bg-blue-500 h-2 rounded-full"
-                    style={{ width: "65%" }}
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      attendanceData.progressPercentage >= 100
+                        ? "bg-green-500"
+                        : attendanceData.progressPercentage >= 80
+                        ? "bg-blue-500"
+                        : "bg-orange-500"
+                    }`}
+                    style={{ width: `${attendanceData.progressPercentage}%` }}
                   ></div>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500">
-                  <span>최소 40h</span>
-                  <span>최대 52h</span>
+                  <span>0h</span>
+                  <span>8h (목표)</span>
                 </div>
               </div>
 
@@ -251,13 +429,13 @@ export default function HomePage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">출근시간</span>
                   <span className="font-medium">
-                    {dashboardData.clockInTime}
+                    {attendanceData.clockInTime}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">퇴근시간</span>
                   <span className="font-medium">
-                    {dashboardData.clockOutTime}
+                    {attendanceData.clockOutTime}
                   </span>
                 </div>
               </div>
@@ -265,23 +443,26 @@ export default function HomePage() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleCheckIn}
-                  disabled={dashboardData.isClockedIn}
+                  disabled={!attendanceData.canCheckIn || attendanceLoading}
                   className="bg-blue-500 text-white py-3 px-4 rounded-xl font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  출근하기
+                  {attendanceLoading ? "처리 중..." : "출근하기"}
                 </button>
                 <button
                   onClick={handleCheckOut}
-                  disabled={!dashboardData.isClockedIn}
+                  disabled={!attendanceData.canCheckOut || attendanceLoading}
                   className="bg-gray-500 text-white py-3 px-4 rounded-xl font-semibold hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  퇴근하기
+                  {attendanceLoading ? "처리 중..." : "퇴근하기"}
                 </button>
               </div>
 
-              <button className="w-full mt-3 bg-gray-100 text-gray-700 py-2 px-4 rounded-xl font-medium hover:bg-gray-200 transition-colors">
-                상태변경
-              </button>
+              <Link
+                href="/attendance"
+                className="w-full mt-3 bg-gray-100 text-gray-700 py-2 px-4 rounded-xl font-medium hover:bg-gray-200 transition-colors text-center block"
+              >
+                출근관리 상세보기
+              </Link>
             </div>
 
             {/* 진행중인 설문 */}

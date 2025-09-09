@@ -106,10 +106,9 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div className={styles.footer}>
-          <span className={styles.footerText}>아직 회원이 아닌가요? </span>
-          <Link href="/auth/register" className={styles.footerLink}>
-            가입하기
-          </Link>
+          <span className={styles.footerText}>
+            로그인에 문제가 있으시면 관리자에게 문의하세요.
+          </span>
         </div>
       </div>
     </div>

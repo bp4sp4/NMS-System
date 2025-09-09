@@ -139,6 +139,12 @@ export default function Navigation() {
               >
                 게시판
               </Link>
+              <Link
+                href="/attendance"
+                className={`${styles.menuLink} ${styles.menuLinkInactive}`}
+              >
+                출근관리
+              </Link>
               {isAdmin && (
                 <Link
                   href="/admin"
@@ -285,6 +291,9 @@ export default function Navigation() {
           </div>
           <Link href="/ranking" className={styles.mobileMenuItem}>
             랭킹
+          </Link>
+          <Link href="/attendance" className={styles.mobileMenuItem}>
+            출근관리
           </Link>
           {isAdmin && (
             <Link href="/admin" className={styles.mobileMenuItem}>

@@ -4,6 +4,7 @@ import { useAuth } from "@/components/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Header from "@/components/Navigation";
+import BulkUploadModal from "@/components/BulkUploadModal";
 import { supabase } from "@/lib/supabase";
 
 interface CRMData {
@@ -44,6 +45,7 @@ export default function CRMPage() {
   const [selectAll, setSelectAll] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingItem, setEditingItem] = useState<string | null>(null);
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     customerType: "가망고객",
@@ -368,8 +370,7 @@ export default function CRMPage() {
 
   // 일괄등록 처리
   const handleBulkSubmit = () => {
-    // 일괄등록 로직 (예시)
-    alert("일괄등록 기능은 추후 구현 예정입니다.");
+    setIsBulkUploadOpen(true);
   };
 
   // 수정 기능
@@ -1189,15 +1190,20 @@ export default function CRMPage() {
                         // 단일 항목 수정
                         handleEdit(selectedItems[0]);
                       } else {
-                        // 다중 항목 수정 (예시)
-                        alert("다중 수정 기능은 추후 구현 예정입니다.");
+                        // 다중 항목 수정 불가
+                        alert(
+                          "수정은 하나씩만 가능합니다. 하나의 항목만 선택해주세요."
+                        );
                       }
                     }}
-                    className="bg-blue-500 text-white px-6 py-3 rounded-xl hover:bg-blue-600 transition-all font-semibold shadow-sm"
+                    className={`px-6 py-3 rounded-xl transition-all font-semibold shadow-sm ${
+                      selectedItems.length === 1
+                        ? "bg-blue-500 text-white hover:bg-blue-600"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
+                    disabled={selectedItems.length !== 1}
                   >
-                    {selectedItems.length === 1
-                      ? "수정"
-                      : `선택 수정 (${selectedItems.length})`}
+                    수정
                   </button>
                 </>
               )}
@@ -1423,6 +1429,17 @@ export default function CRMPage() {
           )}
         </div>
       </div>
+
+      {/* 일괄등록 모달 */}
+      <BulkUploadModal
+        isOpen={isBulkUploadOpen}
+        onClose={() => setIsBulkUploadOpen(false)}
+        onSuccess={() => {
+          fetchCRMData();
+          setIsBulkUploadOpen(false);
+        }}
+        user={user}
+      />
     </div>
   );
 }

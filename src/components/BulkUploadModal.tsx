@@ -585,10 +585,6 @@ export default function BulkUploadModal({
                   <h5>📋 CSV 파일 사용 팁</h5>
                   <ul>
                     <li>
-                      Excel에서 저장 시 "CSV UTF-8(쉼표로 구분)" 형식으로
-                      저장하세요
-                    </li>
-                    <li>
                       한글이 깨지는 경우 템플릿을 다시 다운로드하여 사용하세요
                     </li>
                     <li>

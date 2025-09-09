@@ -10,32 +10,22 @@ export const canWritePost = async (
     // 1. 사용자의 직급과 팀 정보 조회
     const { data: userData, error: userError } = await supabase
       .from("users")
-      .select("branch, team")
+      .select("branch, team, position_id")
       .eq("id", userId)
       .single();
 
     if (userError) return false;
 
-    // 2. 사용자의 직급 정보 조회
-    const { data: positionData, error: positionError } = await supabase
-      .from("user_positions")
-      .select("position_id")
-      .eq("user_id", userId)
-      .limit(1)
-      .single();
-
-    if (positionError) return false;
-
-    // 3. 해당 카테고리의 직급별 권한 확인
+    // 2. 해당 카테고리의 직급별 권한 확인
     const { data: positionPermission } = await supabase
       .from("post_category_permissions")
       .select("*")
       .eq("category_name", category)
-      .eq("position_id", positionData.position_id)
+      .eq("position_id", userData.position_id)
       .eq("can_write", true)
       .single();
 
-    // 4. 해당 카테고리의 팀별 권한 확인 (특별 권한)
+    // 3. 해당 카테고리의 팀별 권한 확인 (특별 권한)
     const { data: teamPermission } = await supabase
       .from("post_category_permissions")
       .select("*")
@@ -44,7 +34,7 @@ export const canWritePost = async (
       .eq("can_write", true)
       .single();
 
-    // 5. 둘 중 하나라도 만족하면 작성 가능
+    // 4. 둘 중 하나라도 만족하면 작성 가능
     return !!(positionPermission || teamPermission);
   } catch (error) {
     console.error("권한 확인 오류:", error);
@@ -102,30 +92,20 @@ export const getPosts = async (
       return [];
     }
 
-    // 2단계: 작성자 정보 조회
+    // 2단계: 작성자 정보 조회 (직급 정보 포함)
     const authorIds = [...new Set(postsData.map((post) => post.author_id))];
     const { data: usersData, error: usersError } = await supabase
       .from("users")
-      .select("id, name, branch, team")
+      .select("id, name, branch, team, position_id")
       .in("id", authorIds);
 
     if (usersError) {
       console.error("사용자 정보 조회 오류:", usersError);
     }
 
-    // 3단계: 직급 정보 조회
-    const { data: positionsData, error: positionsError } = await supabase
-      .from("user_positions")
-      .select("user_id, position_id")
-      .in("user_id", authorIds);
-
-    if (positionsError) {
-      console.error("직급 정보 조회 오류:", positionsError);
-    }
-
-    // 4단계: 직급 마스터 정보 조회
+    // 3단계: 직급 마스터 정보 조회
     const positionIds =
-      positionsData?.map((p) => p.position_id).filter(Boolean) || [];
+      usersData?.map((u) => u.position_id).filter(Boolean) || [];
     const { data: positionMaster, error: masterError } = await supabase
       .from("positions")
       .select("id, name")
@@ -149,16 +129,13 @@ export const getPosts = async (
 
     // 6단계: 데이터 매칭 및 변환
     const usersMap = new Map(usersData?.map((user) => [user.id, user]) || []);
-    const positionsMap = new Map(
-      positionsData?.map((pos) => [pos.user_id, pos.position_id]) || []
-    );
     const positionNamesMap = new Map(
       positionMaster?.map((pos) => [pos.id, pos.name]) || []
     );
 
     return postsData.map((post) => {
       const user = usersMap.get(post.author_id);
-      const positionId = positionsMap.get(post.author_id);
+      const positionId = user?.position_id;
       const positionName = positionId ? positionNamesMap.get(positionId) : null;
       const attachments =
         attachmentsData?.filter((att) => att.post_id === post.id) || [];
@@ -281,10 +258,10 @@ export const getPostById = async (postId: string): Promise<Post | null> => {
       return null;
     }
 
-    // 2단계: 작성자 정보 조회
+    // 2단계: 작성자 정보 조회 (직급 정보 포함)
     const { data: userData, error: userError } = await supabase
       .from("users")
-      .select("id, name, branch, team")
+      .select("id, name, branch, team, position_id")
       .eq("id", postData.author_id)
       .single();
 
@@ -292,31 +269,13 @@ export const getPostById = async (postId: string): Promise<Post | null> => {
       console.error("사용자 정보 조회 오류:", userError);
     }
 
-    // 3단계: 직급 정보 조회
-    const { data: positionData, error: positionError } = await supabase
-      .from("user_positions")
-      .select("position_id")
-      .eq("user_id", postData.author_id)
-      .limit(1)
-      .single();
-
-    if (positionError) {
-      console.error("직급 정보 조회 오류:", positionError);
-      console.error("직급 정보 조회 오류 상세:", {
-        message: positionError.message,
-        details: positionError.details,
-        hint: positionError.hint,
-        code: positionError.code,
-      });
-    }
-
-    // 4단계: 직급 마스터 정보 조회
+    // 3단계: 직급 마스터 정보 조회
     let positionName = null;
-    if (positionData?.position_id) {
+    if (userData?.position_id) {
       const { data: masterData, error: masterError } = await supabase
         .from("positions")
         .select("name")
-        .eq("id", positionData.position_id)
+        .eq("id", userData.position_id)
         .single();
 
       if (masterError) {

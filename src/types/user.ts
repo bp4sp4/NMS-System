@@ -1,3 +1,10 @@
+export interface Position {
+  id: number;
+  name: string;
+  level: number;
+  description: string;
+}
+
 export interface User {
   avatar: null;
   id: string;
@@ -6,6 +13,8 @@ export interface User {
   branch: string;
   team: string;
   position?: string | null;
+  position_id?: number | null;
+  positions?: Position | null;
   hire_date?: string | null;
   bank?: string | null;
   bank_account?: string | null;

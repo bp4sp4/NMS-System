@@ -57,6 +57,9 @@ export default function HomePage() {
     text: string;
   } | null>(null);
 
+  // 프리랜서 여부 확인
+  const isFreelancer = user?.position === "프리랜서";
+
   const [dashboardData] = useState<DashboardData>({
     todayEmails: 0,
     pendingDocuments: 0,
@@ -389,81 +392,83 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 근태관리 카드 */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                근태관리
-              </h3>
+            {/* 근태관리 카드 - 프리랜서가 아닌 경우에만 표시 */}
+            {!isFreelancer && (
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  근태관리
+                </h3>
 
-              <div className="text-center mb-6">
-                <p className="text-sm text-gray-600 mb-2">
-                  {formatDate(currentTime)}
-                </p>
-                <div className="text-3xl font-bold text-blue-600 mb-2">
-                  {attendanceData.workHours}
-                </div>
-                <div className="text-sm text-gray-500 mb-2">
-                  상태: {attendanceData.status}
+                <div className="text-center mb-6">
+                  <p className="text-sm text-gray-600 mb-2">
+                    {formatDate(currentTime)}
+                  </p>
+                  <div className="text-3xl font-bold text-blue-600 mb-2">
+                    {attendanceData.workHours}
+                  </div>
+                  <div className="text-sm text-gray-500 mb-2">
+                    상태: {attendanceData.status}
+                  </div>
+
+                  {/* 근무 시간 진행률 */}
+                  <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                    <div
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        attendanceData.progressPercentage >= 100
+                          ? "bg-green-500"
+                          : attendanceData.progressPercentage >= 80
+                          ? "bg-blue-500"
+                          : "bg-orange-500"
+                      }`}
+                      style={{ width: `${attendanceData.progressPercentage}%` }}
+                    ></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>0h</span>
+                    <span>8h (목표)</span>
+                  </div>
                 </div>
 
-                {/* 근무 시간 진행률 */}
-                <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-                  <div
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      attendanceData.progressPercentage >= 100
-                        ? "bg-green-500"
-                        : attendanceData.progressPercentage >= 80
-                        ? "bg-blue-500"
-                        : "bg-orange-500"
-                    }`}
-                    style={{ width: `${attendanceData.progressPercentage}%` }}
-                  ></div>
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">출근시간</span>
+                    <span className="font-medium">
+                      {attendanceData.clockInTime}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">퇴근시간</span>
+                    <span className="font-medium">
+                      {attendanceData.clockOutTime}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>0h</span>
-                  <span>8h (목표)</span>
-                </div>
-              </div>
 
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">출근시간</span>
-                  <span className="font-medium">
-                    {attendanceData.clockInTime}
-                  </span>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={handleCheckIn}
+                    disabled={!attendanceData.canCheckIn || attendanceLoading}
+                    className="bg-blue-500 text-white py-3 px-4 rounded-xl font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {attendanceLoading ? "처리 중..." : "출근하기"}
+                  </button>
+                  <button
+                    onClick={handleCheckOut}
+                    disabled={!attendanceData.canCheckOut || attendanceLoading}
+                    className="bg-gray-500 text-white py-3 px-4 rounded-xl font-semibold hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {attendanceLoading ? "처리 중..." : "퇴근하기"}
+                  </button>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">퇴근시간</span>
-                  <span className="font-medium">
-                    {attendanceData.clockOutTime}
-                  </span>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={handleCheckIn}
-                  disabled={!attendanceData.canCheckIn || attendanceLoading}
-                  className="bg-blue-500 text-white py-3 px-4 rounded-xl font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                <Link
+                  href="/attendance"
+                  className="w-full mt-3 bg-gray-100 text-gray-700 py-2 px-4 rounded-xl font-medium hover:bg-gray-200 transition-colors text-center block"
                 >
-                  {attendanceLoading ? "처리 중..." : "출근하기"}
-                </button>
-                <button
-                  onClick={handleCheckOut}
-                  disabled={!attendanceData.canCheckOut || attendanceLoading}
-                  className="bg-gray-500 text-white py-3 px-4 rounded-xl font-semibold hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {attendanceLoading ? "처리 중..." : "퇴근하기"}
-                </button>
+                  출근관리 상세보기
+                </Link>
               </div>
-
-              <Link
-                href="/attendance"
-                className="w-full mt-3 bg-gray-100 text-gray-700 py-2 px-4 rounded-xl font-medium hover:bg-gray-200 transition-colors text-center block"
-              >
-                출근관리 상세보기
-              </Link>
-            </div>
+            )}
 
             {/* 진행중인 설문 */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">

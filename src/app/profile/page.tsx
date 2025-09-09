@@ -43,6 +43,7 @@ export default function ProfilePage() {
   });
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [imageLoadError, setImageLoadError] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -50,7 +51,6 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("basic");
 
   useEffect(() => {
-    // isLoading이 false가 될 때까지 기다림
     if (isLoading) {
       return;
     }
@@ -62,46 +62,29 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      // 기본 정보 설정
-      setFormData({
-        name: user.name || "",
-        branch: user.branch || "",
-        team: user.team || "",
-        hireDate: user.hire_date || "",
-        bank: user.bank || "",
-        bankAccount: user.bank_account || "",
-        address: user.address || "",
-        residentNumber: user.resident_number || "",
-        emergencyContact: user.emergency_contact || "",
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-      setAvatarUrl(user.avatar || null);
-
-      // 프로필 정보 직접 조회 (로그인과 독립적으로)
       const fetchProfileData = async () => {
         try {
-          // 기본 사용자 정보 조회
+          console.log("Fetching data for user:", user.id);
+
           const { data: userData, error: userError } = await supabase
             .from("users")
             .select("*")
             .eq("id", user.id)
             .single();
 
+          console.log("User data:", userData, "User error:", userError);
+
           let { data: profileData } = await supabase
             .from("user_profiles")
             .select("*")
             .eq("user_id", user.id)
             .single();
-          const { error: profileError } = await supabase
-            .from("user_profiles")
-            .select("*")
-            .eq("user_id", user.id)
-            .single();
+
+          console.log("Profile data:", profileData);
 
           // user_profiles에 레코드가 없는 경우 생성
-          if (profileError && profileError.code === "PGRST116") {
+          if (!profileData && !userError) {
+            // profileData가 없고 userError도 없을 때만 생성 시도
             const { data: newProfile, error: insertError } = await supabase
               .from("user_profiles")
               .insert({
@@ -119,51 +102,53 @@ export default function ProfilePage() {
               .select()
               .single();
 
-            if (insertError) {
-              profileData = null;
-            } else {
+            if (!insertError) {
               profileData = newProfile;
+            } else {
+              console.error("Error creating user profile:", insertError);
+              // profileData는 null로 유지
             }
-          } else if (profileError) {
-            profileData = null;
+          } else if (profileData && userError) {
+            // profileData는 있는데 userError가 있는 경우
+            console.error("Error fetching user data:", userError);
+            // profileData는 그대로 사용
+          } else if (!profileData && userError) {
+            // profileData도 없고 userError도 있는 경우
+            console.error("Error fetching user and profile data:", userError);
+            // profileData는 null로 유지
           }
 
-          if (!userError && userData) {
-            setFormData((prevData) => {
-              const newProfileData = {
-                name: userData.name || prevData.name,
-                branch: userData.branch || prevData.branch,
-                team: userData.team || prevData.team,
-              };
+          // userData가 있으면 설정, 없으면 기본값 사용
+          setFormData((prevData) => ({
+            ...prevData,
+            name: userData?.name || "",
+            branch: userData?.branch || "",
+            team: userData?.team || "",
+            hireDate: profileData?.hire_date || prevData.hireDate,
+            bank: profileData?.bank || prevData.bank,
+            bankAccount: profileData?.bank_account || prevData.bankAccount,
+            address: profileData?.address || prevData.address,
+            residentNumber:
+              profileData?.resident_number || prevData.residentNumber,
+            emergencyContact:
+              profileData?.emergency_contact || prevData.emergencyContact,
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+          }));
 
-              if (profileData) {
-                Object.assign(newProfileData, {
-                  hireDate: profileData.hire_date || prevData.hireDate,
-                  bank: profileData.bank || prevData.bank,
-                  bankAccount: profileData.bank_account || prevData.bankAccount,
-                  address: profileData.address || prevData.address,
-                  residentNumber:
-                    profileData.resident_number || prevData.residentNumber,
-                  emergencyContact:
-                    profileData.emergency_contact || prevData.emergencyContact,
-                });
-              }
-
-              return {
-                ...prevData,
-                ...newProfileData,
-                currentPassword: "",
-                newPassword: "",
-                confirmPassword: "",
-              };
-            });
-
-            if (profileData) {
-              setAvatarUrl(profileData.avatar || null);
-            }
+          if (profileData?.avatar) {
+            // Supabase Storage URL에 캐시 파괴자를 추가하여 새로고침 시 이미지 업데이트 보장
+            setAvatarUrl(`${profileData.avatar}?t=${Date.now()}`);
+          } else {
+            setAvatarUrl(null); // avatar가 없으면 null로 설정
           }
         } catch (error) {
           console.error("Profile fetch error:", error);
+          setMessage({
+            type: "error",
+            text: "프로필 정보를 불러오는 데 실패했습니다.",
+          });
         }
       };
 
@@ -177,15 +162,24 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
-    // 파일 크기 제한 (5MB)
     if (file.size > 5 * 1024 * 1024) {
       setMessage({ type: "error", text: "파일 크기는 5MB 이하여야 합니다." });
       return;
     }
 
-    // 파일 타입 확인
-    if (!file.type.startsWith("image/")) {
-      setMessage({ type: "error", text: "이미지 파일만 업로드 가능합니다." });
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+
+    // MIME 타입 정규화 (image/jpg -> image/jpeg)
+    let normalizedMimeType = file.type;
+    if (file.type === "image/jpg") {
+      normalizedMimeType = "image/jpeg";
+    }
+
+    if (!allowedTypes.includes(normalizedMimeType)) {
+      setMessage({
+        type: "error",
+        text: `지원하지 않는 파일 형식입니다. JPEG, PNG, GIF, WebP만 업로드 가능합니다. (현재: ${file.type})`,
+      });
       return;
     }
 
@@ -195,58 +189,54 @@ export default function ProfilePage() {
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = fileName; // avatars/ 접두사 제거
 
-      // 1. Supabase Storage에 파일 업로드
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
+      console.log("업로드할 파일 정보:", {
+        fileName,
+        fileType: file.type,
+        normalizedMimeType,
+        fileSize: file.size,
+      });
 
-      if (uploadError) {
-        console.error("Storage 업로드 오류:", uploadError);
+      // 모든 파일을 Blob으로 변환하여 MIME 타입을 확실히 설정
+      console.log(
+        `원본 파일 타입: ${file.type}, 정규화된 타입: ${normalizedMimeType}`
+      );
+      const arrayBuffer = await file.arrayBuffer();
+      const fileToUpload = new Blob([arrayBuffer], {
+        type: normalizedMimeType,
+      });
 
-        // RLS 정책 오류인 경우 대안 방법 제시
-        if (uploadError.message.includes("row-level security")) {
-          setMessage({
-            type: "error",
-            text: "Storage 권한 설정이 필요합니다. 관리자에게 문의하거나 임시로 기본 아바타를 사용하세요.",
-          });
+      console.log(`변환된 Blob 타입: ${fileToUpload.type}`);
 
-          // 임시로 기본 아바타 설정
-          const defaultAvatar =
-            "https://via.placeholder.com/150x150?text=Avatar";
-          setAvatarUrl(defaultAvatar);
+      // 인증 상태 확인
+      console.log("사용자 ID:", user?.id);
 
-          // 데이터베이스에 기본 아바타 저장
-          const { error: updateError } = await supabase
-            .from("user_profiles")
-            .update({
-              avatar: defaultAvatar,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("user_id", user.id);
-
-          if (!updateError) {
-            setMessage({
-              type: "success",
-              text: "기본 아바타가 설정되었습니다. Storage 설정 후 다시 시도하세요.",
-            });
-          }
-          return;
-        }
-
-        throw new Error(`파일 업로드 실패: ${uploadError.message}`);
+      if (!user) {
+        throw new Error("로그인 세션이 없습니다. 다시 로그인해주세요.");
       }
 
-      // 2. 공개 URL 가져오기
+      // Supabase Storage API를 직접 사용하여 업로드
+      const { data, error } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, fileToUpload, {
+          contentType: normalizedMimeType, // MIME 타입 명시
+          cacheControl: "3600",
+          upsert: true, // 같은 파일명이 있어도 덮어쓰기
+        });
+
+      if (error) {
+        console.error("Storage 업로드 오류:", error);
+        throw new Error(`파일 업로드 실패: ${error.message}`);
+      }
+
+      console.log("Storage 업로드 성공:", data);
+
+      // 공개 URL 가져오기
       const {
         data: { publicUrl },
-      } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      } = supabase.storage.from("avatars").getPublicUrl(fileName);
 
-      // 3. 데이터베이스에 아바타 URL 업데이트 (upsert 방식으로 변경)
+      // 데이터베이스에 아바타 URL 업데이트
       const { error: updateError } = await supabase
         .from("user_profiles")
         .upsert(
@@ -254,14 +244,6 @@ export default function ProfilePage() {
             user_id: user.id,
             avatar: publicUrl,
             updated_at: new Date().toISOString(),
-            // 기존 데이터가 있다면 유지, 없다면 기본값 설정
-            hire_date: null,
-            bank: null,
-            bank_account: null,
-            address: null,
-            resident_number: null,
-            emergency_contact: null,
-            created_at: new Date().toISOString(),
           },
           {
             onConflict: "user_id",
@@ -273,15 +255,13 @@ export default function ProfilePage() {
         throw new Error(`프로필 업데이트 실패: ${updateError.message}`);
       }
 
-      // 4. 로컬 상태 업데이트
-      setAvatarUrl(publicUrl);
-
-      // 5. AuthContext의 사용자 정보 업데이트 (avatar는 별도 처리)
-      // updateUser({ avatar: publicUrl }); // User 타입에 avatar가 없으므로 제거
+      // 캐시 파괴자를 추가하여 URL 변경 시 강제 새로고침
+      const avatarUrlWithCacheBuster = `${publicUrl}?t=${Date.now()}`;
+      setAvatarUrl(avatarUrlWithCacheBuster);
+      setImageLoadError(false); // 이미지 로드 성공 시 에러 상태 리셋
 
       setMessage({ type: "success", text: "프로필 사진이 업로드되었습니다." });
 
-      // 3초 후 성공 메시지 자동 제거
       setTimeout(() => {
         setMessage({ type: "", text: "" });
       }, 3000);
@@ -302,7 +282,6 @@ export default function ProfilePage() {
 
     setIsSaving(true);
     try {
-      // 기본 사용자 정보 업데이트
       const { error: userError } = await supabase
         .from("users")
         .update({
@@ -316,7 +295,6 @@ export default function ProfilePage() {
         throw userError;
       }
 
-      // 개인정보 업데이트 (upsert 방식으로 변경)
       const { error: profileError } = await supabase
         .from("user_profiles")
         .upsert(
@@ -329,9 +307,7 @@ export default function ProfilePage() {
             resident_number: formData.residentNumber,
             emergency_contact: formData.emergencyContact,
             updated_at: new Date().toISOString(),
-            // 기존 데이터가 있다면 유지, 없다면 기본값 설정
-            avatar: avatarUrl,
-            created_at: new Date().toISOString(),
+            avatar: avatarUrl, // 기존 avatarUrl 상태 유지
           },
           {
             onConflict: "user_id",
@@ -344,7 +320,6 @@ export default function ProfilePage() {
 
       setMessage({ type: "success", text: "프로필이 저장되었습니다." });
 
-      // 로컬 상태 업데이트
       setFormData((prev) => ({
         ...prev,
         name: formData.name,
@@ -358,14 +333,12 @@ export default function ProfilePage() {
         emergencyContact: formData.emergencyContact,
       }));
 
-      // AuthContext의 사용자 정보도 업데이트
       updateUser({
         name: formData.name,
         branch: formData.branch,
         team: formData.team,
       });
 
-      // 3초 후 성공 메시지 자동 제거
       setTimeout(() => {
         setMessage({ type: "", text: "" });
       }, 3000);
@@ -394,7 +367,6 @@ export default function ProfilePage() {
     setMessage({ type: "", text: "" });
 
     try {
-      // 비밀번호 변경 로직 (커스텀 인증 시스템)
       const { error } = await supabase
         .from("user_passwords")
         .update({
@@ -409,10 +381,8 @@ export default function ProfilePage() {
         throw error;
       }
 
-      // 성공 메시지 표시
       setMessage({ type: "success", text: "비밀번호가 변경되었습니다." });
 
-      // 폼 초기화
       setFormData({
         ...formData,
         currentPassword: "",
@@ -420,7 +390,6 @@ export default function ProfilePage() {
         confirmPassword: "",
       });
 
-      // 3초 후 성공 메시지 자동 제거
       setTimeout(() => {
         setMessage({ type: "", text: "" });
       }, 3000);
@@ -444,7 +413,6 @@ export default function ProfilePage() {
       <Header />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* 헤더 섹션 */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             개인정보 수정
@@ -452,7 +420,6 @@ export default function ProfilePage() {
           <p className="text-gray-600">프로필 정보와 비밀번호를 관리하세요</p>
         </div>
 
-        {/* 메시지 표시 */}
         {message.text && (
           <div
             className={`mb-6 p-4 rounded-lg ${
@@ -465,7 +432,6 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* 토스 스타일 탭 네비게이션 */}
         <div className="mb-8">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
@@ -512,20 +478,30 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* 탭 콘텐츠 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          {/* 기본정보 수정 탭 */}
           {activeTab === "basic" && (
             <div className="space-y-6">
-              {/* 프로필 사진 섹션 */}
               <div className="text-center mb-8">
                 <div className="relative inline-block">
                   <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mb-4 mx-auto">
-                    {avatarUrl ? (
+                    {avatarUrl && !imageLoadError ? (
                       <img
                         src={avatarUrl}
                         alt="Profile"
                         className="w-full h-full object-cover"
+                        onError={() => {
+                          console.error("이미지 로드 실패:", avatarUrl);
+                          setImageLoadError(true);
+                          // 기본 아바타 URL 생성 (이름 기반)
+                          const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                            formData.name || "User"
+                          )}&background=3b82f6&color=ffffff&size=128`;
+                          setAvatarUrl(defaultAvatar);
+                        }}
+                        onLoad={() => {
+                          console.log("이미지 로드 성공:", avatarUrl);
+                          setImageLoadError(false);
+                        }}
                       />
                     ) : (
                       <User className="w-16 h-16 text-gray-400" />
@@ -555,7 +531,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* 기본 정보 폼 */}
               <div className="max-w-2xl mx-auto">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                   기본 정보
@@ -621,7 +596,6 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* 인사카드 기록 탭 */}
           {activeTab === "greeting" && (
             <div className="max-w-4xl mx-auto">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">
@@ -629,7 +603,6 @@ export default function ProfilePage() {
               </h3>
 
               <div className="space-y-6">
-                {/* 기본 정보 섹션 */}
                 <div className="bg-gray-50 rounded-xl p-6">
                   <h4 className="text-md font-medium text-gray-900 mb-4">
                     기본 정보
@@ -698,7 +671,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* 주소 정보 섹션 */}
                 <div className="bg-gray-50 rounded-xl p-6">
                   <h4 className="text-md font-medium text-gray-900 mb-4">
                     주소 정보
@@ -739,7 +711,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* 비상연락망 섹션 */}
                 <div className="bg-gray-50 rounded-xl p-6">
                   <h4 className="text-md font-medium text-gray-900 mb-4">
                     비상연락망
@@ -763,7 +734,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* 저장 버튼 */}
                 <div className="text-center">
                   <button
                     onClick={handleSaveProfile}
@@ -782,7 +752,6 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* 비밀번호 변경 탭 */}
           {activeTab === "password" && (
             <div className="max-w-md mx-auto">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">

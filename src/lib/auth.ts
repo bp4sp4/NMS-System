@@ -6,7 +6,17 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
   try {
     const { data: userData, error } = await supabase
       .from("users")
-      .select("*")
+      .select(
+        `
+        *,
+        positions (
+          id,
+          name,
+          level,
+          description
+        )
+      `
+      )
       .eq("id", userId)
       .single();
 
@@ -25,6 +35,8 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
       branch: userData.branch,
       team: userData.team,
       avatar: userData.avatar,
+      position_id: userData.position_id,
+      positions: userData.positions,
       hire_date: userData.hire_date,
       bank: userData.bank,
       bank_account: userData.bank_account,
@@ -193,6 +205,7 @@ export const createUserByAdmin = async (userData: {
   name: string;
   branch: string;
   team: string;
+  position_id?: number;
 }): Promise<{ success: boolean; userId?: string; error?: string }> => {
   try {
     // 비밀번호 강도 검증
@@ -229,6 +242,7 @@ export const createUserByAdmin = async (userData: {
         name: userData.name,
         branch: userData.branch,
         team: userData.team,
+        position_id: userData.position_id || 1, // 기본값: 사원
       })
       .select()
       .single();

@@ -70,7 +70,7 @@ export const getUserBasicInfo = async (userId: string) => {
     // 1단계: 기본 사용자 정보 조회
     const { data: userData, error: userError } = await supabase
       .from("users")
-      .select("id, email, name, branch, team")
+      .select("id, email, name, branch, team, position_id")
       .eq("id", userId)
       .single();
 
@@ -79,35 +79,23 @@ export const getUserBasicInfo = async (userId: string) => {
       return null;
     }
 
-    // 2단계: 직급 정보 조회
-    const { data: positionData, error: positionError } = await supabase
-      .from("user_positions")
-      .select("position_id")
-      .eq("user_id", userId)
-      .single();
-
-    if (positionError && positionError.code !== "PGRST116") {
-      // PGRST116은 데이터가 없는 경우
-      console.error("직급 정보 조회 오류:", positionError);
-    }
-
-    // 3단계: 직급 마스터 정보 조회
+    // 2단계: 직급 정보 조회 (별도로)
     let positionName = null;
-    if (positionData?.position_id) {
-      const { data: masterData, error: masterError } = await supabase
+    if (userData.position_id) {
+      const { data: positionData, error: positionError } = await supabase
         .from("positions")
         .select("name")
-        .eq("id", positionData.position_id)
+        .eq("id", userData.position_id)
         .single();
 
-      if (masterError) {
-        console.error("직급 마스터 조회 오류:", masterError);
+      if (positionError) {
+        console.error("직급 정보 조회 오류:", positionError);
       } else {
-        positionName = masterData?.name;
+        positionName = positionData?.name;
       }
     }
 
-    // 4단계: 데이터 합치기
+    // 3단계: 데이터 합치기
     return {
       ...userData,
       position: positionName,

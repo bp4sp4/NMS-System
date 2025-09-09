@@ -171,12 +171,17 @@ export default function BulkUploadModal({
           field: "contact",
           message: "연락처는 필수입니다",
         });
-      } else if (!/^010-\d{4}-\d{4}$/.test(row.contact)) {
-        errors.push({
-          row: rowNum,
-          field: "contact",
-          message: "연락처 형식이 올바르지 않습니다 (010-0000-0000)",
-        });
+      } else {
+        // 전화번호 형식 검증 (010-XXXX-XXXX 형식만 허용)
+        const phoneRegex = /^010-\d{4}-\d{4}$/;
+        if (!phoneRegex.test(row.contact.trim())) {
+          errors.push({
+            row: rowNum,
+            field: "contact",
+            message:
+              "연락처는 010-XXXX-XXXX 형식이어야 합니다 (예: 010-1234-5678)",
+          });
+        }
       }
 
       if (row.customerType === "계약고객") {
@@ -279,7 +284,16 @@ export default function BulkUploadModal({
   // 일괄 등록 처리
   const handleBulkSubmit = async () => {
     if (validationErrors.length > 0) {
-      alert("검증 오류를 먼저 수정해주세요.");
+      const phoneErrors = validationErrors.filter(
+        (error) => error.field === "contact"
+      );
+      if (phoneErrors.length > 0) {
+        alert(
+          `전화번호 형식 오류가 ${phoneErrors.length}개 있습니다.\n모든 연락처는 010-XXXX-XXXX 형식이어야 합니다.\n오류를 수정한 후 다시 시도해주세요.`
+        );
+      } else {
+        alert("검증 오류를 먼저 수정해주세요.");
+      }
       return;
     }
 

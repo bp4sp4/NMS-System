@@ -26,6 +26,7 @@ interface AuthContextType {
     name: string;
     branch: string;
     team: string;
+    position_id?: number;
   }) => Promise<{ success: boolean; error?: string }>;
   getUsers: () => Promise<User[] | null>;
   removeUser: (userId: string) => Promise<{ success: boolean; error?: string }>;
@@ -140,6 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     name: string;
     branch: string;
     team: string;
+    position_id?: number;
   }) => {
     try {
       const result = await createUserByAdmin(userData);

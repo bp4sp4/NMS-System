@@ -14,6 +14,13 @@ export default function Navigation() {
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
 
+  // 프리랜서 여부 확인
+  const isFreelancer = user?.position === "프리랜서";
+
+  // 브랜드마케팅본부 여부 확인 (고객관리 메뉴 숨김)
+  // 인사팀, 경영지원본부 등 다른 부서는 고객관리 메뉴 표시
+  const isBrandMarketing = user?.branch === "브랜드마케팅본부";
+
   useEffect(() => {
     if (user) {
       // 관리자 권한 확인 (이메일 기반 또는 is_admin 컬럼 기반)
@@ -85,48 +92,50 @@ export default function Navigation() {
               >
                 홈
               </Link>
-              {/* 고객관리 드롭다운 */}
-              <div className={styles.dropdownContainer}>
-                <button
-                  className={`${styles.menuLink} ${styles.menuLinkInactive} ${styles.dropdownButton}`}
-                  onClick={() =>
-                    setIsCustomerDropdownOpen(!isCustomerDropdownOpen)
-                  }
-                  onMouseEnter={() => setIsCustomerDropdownOpen(true)}
-                >
-                  고객관리
-                  <ChevronDown
-                    className={`${styles.dropdownIcon} ${
-                      isCustomerDropdownOpen ? styles.dropdownIconRotated : ""
-                    }`}
-                  />
-                </button>
-                {isCustomerDropdownOpen && (
-                  <div
-                    className={styles.dropdownMenu}
-                    onMouseLeave={() => setIsCustomerDropdownOpen(false)}
+              {/* 고객관리 드롭다운 - 브랜드마케팅본부 제외 */}
+              {!isBrandMarketing && (
+                <div className={styles.dropdownContainer}>
+                  <button
+                    className={`${styles.menuLink} ${styles.menuLinkInactive} ${styles.dropdownButton}`}
+                    onClick={() =>
+                      setIsCustomerDropdownOpen(!isCustomerDropdownOpen)
+                    }
+                    onMouseEnter={() => setIsCustomerDropdownOpen(true)}
                   >
-                    <Link href="/crm" className={styles.dropdownItem}>
-                      CRM
-                    </Link>
-                    <Link href="/crm-db" className={styles.dropdownItem}>
-                      CRM-DB
-                    </Link>
-                    <Link href="/kakao-send" className={styles.dropdownItem}>
-                      메시지 발송
-                    </Link>
-                    <Link href="/sms" className={styles.dropdownItem}>
-                      SMS 전송
-                    </Link>
-                    <Link
-                      href="/kakao-settings"
-                      className={styles.dropdownItem}
+                    고객관리
+                    <ChevronDown
+                      className={`${styles.dropdownIcon} ${
+                        isCustomerDropdownOpen ? styles.dropdownIconRotated : ""
+                      }`}
+                    />
+                  </button>
+                  {isCustomerDropdownOpen && (
+                    <div
+                      className={styles.dropdownMenu}
+                      onMouseLeave={() => setIsCustomerDropdownOpen(false)}
                     >
-                      카톡 설정
-                    </Link>
-                  </div>
-                )}
-              </div>
+                      <Link href="/crm" className={styles.dropdownItem}>
+                        CRM
+                      </Link>
+                      <Link href="/crm-db" className={styles.dropdownItem}>
+                        CRM-DB
+                      </Link>
+                      <Link href="/kakao-send" className={styles.dropdownItem}>
+                        메시지 발송
+                      </Link>
+                      <Link href="/sms" className={styles.dropdownItem}>
+                        SMS 전송
+                      </Link>
+                      <Link
+                        href="/kakao-settings"
+                        className={styles.dropdownItem}
+                      >
+                        카톡 설정
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
               <Link
                 href="/ranking"
                 className={`${styles.menuLink} ${styles.menuLinkInactive}`}
@@ -139,12 +148,14 @@ export default function Navigation() {
               >
                 게시판
               </Link>
-              <Link
-                href="/attendance"
-                className={`${styles.menuLink} ${styles.menuLinkInactive}`}
-              >
-                출근관리
-              </Link>
+              {!isFreelancer && (
+                <Link
+                  href="/attendance"
+                  className={`${styles.menuLink} ${styles.menuLinkInactive}`}
+                >
+                  출근관리
+                </Link>
+              )}
               {isAdmin && (
                 <Link
                   href="/admin"
@@ -253,48 +264,57 @@ export default function Navigation() {
           <Link href="/" className={styles.mobileMenuItem}>
             홈
           </Link>
-          {/* 모바일에서도 드롭다운 메뉴 */}
-          <div className={styles.mobileDropdownContainer}>
-            <button
-              className={styles.mobileDropdownButton}
-              onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
-            >
-              고객관리
-              <ChevronDown
-                className={`${styles.mobileDropdownIcon} ${
-                  isCustomerDropdownOpen ? styles.dropdownIconRotated : ""
-                }`}
-              />
-            </button>
-            {isCustomerDropdownOpen && (
-              <div className={styles.mobileDropdownMenu}>
-                <Link href="/crm" className={styles.mobileDropdownItem}>
-                  CRM
-                </Link>
-                <Link href="/crm-db" className={styles.mobileDropdownItem}>
-                  CRM-DB
-                </Link>
-                <Link href="/kakao-send" className={styles.mobileDropdownItem}>
-                  메시지 발송
-                </Link>
-                <Link href="/sms" className={styles.mobileDropdownItem}>
-                  SMS 전송
-                </Link>
-                <Link
-                  href="/kakao-settings"
-                  className={styles.mobileDropdownItem}
-                >
-                  카톡 설정
-                </Link>
-              </div>
-            )}
-          </div>
+          {/* 모바일에서도 드롭다운 메뉴 - 브랜드마케팅본부 제외 */}
+          {!isBrandMarketing && (
+            <div className={styles.mobileDropdownContainer}>
+              <button
+                className={styles.mobileDropdownButton}
+                onClick={() =>
+                  setIsCustomerDropdownOpen(!isCustomerDropdownOpen)
+                }
+              >
+                고객관리
+                <ChevronDown
+                  className={`${styles.mobileDropdownIcon} ${
+                    isCustomerDropdownOpen ? styles.dropdownIconRotated : ""
+                  }`}
+                />
+              </button>
+              {isCustomerDropdownOpen && (
+                <div className={styles.mobileDropdownMenu}>
+                  <Link href="/crm" className={styles.mobileDropdownItem}>
+                    CRM
+                  </Link>
+                  <Link href="/crm-db" className={styles.mobileDropdownItem}>
+                    CRM-DB
+                  </Link>
+                  <Link
+                    href="/kakao-send"
+                    className={styles.mobileDropdownItem}
+                  >
+                    메시지 발송
+                  </Link>
+                  <Link href="/sms" className={styles.mobileDropdownItem}>
+                    SMS 전송
+                  </Link>
+                  <Link
+                    href="/kakao-settings"
+                    className={styles.mobileDropdownItem}
+                  >
+                    카톡 설정
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
           <Link href="/ranking" className={styles.mobileMenuItem}>
             랭킹
           </Link>
-          <Link href="/attendance" className={styles.mobileMenuItem}>
-            출근관리
-          </Link>
+          {!isFreelancer && (
+            <Link href="/attendance" className={styles.mobileMenuItem}>
+              출근관리
+            </Link>
+          )}
           {isAdmin && (
             <Link href="/admin" className={styles.mobileMenuItem}>
               관리자

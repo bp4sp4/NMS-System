@@ -269,6 +269,13 @@ export default function CRMPage() {
       return;
     }
 
+    // 전화번호 형식 검증 (010-XXXX-XXXX 형식만 허용)
+    const phoneRegex = /^010-\d{4}-\d{4}$/;
+    if (!phoneRegex.test(formData.contact.trim())) {
+      alert("연락처는 010-XXXX-XXXX 형식이어야 합니다.\n예: 010-1234-5678");
+      return;
+    }
+
     if (!user?.name) {
       alert("로그인이 필요합니다.");
       return;

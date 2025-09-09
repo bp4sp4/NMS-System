@@ -18,6 +18,9 @@ interface WeeklyData {
 export default function AttendancePage() {
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  // 프리랜서 여부 확인
+  const isFreelancer = user?.position === "프리랜서";
   const [monthlyRecords, setMonthlyRecords] = useState<AttendanceRecord[]>([]);
   const [stats, setStats] = useState<AttendanceStats | null>(null);
   const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
@@ -182,6 +185,30 @@ export default function AttendancePage() {
       </div>
     );
   };
+
+  // 프리랜서인 경우 접근 제한
+  if (isFreelancer) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h1 className={styles.title}>근태현황</h1>
+        </div>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "60px 20px",
+            color: "#666",
+            fontSize: "18px",
+          }}
+        >
+          <p>프리랜서는 출근 관리 대상이 아닙니다.</p>
+          <p style={{ marginTop: "10px", fontSize: "14px" }}>
+            독립적인 업무 시간을 관리해주세요.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

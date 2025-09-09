@@ -73,7 +73,7 @@ export default function AttendancePage() {
       0
     );
 
-    let currentWeekStart = new Date(firstDay);
+    const currentWeekStart = new Date(firstDay);
     let weekNumber = 1;
 
     while (currentWeekStart <= lastDay) {

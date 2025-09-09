@@ -47,8 +47,7 @@
 }
 
 .logo {
-    height: 1.5rem;
-    width: 1.5rem;
+
     border-radius: 0.5rem;
     display: flex;
     align-items: center;
@@ -58,7 +57,7 @@
 
 .logoImage {
     height: 1.5rem;
-    width: 1.5rem;
+
 }
 
 .brandName {

@@ -83,7 +83,6 @@ export default function Navigation() {
                   className={styles.logoImage}
                 />
               </div>
-              <span className={styles.brandName}>한평생 에듀바이저스</span>
             </Link>
             <div className={styles.menuItems}>
               <Link

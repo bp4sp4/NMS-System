@@ -122,9 +122,7 @@ export default function Navigation() {
                       <Link href="/kakao-send" className={styles.dropdownItem}>
                         메시지 발송
                       </Link>
-                      <Link href="/sms" className={styles.dropdownItem}>
-                        SMS 전송
-                      </Link>
+
                       <Link
                         href="/kakao-settings"
                         className={styles.dropdownItem}

@@ -33,9 +33,9 @@ export async function checkIn(
       return { success: false, error: "이미 오늘 출근하셨습니다." };
     }
 
-    // 출근 시간이 9시 이후인지 확인 (지각 여부)
+    // 출근 시간이 10시 이후인지 확인 (지각 여부)
     const checkInTime = new Date(now);
-    const standardTime = new Date(today + "T09:00:00");
+    const standardTime = new Date(today + "T10:00:00");
     const isLate = checkInTime > standardTime;
 
     const attendanceData = {
@@ -111,8 +111,8 @@ export async function checkOut(
     const workHours =
       (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
 
-    // 조기 퇴근 여부 확인 (18시 이전)
-    const standardEndTime = new Date(today + "T18:00:00");
+    // 조기 퇴근 여부 확인 (19시 이전)
+    const standardEndTime = new Date(today + "T19:00:00");
     const isEarlyLeave = checkOutTime < standardEndTime;
 
     const updateData = {

@@ -8,16 +8,7 @@ import ProfileAvatar from "@/components/ProfileAvatar";
 import { getRecentPosts } from "@/lib/board";
 import { checkIn, checkOut, getTodayAttendance } from "@/lib/attendance";
 import type { Attendance } from "@/types/attendance";
-import {
-  Clock,
-  Mail,
-  FileText,
-  Calendar,
-  Trophy,
-  Bell,
-  Search,
-  ChevronRight,
-} from "lucide-react";
+import { Clock, Mail, FileText, Search, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 interface DashboardData {
@@ -70,18 +61,12 @@ export default function HomePage() {
   });
 
   useEffect(() => {
-    // isLoading이 false가 될 때까지 기다림
     if (isLoading) {
       return;
     }
-
-    // 로딩이 완료되고 사용자가 없으면 즉시 로그인 페이지로 리다이렉트
     if (!user) {
-      // 세션 데이터 재확인
       const sessionData = localStorage.getItem("nms-user-session");
-
       if (!sessionData) {
-        // 즉시 로그인 페이지로 리다이렉트 (replace로 브라우저 히스토리에 남기지 않음)
         router.replace("/auth/login");
         return;
       }
@@ -304,8 +289,8 @@ export default function HomePage() {
       (currentWorkHours % 1) * 60
     )}m`;
 
-    // 진행률 계산 (8시간 기준)
-    const progressPercentage = Math.min((currentWorkHours / 8) * 100, 100);
+    // 진행률 계산 (9시간 기준)
+    const progressPercentage = Math.min((currentWorkHours / 9) * 100, 100);
 
     const isClockedIn = !!todayAttendance.check_in_time;
     const isClockedOut = !!todayAttendance.check_out_time;
@@ -425,7 +410,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex justify-between text-xs text-gray-500">
                     <span>0h</span>
-                    <span>8h (목표)</span>
+                    <span>9h (목표)</span>
                   </div>
                 </div>
 

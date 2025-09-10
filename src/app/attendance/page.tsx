@@ -251,7 +251,7 @@ export default function AttendancePage() {
 
       {/* 직원 정보 */}
       <div className={styles.employeeInfo}>
-        <span>정직원 10:00:59 ~ 18:00:59</span>
+        <span>정직원 10:00:00 ~ 19:00:00</span>
         <span className={styles.infoIcon}>i</span>
       </div>
 

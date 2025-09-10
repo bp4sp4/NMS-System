@@ -8,6 +8,7 @@ import ProfileAvatar from "@/components/ProfileAvatar";
 import { getRecentPosts } from "@/lib/board";
 import { checkIn, checkOut, getTodayAttendance } from "@/lib/attendance";
 import { getRecentMeetingReservations } from "@/lib/meetingRooms";
+import { getDepartmentColor } from "@/lib/utils";
 import type { Attendance } from "@/types/attendance";
 import type { MeetingReservation } from "@/lib/meetingRooms";
 import { Clock, Mail, FileText, Search, ChevronRight } from "lucide-react";
@@ -733,9 +734,17 @@ export default function HomePage() {
 
             {/* 최근 알림 */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                회의실 알림
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  회의 알림
+                </h3>
+                <Link
+                  href="/meeting-rooms"
+                  className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  전체보기
+                </Link>
+              </div>
 
               <div className="space-y-4">
                 {meetingReservationsLoading ? (
@@ -772,17 +781,23 @@ export default function HomePage() {
                           .toString()
                           .padStart(2, "0")} ${timeString}`;
 
+                        const colorClass = getDepartmentColor(
+                          reservation.meeting_rooms.name
+                        );
+
                         return (
                           <div
                             key={reservation.id}
                             className="flex items-start space-x-3 group cursor-pointer"
                           >
-                            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                            <div
+                              className={`w-8 h-8 ${colorClass} rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}
+                            >
                               📅
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
-                                [회의실 예약] {reservation.title} -{" "}
+                                [회의 예약] {reservation.title} -{" "}
                                 {reservation.meeting_rooms.name}
                               </p>
                               <div className="flex items-center space-x-2 mt-1">

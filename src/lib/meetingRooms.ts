@@ -13,9 +13,16 @@ export interface MeetingReservation {
   repeat_count: number;
   status: string;
   created_at: string;
+  organizer_name?: string;
+  attendees?: string;
   meeting_rooms: {
     name: string;
     location: string;
+  };
+  users?: {
+    id: string;
+    name: string;
+    email: string;
   };
 }
 

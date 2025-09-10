@@ -38,3 +38,17 @@ export const isDevelopment = (): boolean => {
 export const isProduction = (): boolean => {
   return process.env.NODE_ENV === "production";
 };
+
+/**
+ * 부서별 색상을 반환하는 함수
+ */
+export const getDepartmentColor = (roomName: string): string => {
+  const colorMap: { [key: string]: string } = {
+    "AIO 사업단": "bg-blue-600",
+    경영지원본부: "bg-green-600",
+    브랜드마케팅본부: "bg-purple-600",
+    "위드업 사업단": "bg-orange-600",
+    한평생실습지원: "bg-red-600",
+  };
+  return colorMap[roomName] || "bg-gray-600";
+};

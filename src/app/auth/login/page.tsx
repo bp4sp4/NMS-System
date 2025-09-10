@@ -43,10 +43,9 @@ export default function LoginPage() {
       <div className={styles.header}>
         <div className={styles.logo}>
           <span className={styles.logoText}>
-            <img src="/images/logo2.png" alt="logo" />
+            <img src="/images/logo_white.png" alt="logo" />
           </span>
         </div>
-        <span className={styles.brandName}>한평생 에듀바이저스</span>
       </div>
 
       <div className={styles.content}>

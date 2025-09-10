@@ -17,6 +17,7 @@ import {
   Trash2,
 } from "lucide-react";
 import MeetingRoomBookingModal from "@/components/MeetingRoomBookingModal";
+import { getDepartmentColor } from "@/lib/utils";
 
 interface MeetingRoom {
   id: string;
@@ -44,6 +45,11 @@ interface MeetingReservation {
   meeting_rooms: {
     name: string;
     location: string;
+  };
+  users?: {
+    id: string;
+    name: string;
+    email: string;
   };
 }
 
@@ -116,6 +122,11 @@ export default function MeetingRoomsPage() {
           meeting_rooms (
             name,
             location
+          ),
+          users (
+            id,
+            name,
+            email
           )
         `
         )
@@ -140,6 +151,55 @@ export default function MeetingRoomsPage() {
       dates.push(date);
     }
     return dates;
+  };
+
+  const getMonthDates = (): Date[] => {
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth();
+
+    // 해당 월의 첫 번째 날
+    const firstDay = new Date(year, month, 1);
+    // 해당 월의 마지막 날
+    const lastDay = new Date(year, month + 1, 0);
+
+    // 첫 번째 날이 시작하는 주의 시작일 (일요일)
+    const startOfFirstWeek = new Date(firstDay);
+    startOfFirstWeek.setDate(firstDay.getDate() - firstDay.getDay());
+
+    // 마지막 날이 끝나는 주의 마지막일 (토요일)
+    const endOfLastWeek = new Date(lastDay);
+    endOfLastWeek.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+
+    const dates: Date[] = [];
+    const current = new Date(startOfFirstWeek);
+
+    while (current <= endOfLastWeek) {
+      dates.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+
+    return dates;
+  };
+
+  // 특정 날짜의 회의 개수 계산
+  const getMeetingCountForDate = (date: Date): number => {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return reservations.filter((reservation) => {
+      // 회의실 필터링
+      if (selectedRoom && reservation.room_id !== selectedRoom) {
+        return false;
+      }
+
+      const resStart = new Date(reservation.start_time);
+      const resEnd = new Date(reservation.end_time);
+
+      // 해당 날짜와 겹치는 회의인지 확인
+      return resStart < endOfDay && resEnd > startOfDay;
+    }).length;
   };
 
   const getTimeSlots = (): string[] => {
@@ -195,17 +255,27 @@ export default function MeetingRoomsPage() {
     setIsReservationModalOpen(true);
   };
 
+  // 예약 수정/삭제 권한 체크
+  const canEditReservation = (reservation: MeetingReservation): boolean => {
+    if (!user || !reservation.users) return false;
+    return user.id === reservation.users.id;
+  };
+
   const handleMoreReservationsClick = (
     reservations: MeetingReservation[],
     date: Date,
     timeSlot: string
   ) => {
     setMoreReservations(reservations);
-    setMoreReservationsTitle(
-      `${date.getMonth() + 1}월 ${date.getDate()}일 ${timeSlot} - ${
-        reservations.length
-      }개 예약`
-    );
+    const title =
+      timeSlot === "전체"
+        ? `${date.getMonth() + 1}월 ${date.getDate()}일 전체 - ${
+            reservations.length
+          }개 예약`
+        : `${date.getMonth() + 1}월 ${date.getDate()}일 ${timeSlot} - ${
+            reservations.length
+          }개 예약`;
+    setMoreReservationsTitle(title);
     setIsMoreReservationsModalOpen(true);
   };
 
@@ -244,7 +314,7 @@ export default function MeetingRoomsPage() {
           <div className="p-6">
             {/* 헤더 */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">회의실 예약</h2>
+              <h2 className="text-xl font-bold text-gray-900">회의 예약</h2>
               <button
                 onClick={() => setIsBookingModalOpen(true)}
                 className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -412,7 +482,7 @@ export default function MeetingRoomsPage() {
                         : "text-gray-600"
                     }`}
                   >
-                    Month
+                    월간
                   </button>
                   <button
                     onClick={() => setViewMode("week")}
@@ -422,7 +492,7 @@ export default function MeetingRoomsPage() {
                         : "text-gray-600"
                     }`}
                   >
-                    Week
+                    주간
                   </button>
                 </div>
                 <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
@@ -437,121 +507,118 @@ export default function MeetingRoomsPage() {
             <div className="min-h-full">
               {/* 요일 헤더 */}
               <div className="sticky top-0 bg-white border-b border-gray-200 z-10">
-                <div className="grid grid-cols-8">
+                <div
+                  className={`grid ${
+                    viewMode === "month" ? "grid-cols-8" : "grid-cols-8"
+                  }`}
+                >
                   <div className="p-4 border-r border-gray-200"></div>
-                  {getWeekDates().map((date, index) => (
-                    <div
-                      key={index}
-                      className="p-4 text-center border-r border-gray-200"
-                    >
-                      <div className="text-sm font-medium text-gray-900">
-                        {date.getMonth() + 1}.{date.getDate()}.
+                  {(viewMode === "month"
+                    ? getMonthDates()
+                    : getWeekDates()
+                  ).map((date, index) => {
+                    const meetingCount =
+                      viewMode === "month" ? getMeetingCountForDate(date) : 0;
+                    return (
+                      <div
+                        key={index}
+                        className="p-4 text-center border-r border-gray-200"
+                      >
+                        <div className="text-sm font-medium text-gray-900">
+                          {date.getMonth() + 1}.{date.getDate()}.
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {
+                            ["일", "월", "화", "수", "목", "금", "토"][
+                              date.getDay()
+                            ]
+                          }
+                        </div>
+                        {viewMode === "month" && meetingCount > 0 && (
+                          <div className="mt-1">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {meetingCount}개
+                            </span>
+                          </div>
+                        )}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {
-                          ["일", "월", "화", "수", "목", "금", "토"][
-                            date.getDay()
-                          ]
-                        }
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
               {/* 시간 슬롯과 회의실 그리드 */}
-              <div className="grid grid-cols-8">
-                {/* 시간 슬롯 */}
-                <div className="border-r border-gray-200">
-                  {getTimeSlots().map((timeSlot) => (
-                    <div
-                      key={timeSlot}
-                      className="h-20 border-b border-gray-100 flex items-center justify-center"
-                    >
-                      <span className="text-sm text-gray-500">{timeSlot}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* 회의실별 예약 슬롯 */}
-                {getWeekDates().map((date, dateIndex) => (
-                  <div key={dateIndex} className="border-r border-gray-200">
-                    {getTimeSlots().map((timeSlot, timeIndex) => {
-                      // 선택된 회의실에 따라 예약을 필터링하고 정렬
-                      const allReservations = reservations
-                        .filter((reservation) => {
-                          // 회의실 필터링
+              <div
+                className={`grid ${
+                  viewMode === "month" ? "grid-cols-8" : "grid-cols-8"
+                }`}
+              >
+                {viewMode === "month" ? (
+                  // 월간 보기: 날짜별 회의 개수만 표시
+                  <>
+                    <div className="border-r border-gray-200"></div>
+                    {getMonthDates().map((date, dateIndex) => {
+                      const meetingCount = getMeetingCountForDate(date);
+                      const dayReservations = reservations.filter(
+                        (reservation) => {
                           if (
                             selectedRoom &&
                             reservation.room_id !== selectedRoom
                           ) {
                             return false;
                           }
-
-                          // 시간 필터링
                           const resStart = new Date(reservation.start_time);
                           const resEnd = new Date(reservation.end_time);
-                          const slotStart = new Date(date);
-                          const [hour] = timeSlot.split(":").map(Number);
-                          slotStart.setHours(hour, 0, 0, 0);
-                          const slotEnd = new Date(slotStart);
-                          slotEnd.setHours(hour + 1, 0, 0, 0);
-
-                          return resStart < slotEnd && resEnd > slotStart;
-                        })
-                        .sort(
-                          (a, b) =>
-                            new Date(a.start_time).getTime() -
-                            new Date(b.start_time).getTime()
-                        );
+                          const startOfDay = new Date(date);
+                          startOfDay.setHours(0, 0, 0, 0);
+                          const endOfDay = new Date(date);
+                          endOfDay.setHours(23, 59, 59, 999);
+                          return resStart < endOfDay && resEnd > startOfDay;
+                        }
+                      );
 
                       return (
                         <div
-                          key={timeIndex}
-                          className={`h-20 border-b border-gray-100 cursor-pointer hover:bg-blue-50 transition-colors relative ${
-                            date.getDay() === 0 || date.getDay() === 6
-                              ? "bg-yellow-50"
-                              : ""
-                          }`}
-                          onClick={() => {
-                            if (selectedRoom) {
-                              handleDateClick(selectedRoom, date, timeSlot);
-                            }
-                          }}
+                          key={dateIndex}
+                          className="border-r border-gray-200"
                         >
-                          {allReservations.length > 0 && (
-                            <div className="absolute inset-0 p-1">
-                              {allReservations.length > 2 ? (
-                                // 2개 이상 겹칠 때는 축약 표시
-                                <div className="space-y-0.5">
-                                  {allReservations
-                                    .slice(0, 1)
-                                    .map((reservation, index) => {
-                                      const colors = [
-                                        "bg-blue-500",
-                                        "bg-green-500",
-                                        "bg-purple-500",
-                                        "bg-orange-500",
-                                        "bg-pink-500",
-                                        "bg-indigo-500",
-                                        "bg-red-500",
-                                      ];
-                                      const colorClass =
-                                        colors[index % colors.length];
-
-                                      return (
-                                        <div
-                                          key={reservation.id}
-                                          className={`${colorClass} text-white p-1 rounded text-xs cursor-pointer hover:opacity-80 transition-opacity shadow-sm relative group`}
-                                          title={`${reservation.title} - ${reservation.meeting_rooms?.name} (${reservation.meeting_rooms?.location})`}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleReservationClick(reservation);
-                                          }}
-                                        >
-                                          <div className="font-semibold truncate">
-                                            {reservation.title}
-                                          </div>
+                          <div className="h-96 border-b border-gray-100 p-2 cursor-pointer hover:bg-blue-50 transition-colors relative">
+                            <div className="text-xs text-gray-500 mb-2">
+                              {date.getDate()}일
+                            </div>
+                            {meetingCount > 0 && (
+                              <div className="space-y-1">
+                                <div className="text-xs font-medium text-blue-600 mb-2">
+                                  {meetingCount}개 회의
+                                </div>
+                                {dayReservations
+                                  .slice(0, 3)
+                                  .map((reservation) => {
+                                    const colorClass = getDepartmentColor(
+                                      reservation.meeting_rooms?.name || ""
+                                    );
+                                    return (
+                                      <div
+                                        key={reservation.id}
+                                        className={`${colorClass} text-white p-1 rounded text-xs cursor-pointer hover:opacity-80 transition-opacity relative group`}
+                                        title={`${reservation.title} - ${reservation.meeting_rooms?.name}`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleReservationClick(reservation);
+                                        }}
+                                      >
+                                        <div className="font-semibold truncate">
+                                          {reservation.title}
+                                        </div>
+                                        <div className="text-xs opacity-90 truncate">
+                                          {new Date(
+                                            reservation.start_time
+                                          ).toLocaleTimeString("ko-KR", {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          })}
+                                        </div>
+                                        {canEditReservation(reservation) && (
                                           <button
                                             onClick={async (e) => {
                                               e.stopPropagation();
@@ -584,107 +651,273 @@ export default function MeetingRoomsPage() {
                                                 }
                                               }
                                             }}
-                                            className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-red-600 rounded"
+                                            className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-red-600 rounded"
                                             title="예약 삭제"
                                           >
-                                            <Trash2 className="w-3 h-3" />
+                                            <Trash2 className="w-2 h-2" />
                                           </button>
-                                        </div>
-                                      );
-                                    })}
-                                  <div
-                                    className="bg-gray-500 text-white p-1 rounded text-xs text-center cursor-pointer hover:bg-gray-600 transition-colors"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleMoreReservationsClick(
-                                        allReservations,
-                                        date,
-                                        timeSlot
-                                      );
-                                    }}
-                                  >
-                                    +{allReservations.length - 1}개 더
-                                  </div>
-                                </div>
-                              ) : (
-                                // 2개 이하일 때는 전체 표시
-                                <div className="space-y-0.5">
-                                  {allReservations.map((reservation, index) => {
-                                    const colors = [
-                                      "bg-blue-500",
-                                      "bg-green-500",
-                                      "bg-purple-500",
-                                      "bg-orange-500",
-                                      "bg-pink-500",
-                                      "bg-indigo-500",
-                                      "bg-red-500",
-                                    ];
-                                    const colorClass =
-                                      colors[index % colors.length];
-
-                                    return (
-                                      <div
-                                        key={reservation.id}
-                                        className={`${colorClass} text-white p-1 rounded text-xs cursor-pointer hover:opacity-80 transition-opacity shadow-sm relative group`}
-                                        title={`${reservation.title} - ${reservation.meeting_rooms?.name} (${reservation.meeting_rooms?.location})`}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleReservationClick(reservation);
-                                        }}
-                                      >
-                                        <div className="font-semibold truncate">
-                                          {reservation.title}
-                                        </div>
-                                        <div className="text-xs opacity-90 truncate">
-                                          {reservation.meeting_rooms?.name ||
-                                            ""}
-                                        </div>
-                                        <button
-                                          onClick={async (e) => {
-                                            e.stopPropagation();
-                                            if (
-                                              confirm(
-                                                "정말로 이 예약을 삭제하시겠습니까?"
-                                              )
-                                            ) {
-                                              try {
-                                                const { error } = await supabase
-                                                  .from("meeting_reservations")
-                                                  .delete()
-                                                  .eq("id", reservation.id);
-
-                                                if (error) throw error;
-
-                                                // 예약 목록 새로고침
-                                                loadReservations();
-                                              } catch (error) {
-                                                console.error(
-                                                  "예약 삭제 오류:",
-                                                  error
-                                                );
-                                                alert(
-                                                  "예약 삭제 중 오류가 발생했습니다."
-                                                );
-                                              }
-                                            }
-                                          }}
-                                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-red-600 rounded"
-                                          title="예약 삭제"
-                                        >
-                                          <Trash2 className="w-3 h-3" />
-                                        </button>
+                                        )}
                                       </div>
                                     );
                                   })}
-                                </div>
-                              )}
-                            </div>
-                          )}
+                                {dayReservations.length > 3 && (
+                                  <div
+                                    className="text-xs text-gray-500 text-center cursor-pointer hover:text-gray-700 transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleMoreReservationsClick(
+                                        dayReservations,
+                                        date,
+                                        "전체"
+                                      );
+                                    }}
+                                  >
+                                    +{dayReservations.length - 3}개 더
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
-                  </div>
-                ))}
+                  </>
+                ) : (
+                  // 주간 보기: 기존 시간별 표시
+                  <>
+                    {/* 시간 슬롯 */}
+                    <div className="border-r border-gray-200">
+                      {getTimeSlots().map((timeSlot) => (
+                        <div
+                          key={timeSlot}
+                          className="h-20 border-b border-gray-100 flex items-center justify-center"
+                        >
+                          <span className="text-sm text-gray-500">
+                            {timeSlot}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* 회의실별 예약 슬롯 */}
+                    {getWeekDates().map((date, dateIndex) => (
+                      <div key={dateIndex} className="border-r border-gray-200">
+                        {getTimeSlots().map((timeSlot, timeIndex) => {
+                          // 선택된 회의실에 따라 예약을 필터링하고 정렬
+                          const allReservations = reservations
+                            .filter((reservation) => {
+                              // 회의실 필터링
+                              if (
+                                selectedRoom &&
+                                reservation.room_id !== selectedRoom
+                              ) {
+                                return false;
+                              }
+
+                              // 시간 필터링
+                              const resStart = new Date(reservation.start_time);
+                              const resEnd = new Date(reservation.end_time);
+                              const slotStart = new Date(date);
+                              const [hour] = timeSlot.split(":").map(Number);
+                              slotStart.setHours(hour, 0, 0, 0);
+                              const slotEnd = new Date(slotStart);
+                              slotEnd.setHours(hour + 1, 0, 0, 0);
+
+                              return resStart < slotEnd && resEnd > slotStart;
+                            })
+                            .sort(
+                              (a, b) =>
+                                new Date(a.start_time).getTime() -
+                                new Date(b.start_time).getTime()
+                            );
+
+                          return (
+                            <div
+                              key={timeIndex}
+                              className="h-20 border-b border-gray-100 cursor-pointer hover:bg-blue-50 transition-colors relative"
+                              onClick={() => {
+                                if (selectedRoom) {
+                                  handleDateClick(selectedRoom, date, timeSlot);
+                                }
+                              }}
+                            >
+                              {allReservations.length > 0 && (
+                                <div className="absolute inset-0 p-1">
+                                  {allReservations.length > 2 ? (
+                                    // 2개 이상 겹칠 때는 축약 표시
+                                    <div className="space-y-0.5">
+                                      {allReservations
+                                        .slice(0, 1)
+                                        .map((reservation, index) => {
+                                          const colorClass = getDepartmentColor(
+                                            reservation.meeting_rooms?.name ||
+                                              ""
+                                          );
+
+                                          return (
+                                            <div
+                                              key={reservation.id}
+                                              className={`${colorClass} text-white p-1 rounded text-xs cursor-pointer hover:opacity-80 transition-opacity shadow-sm relative group`}
+                                              title={`${reservation.title} - ${reservation.meeting_rooms?.name} (${reservation.meeting_rooms?.location})`}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleReservationClick(
+                                                  reservation
+                                                );
+                                              }}
+                                            >
+                                              <div className="font-semibold truncate">
+                                                {reservation.title}
+                                              </div>
+                                              {canEditReservation(
+                                                reservation
+                                              ) && (
+                                                <button
+                                                  onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    if (
+                                                      confirm(
+                                                        "정말로 이 예약을 삭제하시겠습니까?"
+                                                      )
+                                                    ) {
+                                                      try {
+                                                        const { error } =
+                                                          await supabase
+                                                            .from(
+                                                              "meeting_reservations"
+                                                            )
+                                                            .delete()
+                                                            .eq(
+                                                              "id",
+                                                              reservation.id
+                                                            );
+
+                                                        if (error) throw error;
+
+                                                        // 예약 목록 새로고침
+                                                        loadReservations();
+                                                      } catch (error) {
+                                                        console.error(
+                                                          "예약 삭제 오류:",
+                                                          error
+                                                        );
+                                                        alert(
+                                                          "예약 삭제 중 오류가 발생했습니다."
+                                                        );
+                                                      }
+                                                    }
+                                                  }}
+                                                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-red-600 rounded"
+                                                  title="예약 삭제"
+                                                >
+                                                  <Trash2 className="w-3 h-3" />
+                                                </button>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      <div
+                                        className="bg-gray-500 text-white p-1 rounded text-xs text-center cursor-pointer hover:bg-gray-600 transition-colors"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleMoreReservationsClick(
+                                            allReservations,
+                                            date,
+                                            timeSlot
+                                          );
+                                        }}
+                                      >
+                                        +{allReservations.length - 1}개 더
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    // 2개 이하일 때는 전체 표시
+                                    <div className="space-y-0.5">
+                                      {allReservations.map(
+                                        (reservation, index) => {
+                                          const colorClass = getDepartmentColor(
+                                            reservation.meeting_rooms?.name ||
+                                              ""
+                                          );
+
+                                          return (
+                                            <div
+                                              key={reservation.id}
+                                              className={`${colorClass} text-white p-1 rounded text-xs cursor-pointer hover:opacity-80 transition-opacity shadow-sm relative group`}
+                                              title={`${reservation.title} - ${reservation.meeting_rooms?.name} (${reservation.meeting_rooms?.location})`}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleReservationClick(
+                                                  reservation
+                                                );
+                                              }}
+                                            >
+                                              <div className="font-semibold truncate">
+                                                {reservation.title}
+                                              </div>
+                                              <div className="text-xs opacity-90 truncate">
+                                                {reservation.meeting_rooms
+                                                  ?.name || ""}
+                                              </div>
+                                              {canEditReservation(
+                                                reservation
+                                              ) && (
+                                                <button
+                                                  onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    if (
+                                                      confirm(
+                                                        "정말로 이 예약을 삭제하시겠습니까?"
+                                                      )
+                                                    ) {
+                                                      try {
+                                                        const { error } =
+                                                          await supabase
+                                                            .from(
+                                                              "meeting_reservations"
+                                                            )
+                                                            .delete()
+                                                            .eq(
+                                                              "id",
+                                                              reservation.id
+                                                            );
+
+                                                        if (error) throw error;
+
+                                                        // 예약 목록 새로고침
+                                                        loadReservations();
+                                                      } catch (error) {
+                                                        console.error(
+                                                          "예약 삭제 오류:",
+                                                          error
+                                                        );
+                                                        alert(
+                                                          "예약 삭제 중 오류가 발생했습니다."
+                                                        );
+                                                      }
+                                                    }
+                                                  }}
+                                                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-red-600 rounded"
+                                                  title="예약 삭제"
+                                                >
+                                                  <Trash2 className="w-3 h-3" />
+                                                </button>
+                                              )}
+                                            </div>
+                                          );
+                                        }
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -738,56 +971,58 @@ export default function MeetingRoomsPage() {
                 <h3 className="text-lg font-semibold text-gray-900">
                   회의 정보
                 </h3>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => {
-                      // 수정 모달 열기
-                      setIsReservationModalOpen(false);
-                      setIsEditMode(true);
-                      setBookingData({
-                        roomId: selectedReservation.room_id,
-                        date: new Date(selectedReservation.start_time)
-                          .toISOString()
-                          .split("T")[0],
-                        startTime: new Date(selectedReservation.start_time)
-                          .toTimeString()
-                          .slice(0, 5),
-                        endTime: new Date(selectedReservation.end_time)
-                          .toTimeString()
-                          .slice(0, 5),
-                      });
-                      setIsBookingModalOpen(true);
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                  >
-                    수정
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (confirm("정말로 이 예약을 삭제하시겠습니까?")) {
-                        try {
-                          const { error } = await supabase
-                            .from("meeting_reservations")
-                            .delete()
-                            .eq("id", selectedReservation.id);
+                {canEditReservation(selectedReservation) && (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => {
+                        // 수정 모달 열기
+                        setIsReservationModalOpen(false);
+                        setIsEditMode(true);
+                        setBookingData({
+                          roomId: selectedReservation.room_id,
+                          date: new Date(selectedReservation.start_time)
+                            .toISOString()
+                            .split("T")[0],
+                          startTime: new Date(selectedReservation.start_time)
+                            .toTimeString()
+                            .slice(0, 5),
+                          endTime: new Date(selectedReservation.end_time)
+                            .toTimeString()
+                            .slice(0, 5),
+                        });
+                        setIsBookingModalOpen(true);
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                    >
+                      수정
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (confirm("정말로 이 예약을 삭제하시겠습니까?")) {
+                          try {
+                            const { error } = await supabase
+                              .from("meeting_reservations")
+                              .delete()
+                              .eq("id", selectedReservation.id);
 
-                          if (error) throw error;
+                            if (error) throw error;
 
-                          // 예약 목록 새로고침
-                          loadReservations();
-                          setIsReservationModalOpen(false);
-                          setSelectedReservation(null);
-                        } catch (error) {
-                          console.error("예약 삭제 오류:", error);
-                          alert("예약 삭제 중 오류가 발생했습니다.");
+                            // 예약 목록 새로고침
+                            loadReservations();
+                            setIsReservationModalOpen(false);
+                            setSelectedReservation(null);
+                          } catch (error) {
+                            console.error("예약 삭제 오류:", error);
+                            alert("예약 삭제 중 오류가 발생했습니다.");
+                          }
                         }
-                      }
-                    }}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-                  >
-                    삭제
-                  </button>
-                </div>
+                      }}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -888,6 +1123,10 @@ export default function MeetingRoomsPage() {
             <div className="p-6 max-h-[60vh] overflow-y-auto">
               <div className="space-y-3">
                 {moreReservations.map((reservation, index) => {
+                  const colorClass = getDepartmentColor(
+                    reservation.meeting_rooms?.name || ""
+                  );
+
                   return (
                     <div
                       key={reservation.id}
@@ -895,8 +1134,13 @@ export default function MeetingRoomsPage() {
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <div className="font-semibold text-lg mb-3 text-gray-900">
-                            {reservation.title}
+                          <div className="flex items-center space-x-3 mb-3">
+                            <div
+                              className={`w-4 h-4 rounded-full ${colorClass}`}
+                            ></div>
+                            <div className="font-semibold text-lg text-gray-900">
+                              {reservation.title}
+                            </div>
                           </div>
                           <div className="space-y-2">
                             <div className="text-sm text-gray-700">
@@ -942,35 +1186,39 @@ export default function MeetingRoomsPage() {
                           >
                             상세보기
                           </button>
-                          <button
-                            onClick={async () => {
-                              if (
-                                confirm("정말로 이 예약을 삭제하시겠습니까?")
-                              ) {
-                                try {
-                                  const { error } = await supabase
-                                    .from("meeting_reservations")
-                                    .delete()
-                                    .eq("id", reservation.id);
+                          {canEditReservation(reservation) && (
+                            <button
+                              onClick={async () => {
+                                if (
+                                  confirm("정말로 이 예약을 삭제하시겠습니까?")
+                                ) {
+                                  try {
+                                    const { error } = await supabase
+                                      .from("meeting_reservations")
+                                      .delete()
+                                      .eq("id", reservation.id);
 
-                                  if (error) throw error;
+                                    if (error) throw error;
 
-                                  // 예약 목록 새로고침
-                                  loadReservations();
-                                  // 모달에서도 해당 예약 제거
-                                  setMoreReservations((prev) =>
-                                    prev.filter((r) => r.id !== reservation.id)
-                                  );
-                                } catch (error) {
-                                  console.error("예약 삭제 오류:", error);
-                                  alert("예약 삭제 중 오류가 발생했습니다.");
+                                    // 예약 목록 새로고침
+                                    loadReservations();
+                                    // 모달에서도 해당 예약 제거
+                                    setMoreReservations((prev) =>
+                                      prev.filter(
+                                        (r) => r.id !== reservation.id
+                                      )
+                                    );
+                                  } catch (error) {
+                                    console.error("예약 삭제 오류:", error);
+                                    alert("예약 삭제 중 오류가 발생했습니다.");
+                                  }
                                 }
-                              }
-                            }}
-                            className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-colors"
-                          >
-                            삭제
-                          </button>
+                              }}
+                              className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-colors"
+                            >
+                              삭제
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

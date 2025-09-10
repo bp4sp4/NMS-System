@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Header from "@/components/Navigation";
 import { supabase } from "@/lib/supabase";
+import {
+  getInstitutionAbbreviation,
+  formatPhoneNumber,
+  unformatPhoneNumber,
+} from "@/lib/utils";
 import styles from "./page.module.css";
 
 interface CRMDBData {
@@ -53,6 +58,20 @@ export default function CRMDBPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [crmData, setCrmData] = useState<CRMDBData[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
+
+  // 가망고객 등록 폼 상태
+  const [prospectFormData, setProspectFormData] = useState({
+    customerType: "가망고객", // CRM DB에서는 가망고객만 등록
+    courseType: "학점은행제",
+    course: "사회복지사2급",
+    institution: "한평생학점은행",
+    customerName: "",
+    contact: "",
+    education: "고등학교 졸업",
+    region: "서울",
+    subRegion: "도봉구",
+    inflowPath: "기타",
+  });
 
   // 카톡 발송 내역 데이터
   const [kakaoHistory, setKakaoHistory] = useState([
@@ -169,6 +188,75 @@ export default function CRMDBPage() {
   const handleUpsellingCourseSelect = (course: string) => {
     setSelectedUpsellingCourse(course);
     setIsUpsellingOpen(false);
+  };
+
+  // 가망고객 등록 처리
+  const handleProspectSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!prospectFormData.customerName || !prospectFormData.contact) {
+      alert("모든 필수 항목을 입력해주세요.");
+      return;
+    }
+
+    const unformattedContact = unformatPhoneNumber(prospectFormData.contact);
+    if (!/^010\d{8}$/.test(unformattedContact)) {
+      alert(
+        "연락처는 010으로 시작하는 11자리 숫자여야 합니다.\n예: 010-1234-5678"
+      );
+      return;
+    }
+
+    if (!user?.name) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from("customers").insert({
+        branch: user.branch || "",
+        team: user.team || "",
+        manager: user.name,
+        customer_type: prospectFormData.customerType,
+        course_type: prospectFormData.courseType,
+        course: prospectFormData.course,
+        institution: prospectFormData.institution,
+        customer_name: prospectFormData.customerName,
+        contact: prospectFormData.contact,
+        education: prospectFormData.education,
+        region: `${prospectFormData.region} ${prospectFormData.subRegion}`,
+        status: "등록완료",
+        inflow_path: prospectFormData.inflowPath,
+      });
+
+      if (error) {
+        console.error("가망고객 등록 오류:", error);
+        alert("가망고객 등록에 실패했습니다.");
+        return;
+      }
+
+      // 성공적으로 저장되면 데이터 다시 가져오기
+      await fetchCRMData();
+
+      // 폼 초기화
+      setProspectFormData({
+        customerType: "가망고객",
+        courseType: "학점은행제",
+        course: "사회복지사2급",
+        institution: "한평생학점은행",
+        customerName: "",
+        contact: "",
+        education: "고등학교 졸업",
+        region: "서울",
+        subRegion: "도봉구",
+        inflowPath: "기타",
+      });
+
+      alert("가망고객이 성공적으로 등록되었습니다.");
+    } catch (error) {
+      console.error("가망고객 등록 오류:", error);
+      alert("가망고객 등록에 실패했습니다.");
+    }
   };
 
   // 필터링된 데이터
@@ -351,6 +439,281 @@ export default function CRMDBPage() {
                 <span className={styles.agentName}>{user.name}</span>
               </div>
             </div>
+          </div>
+
+          {/* 가망고객 등록 폼 */}
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              가망고객 등록
+            </h3>
+            <form onSubmit={handleProspectSubmit} className="space-y-4">
+              {/* 고객 분류 - CRM DB에서는 가망고객만 등록 */}
+              <div className="mb-3">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  고객 분류
+                </label>
+                <div className="w-full bg-gray-100 border-0 rounded-lg px-3 py-2 text-sm text-gray-700">
+                  가망고객 (CRM DB 전용)
+                </div>
+              </div>
+
+              {/* 과정 정보 */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    과정 유형
+                  </label>
+                  <select
+                    className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                    value={prospectFormData.courseType}
+                    onChange={(e) =>
+                      setProspectFormData({
+                        ...prospectFormData,
+                        courseType: e.target.value,
+                      })
+                    }
+                    required
+                  >
+                    <option value="학점은행제">학점은행제</option>
+                    <option value="민간 자격증">민간 자격증</option>
+                    <option value="유학">유학</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    과정
+                  </label>
+                  <select
+                    className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                    value={prospectFormData.course}
+                    onChange={(e) =>
+                      setProspectFormData({
+                        ...prospectFormData,
+                        course: e.target.value,
+                      })
+                    }
+                    required
+                  >
+                    <option value="사회복지사2급">사회복지사2급</option>
+                    <option value="보육교사2급">보육교사2급</option>
+                    <option value="평생교육사2급">평생교육사2급</option>
+                    <option value="한국어교원2급">한국어교원2급</option>
+                    <option value="아동학사">아동학사</option>
+                    <option value="아동전문학사">아동전문학사</option>
+                    <option value="사회복지학사">사회복지학사</option>
+                    <option value="사회복지전문학사">사회복지전문학사</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    기관
+                  </label>
+                  <select
+                    className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                    value={prospectFormData.institution}
+                    onChange={(e) =>
+                      setProspectFormData({
+                        ...prospectFormData,
+                        institution: e.target.value,
+                      })
+                    }
+                    required
+                  >
+                    <option value="한평생학점은행">한평생학점은행</option>
+                    <option value="올티칭학점은행">올티칭학점은행</option>
+                    <option value="서울사이버평생교육원">
+                      서울사이버평생교육원
+                    </option>
+                    <option value="드림원격평생교육원">
+                      드림원격평생교육원
+                    </option>
+                    <option value="드림원격평생교육원 한국어교원 과정">
+                      드림원격평생교육원 한국어교원 과정
+                    </option>
+                    <option value="드림원격평생교육원 미용학 과정">
+                      드림원격평생교육원 미용학 과정
+                    </option>
+                    <option value="해밀원격평생교육원">
+                      해밀원격평생교육원
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 고객 정보 */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    고객명 *
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                    value={prospectFormData.customerName}
+                    onChange={(e) =>
+                      setProspectFormData({
+                        ...prospectFormData,
+                        customerName: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    연락처 *
+                  </label>
+                  <input
+                    type="tel"
+                    className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                    value={prospectFormData.contact}
+                    onChange={(e) => {
+                      const formatted = formatPhoneNumber(e.target.value);
+                      setProspectFormData({
+                        ...prospectFormData,
+                        contact: formatted,
+                      });
+                    }}
+                    placeholder="010-1234-5678"
+                    maxLength={13}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* 교육 수준 및 지역 */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    교육 수준
+                  </label>
+                  <select
+                    className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                    value={prospectFormData.education}
+                    onChange={(e) =>
+                      setProspectFormData({
+                        ...prospectFormData,
+                        education: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="고등학교 졸업">고등학교 졸업</option>
+                    <option value="대학교 졸업">대학교 졸업</option>
+                    <option value="대학원 졸업">대학원 졸업</option>
+                    <option value="기타">기타</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    지역
+                  </label>
+                  <select
+                    className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                    value={prospectFormData.region}
+                    onChange={(e) =>
+                      setProspectFormData({
+                        ...prospectFormData,
+                        region: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="서울">서울</option>
+                    <option value="경기">경기</option>
+                    <option value="인천">인천</option>
+                    <option value="부산">부산</option>
+                    <option value="대구">대구</option>
+                    <option value="광주">광주</option>
+                    <option value="대전">대전</option>
+                    <option value="울산">울산</option>
+                    <option value="세종">세종</option>
+                    <option value="강원">강원</option>
+                    <option value="충북">충북</option>
+                    <option value="충남">충남</option>
+                    <option value="전북">전북</option>
+                    <option value="전남">전남</option>
+                    <option value="경북">경북</option>
+                    <option value="경남">경남</option>
+                    <option value="제주">제주</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    세부 지역
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                    value={prospectFormData.subRegion}
+                    onChange={(e) =>
+                      setProspectFormData({
+                        ...prospectFormData,
+                        subRegion: e.target.value,
+                      })
+                    }
+                    placeholder="도봉구"
+                  />
+                </div>
+              </div>
+
+              {/* 유입 경로 */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  유입 경로
+                </label>
+                <select
+                  className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+                  value={prospectFormData.inflowPath}
+                  onChange={(e) =>
+                    setProspectFormData({
+                      ...prospectFormData,
+                      inflowPath: e.target.value,
+                    })
+                  }
+                >
+                  <option value="기타">기타</option>
+                  <option value="네이버">네이버</option>
+                  <option value="구글">구글</option>
+                  <option value="페이스북">페이스북</option>
+                  <option value="인스타">인스타</option>
+                  <option value="유튜브">유튜브</option>
+                </select>
+              </div>
+
+              {/* 버튼 */}
+              <div className="flex space-x-3 pt-6">
+                <button
+                  type="submit"
+                  className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                >
+                  가망고객 등록
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProspectFormData({
+                      customerType: "가망고객",
+                      courseType: "학점은행제",
+                      course: "사회복지사2급",
+                      institution: "한평생학점은행",
+                      customerName: "",
+                      contact: "",
+                      education: "고등학교 졸업",
+                      region: "서울",
+                      subRegion: "도봉구",
+                      inflowPath: "기타",
+                    });
+                  }}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors text-sm font-medium"
+                >
+                  초기화
+                </button>
+              </div>
+            </form>
           </div>
 
           {/* 카톡 발송 내역 */}
@@ -611,7 +974,9 @@ export default function CRMDBPage() {
                         <td className={styles.tableCell}>
                           {item.course || "미선택"}
                         </td>
-                        <td className={styles.tableCell}>{item.institution}</td>
+                        <td className={styles.tableCell}>
+                          {getInstitutionAbbreviation(item.institution)}
+                        </td>
                         <td className={styles.tableCell}>
                           {item.customerName}
                         </td>

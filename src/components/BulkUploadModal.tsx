@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { formatPhoneNumber, unformatPhoneNumber } from "@/lib/utils";
 import styles from "./BulkUploadModal.module.css";
 
 interface BulkUploadData {
@@ -38,6 +39,70 @@ interface BulkUploadModalProps {
     team: string;
   };
 }
+
+// 유효한 옵션들 정의
+const VALID_OPTIONS = {
+  courseType: ["학점은행제", "민간 자격증", "유학"],
+  course: [
+    "사회복지사2급",
+    "보육교사2급",
+    "평생교육사2급",
+    "한국어교원2급",
+    "아동학사",
+    "아동전문학사",
+    "사회복지학사",
+    "사회복지전문학사",
+  ],
+  institution: [
+    "한평생학점은행",
+    "올티칭학점은행",
+    "서울사이버평생교육원",
+    "드림원격평생교육원",
+    "드림원격평생교육원 한국어교원 과정",
+    "드림원격평생교육원 미용학 과정",
+    "해밀원격평생교육원",
+  ],
+  education: ["고등학교 졸업", "대학교 졸업", "대학원 졸업", "기타"],
+  region: [
+    "서울",
+    "경기",
+    "인천",
+    "부산",
+    "대구",
+    "광주",
+    "대전",
+    "울산",
+    "세종",
+    "강원",
+    "충북",
+    "충남",
+    "전북",
+    "전남",
+    "경북",
+    "경남",
+    "제주",
+  ],
+  inflowPath: ["기타", "네이버", "구글", "페이스북", "인스타", "유튜브"],
+};
+
+// 옵션 검증 함수
+const validateOption = (
+  value: string,
+  field: keyof typeof VALID_OPTIONS,
+  rowNum: number
+): ValidationError[] => {
+  const errors: ValidationError[] = [];
+  if (value && !VALID_OPTIONS[field].includes(value)) {
+    errors.push({
+      row: rowNum,
+      field: field,
+      message: `${field}은(는) 다음 중 하나여야 합니다: ${VALID_OPTIONS[
+        field
+      ].join(", ")}`,
+    });
+  }
+  return errors;
+};
 
 export default function BulkUploadModal({
   isOpen,
@@ -172,24 +237,33 @@ export default function BulkUploadModal({
           message: "연락처는 필수입니다",
         });
       } else {
-        // 전화번호 형식 검증 (010-XXXX-XXXX 형식만 허용)
-        const phoneRegex = /^010-\d{4}-\d{4}$/;
-        if (!phoneRegex.test(row.contact.trim())) {
+        // 전화번호 형식 검증 (010으로 시작하는 11자리 숫자)
+        const unformattedContact = unformatPhoneNumber(row.contact);
+        if (!/^010\d{8}$/.test(unformattedContact)) {
           errors.push({
             row: rowNum,
             field: "contact",
             message:
-              "연락처는 010-XXXX-XXXX 형식이어야 합니다 (예: 010-1234-5678)",
+              "연락처는 010으로 시작하는 11자리 숫자여야 합니다 (예: 010-1234-5678)",
           });
         }
       }
 
-      if (row.customerType === "계약고객") {
+      // 옵션 검증 추가
+      errors.push(...validateOption(row.courseType, "courseType", rowNum));
+      errors.push(...validateOption(row.course, "course", rowNum));
+      errors.push(...validateOption(row.institution, "institution", rowNum));
+      errors.push(...validateOption(row.education, "education", rowNum));
+      errors.push(...validateOption(row.region, "region", rowNum));
+      errors.push(...validateOption(row.inflowPath, "inflowPath", rowNum));
+
+      // CRM에서는 계약고객만 등록하므로 결제일자 검증
+      if (true) {
         if (!row.paymentDate) {
           errors.push({
             row: rowNum,
             field: "paymentDate",
-            message: "계약고객은 결제일자가 필요합니다",
+            message: "결제일자가 필요합니다",
           });
         } else if (!/^\d{4}-\d{2}-\d{2}$/.test(row.paymentDate)) {
           errors.push({
@@ -260,14 +334,25 @@ export default function BulkUploadModal({
       alert("파일 읽기 중 오류가 발생했습니다.");
     };
 
-    // UTF-8로 읽기 시도
-    reader.readAsText(file, "UTF-8");
+    // UTF-8로 읽기 시도 (명시적 인코딩 설정)
+    reader.readAsText(file, "utf-8");
   };
 
   // CSV 전처리 함수
   const preprocessCSV = (csvText: string): string => {
-    // BOM 제거
+    // BOM 제거 (UTF-8 BOM)
     csvText = csvText.replace(/^\uFEFF/, "");
+
+    // UTF-8 인코딩 확인 및 정규화
+    try {
+      // UTF-8로 디코딩 시도
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder("utf-8");
+      const bytes = encoder.encode(csvText);
+      csvText = decoder.decode(bytes);
+    } catch (error) {
+      console.warn("UTF-8 인코딩 처리 중 오류:", error);
+    }
 
     // 줄바꿈 정규화
     csvText = csvText.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
@@ -361,7 +446,7 @@ export default function BulkUploadModal({
           branch: user.branch || "",
           team: user.team || "",
           manager: user.name,
-          customer_type: data.customerType,
+          customer_type: "계약고객", // CRM에서는 계약고객만 등록
           course_type: data.courseType,
           course: data.course,
           institution: data.institution,
@@ -370,22 +455,15 @@ export default function BulkUploadModal({
           education: data.education,
           region: `${data.region} ${data.subRegion}`,
           status: "등록완료",
-          payment_date:
-            data.customerType === "계약고객" ? data.paymentDate || null : null,
-          payment_amount: data.customerType === "계약고객" ? paymentAmount : 0,
-          commission: data.customerType === "계약고객" ? commission : 0,
+          payment_date: data.paymentDate || null,
+          payment_amount: paymentAmount,
+          commission: commission,
           subject_theory_count:
-            data.customerType === "계약고객" && data.courseType === "학점은행제"
-              ? data.subjectTheoryCount
-              : 0,
+            data.courseType === "학점은행제" ? data.subjectTheoryCount : 0,
           subject_face_to_face_count:
-            data.customerType === "계약고객" && data.courseType === "학점은행제"
-              ? data.subjectFaceToFaceCount
-              : 0,
+            data.courseType === "학점은행제" ? data.subjectFaceToFaceCount : 0,
           subject_practice_count:
-            data.customerType === "계약고객" && data.courseType === "학점은행제"
-              ? data.subjectPracticeCount
-              : 0,
+            data.courseType === "학점은행제" ? data.subjectPracticeCount : 0,
           inflow_path: data.inflowPath,
         });
 
@@ -487,7 +565,7 @@ export default function BulkUploadModal({
         "한평생학점은행",
         "김영희",
         "010-9876-5432",
-        "2년제 졸업",
+        "고등학교 졸업",
         "부산",
         "해운대구",
         "2025-12-12",
@@ -495,7 +573,7 @@ export default function BulkUploadModal({
         "5",
         "3",
         "2",
-        "제휴카페",
+        "기타",
       ];
     }
 
@@ -515,7 +593,8 @@ export default function BulkUploadModal({
     // BOM 추가하여 Excel에서 한글 깨짐 방지
     const BOM = "\uFEFF";
     const blob = new Blob([BOM + csvContent], {
-      type: "text/csv;charset=utf-8;",
+      type: "text/csv;charset=utf-8",
+      endings: "native",
     });
 
     const link = document.createElement("a");
@@ -599,12 +678,47 @@ export default function BulkUploadModal({
                   <h5>📋 CSV 파일 사용 팁</h5>
                   <ul>
                     <li>
+                      <strong>인코딩:</strong> CSV 파일은 UTF-8 인코딩으로
+                      저장해주세요
+                    </li>
+                    <li>
                       한글이 깨지는 경우 템플릿을 다시 다운로드하여 사용하세요
+                    </li>
+                    <li>
+                      Excel에서 저장 시 "CSV UTF-8(쉼표로 구분)(*.csv)" 형식으로
+                      저장하세요
                     </li>
                     <li>
                       쉼표(,)가 포함된 데이터는 자동으로 따옴표로 처리됩니다
                     </li>
                     <li>빈 행은 자동으로 무시됩니다</li>
+                    <li>
+                      <strong>과정분류:</strong> 학점은행제, 민간 자격증, 유학
+                    </li>
+                    <li>
+                      <strong>과정:</strong> 사회복지사2급, 보육교사2급,
+                      평생교육사2급, 한국어교원2급, 아동학사, 아동전문학사,
+                      사회복지학사, 사회복지전문학사
+                    </li>
+                    <li>
+                      <strong>기관:</strong> 한평생학점은행, 올티칭학점은행,
+                      서울사이버평생교육원, 드림원격평생교육원,
+                      드림원격평생교육원 한국어교원 과정, 드림원격평생교육원
+                      미용학 과정, 해밀원격평생교육원
+                    </li>
+                    <li>
+                      <strong>최종학력:</strong> 고등학교 졸업, 대학교 졸업,
+                      대학원 졸업, 기타
+                    </li>
+                    <li>
+                      <strong>지역:</strong> 서울, 경기, 인천, 부산, 대구, 광주,
+                      대전, 울산, 세종, 강원, 충북, 충남, 전북, 전남, 경북,
+                      경남, 제주
+                    </li>
+                    <li>
+                      <strong>유입경로:</strong> 기타, 네이버, 구글, 페이스북,
+                      인스타, 유튜브
+                    </li>
                   </ul>
                 </div>
               </div>

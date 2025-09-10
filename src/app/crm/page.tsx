@@ -6,6 +6,11 @@ import { useEffect, useState, useCallback } from "react";
 import Header from "@/components/Navigation";
 import BulkUploadModal from "@/components/BulkUploadModal";
 import { supabase } from "@/lib/supabase";
+import {
+  getInstitutionAbbreviation,
+  formatPhoneNumber,
+  unformatPhoneNumber,
+} from "@/lib/utils";
 
 interface CRMData {
   id: string;
@@ -48,7 +53,7 @@ export default function CRMPage() {
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
 
   const [formData, setFormData] = useState({
-    customerType: "가망고객",
+    customerType: "계약고객", // CRM에서는 계약고객만 등록
     courseType: "학점은행제",
     course: "사회복지사2급",
     institution: "한평생학점은행",
@@ -79,6 +84,7 @@ export default function CRMPage() {
         .from("customers")
         .select("*")
         .eq("manager", user.name)
+        .eq("customer_type", "계약고객") // CRM에서는 계약고객만 표시
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -269,10 +275,12 @@ export default function CRMPage() {
       return;
     }
 
-    // 전화번호 형식 검증 (010-XXXX-XXXX 형식만 허용)
-    const phoneRegex = /^010-\d{4}-\d{4}$/;
-    if (!phoneRegex.test(formData.contact.trim())) {
-      alert("연락처는 010-XXXX-XXXX 형식이어야 합니다.\n예: 010-1234-5678");
+    // 전화번호 형식 검증 (010으로 시작하는 11자리 숫자)
+    const unformattedContact = unformatPhoneNumber(formData.contact);
+    if (!/^010\d{8}$/.test(unformattedContact)) {
+      alert(
+        "연락처는 010으로 시작하는 11자리 숫자여야 합니다.\n예: 010-1234-5678"
+      );
       return;
     }
 
@@ -350,7 +358,7 @@ export default function CRMPage() {
 
         // 폼 초기화
         setFormData({
-          customerType: "가망고객",
+          customerType: "계약고객",
           courseType: "학점은행제",
           course: "사회복지사2급",
           institution: "한평생학점은행",
@@ -367,7 +375,7 @@ export default function CRMPage() {
           inflowPath: "기타",
         });
 
-        alert("고객 정보가 성공적으로 등록되었습니다.");
+        alert("계약고객이 성공적으로 등록되었습니다.");
       } catch (error) {
         console.error("CRM 데이터 저장 오류:", error);
         alert("데이터 저장에 실패했습니다.");
@@ -385,7 +393,7 @@ export default function CRMPage() {
     const item = userCRMData.find((data) => data.id === id);
     if (item) {
       setFormData({
-        customerType: item.customerType || "가망고객",
+        customerType: item.customerType || "계약고객",
         courseType: item.courseType,
         course: item.course || "사회복지사2급",
         institution: item.institution,
@@ -469,7 +477,7 @@ export default function CRMPage() {
 
       // 폼 초기화
       setFormData({
-        customerType: "가망고객",
+        customerType: "계약고객",
         courseType: "학점은행제",
         course: "사회복지사2급",
         institution: "한평생학점은행",
@@ -627,60 +635,10 @@ export default function CRMPage() {
       <div className="flex h-screen">
         {/* 왼쪽 패널 */}
         <div className="w-1/4 bg-gray-50 p-6 overflow-y-auto">
-          {/* 담당자 정보 */}
-          <div className="mb-6">
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-              <div className="flex items-center justify-around">
-                <span className="text-base font-semibold text-gray-900">
-                  {user.branch}
-                </span>
-                <div className="w-px h-4 bg-gray-300"></div>
-                <span className="text-base font-semibold text-gray-900">
-                  {user.team}
-                </span>
-                <div className="w-px h-4 bg-gray-300"></div>
-                <span className="text-lg font-bold text-gray-900">
-                  {user.name}
-                </span>
-              </div>
-            </div>
-          </div>
-
           {/* 고객 정보 입력 폼 */}
           <div className="mb-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">고객 등록</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* 고객 분류 */}
-              <div className="mb-3">
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  고객 분류
-                </label>
-                <select
-                  className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
-                  value={formData.customerType}
-                  onChange={(e) => {
-                    const newCustomerType = e.target.value;
-                    setFormData({
-                      ...formData,
-                      customerType: newCustomerType,
-                      // 가망고객으로 변경되면 결제 정보 초기화
-                      paymentDate:
-                        newCustomerType === "가망고객"
-                          ? ""
-                          : formData.paymentDate,
-                      paymentAmount:
-                        newCustomerType === "가망고객"
-                          ? ""
-                          : formData.paymentAmount,
-                    });
-                  }}
-                  required
-                >
-                  <option value="가망고객">가망고객</option>
-                  <option value="계약고객">계약고객</option>
-                </select>
-              </div>
-
               {/* 과정 정보 */}
               <div className="grid grid-cols-3 gap-3">
                 <div>
@@ -782,10 +740,12 @@ export default function CRMPage() {
                     type="text"
                     className="w-full bg-white border-0 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
                     value={formData.contact}
-                    onChange={(e) =>
-                      setFormData({ ...formData, contact: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const formatted = formatPhoneNumber(e.target.value);
+                      setFormData({ ...formData, contact: formatted });
+                    }}
                     placeholder="010-0000-0000"
+                    maxLength={13}
                     required
                   />
                 </div>
@@ -876,8 +836,8 @@ export default function CRMPage() {
                 </select>
               </div>
 
-              {/* 결제 정보 (계약고객일 때만 표시) */}
-              {formData.customerType === "계약고객" && (
+              {/* 결제 정보 (CRM에서는 계약고객만 등록하므로 항상 표시) */}
+              {
                 <>
                   {/* 결제일자 */}
                   <div>
@@ -996,19 +956,7 @@ export default function CRMPage() {
                     </div>
                   )}
                 </>
-              )}
-
-              {/* 가망고객일 때 안내 메시지 */}
-              {formData.customerType === "가망고객" && (
-                <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-                  <div className="text-sm text-yellow-800">
-                    💡 가망고객은 아직 계약이 진행 중인 고객입니다.
-                    <br />
-                    계약이 완료되면 고객 분류를 &quot;계약고객&quot;으로
-                    변경하여 결제 정보를 입력할 수 있습니다.
-                  </div>
-                </div>
-              )}
+              }
 
               {/* 버튼 */}
               <div className="flex space-x-3 pt-6">
@@ -1032,7 +980,7 @@ export default function CRMPage() {
                       onClick={() => {
                         setEditingItem(null);
                         setFormData({
-                          customerType: "가망고객",
+                          customerType: "계약고객",
                           courseType: "학점은행제",
                           course: "사회복지사2급",
                           institution: "한평생학점은행",
@@ -1244,9 +1192,6 @@ export default function CRMPage() {
                       담당자
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
-                      고객분류
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
                       과정분류
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
@@ -1308,16 +1253,13 @@ export default function CRMPage() {
                         {item.manager}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
-                        {item.customerType}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.courseType}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.course || "미선택"}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
-                        {item.institution}
+                        {getInstitutionAbbreviation(item.institution)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.customerName}
@@ -1337,8 +1279,7 @@ export default function CRMPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
-                        {item.courseType === "학점은행제" &&
-                        item.customerType === "계약고객" ? (
+                        {item.courseType === "학점은행제" ? (
                           <div className="space-y-1">
                             <div className="text-xs">
                               이론: {item.subjectTheoryCount}

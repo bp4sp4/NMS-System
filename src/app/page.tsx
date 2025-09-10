@@ -7,7 +7,9 @@ import Header from "@/components/Navigation";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { getRecentPosts } from "@/lib/board";
 import { checkIn, checkOut, getTodayAttendance } from "@/lib/attendance";
+import { getRecentMeetingReservations } from "@/lib/meetingRooms";
 import type { Attendance } from "@/types/attendance";
+import type { MeetingReservation } from "@/lib/meetingRooms";
 import { Clock, Mail, FileText, Search, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
@@ -39,6 +41,11 @@ export default function HomePage() {
   const [recentPosts, setRecentPosts] = useState<Post[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("전체");
+  const [recentMeetingReservations, setRecentMeetingReservations] = useState<
+    MeetingReservation[]
+  >([]);
+  const [meetingReservationsLoading, setMeetingReservationsLoading] =
+    useState(true);
   const [todayAttendance, setTodayAttendance] = useState<Attendance | null>(
     null
   );
@@ -138,6 +145,25 @@ export default function HomePage() {
       fetchRecentPosts();
     } else {
       console.log("메인 페이지: 사용자 정보 없음");
+    }
+  }, [user]);
+
+  // 최근 회의실 예약 가져오기
+  useEffect(() => {
+    const fetchRecentMeetingReservations = async () => {
+      try {
+        setMeetingReservationsLoading(true);
+        const reservations = await getRecentMeetingReservations(3);
+        setRecentMeetingReservations(reservations);
+      } catch (error) {
+        console.error("메인 페이지: 회의실 예약 조회 중 오류:", error);
+      } finally {
+        setMeetingReservationsLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchRecentMeetingReservations();
     }
   }, [user]);
 
@@ -708,57 +734,83 @@ export default function HomePage() {
             {/* 최근 알림 */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                최근 알림
+                회의실 알림
               </h3>
 
               <div className="space-y-4">
-                {[
-                  {
-                    message: "18:00으로 자동퇴근되었습니다.",
-                    author: "박상훈 사원",
-                    time: "08-27 00:22",
-                  },
-                  {
-                    message:
-                      "[전사 게시글 등록] '사원증 및 명함 신청 접수(~8/29)'글이 등록되었습니다.",
-                    author: "정채림 사원",
-                    time: "08-25 15:33",
-                  },
-                  {
-                    message:
-                      "[전사 게시글 등록] '사원증 및 명함이 필요한 직원은 8월 29일(금)까지 전자결재로 신청서 제출'글이 등록되었습니다.",
-                    author: "정채림 사원",
-                    time: "08-25 15:31",
-                  },
-                  {
-                    message: "18:00으로 자동퇴근되었습니다.",
-                    author: "박상훈 사원",
-                    time: "08-23 00:25",
-                  },
-                ].map((notification, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start space-x-3 group cursor-pointer"
-                  >
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                      {notification.author.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
-                        {notification.message}
-                      </p>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <span className="text-xs text-gray-500">
-                          {notification.author}
-                        </span>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500">
-                          {notification.time}
-                        </span>
-                      </div>
-                    </div>
+                {meetingReservationsLoading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    <p className="text-gray-500 text-sm">
+                      알림을 불러오는 중...
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  <>
+                    {/* 회의실 예약 알림 */}
+                    {recentMeetingReservations.length > 0 ? (
+                      recentMeetingReservations.map((reservation) => {
+                        const startTime = new Date(reservation.start_time);
+                        const endTime = new Date(reservation.end_time);
+                        const timeString = `${startTime
+                          .getHours()
+                          .toString()
+                          .padStart(2, "0")}:${startTime
+                          .getMinutes()
+                          .toString()
+                          .padStart(2, "0")} - ${endTime
+                          .getHours()
+                          .toString()
+                          .padStart(2, "0")}:${endTime
+                          .getMinutes()
+                          .toString()
+                          .padStart(2, "0")}`;
+                        const dateString = `${
+                          startTime.getMonth() + 1
+                        }-${startTime
+                          .getDate()
+                          .toString()
+                          .padStart(2, "0")} ${timeString}`;
+
+                        return (
+                          <div
+                            key={reservation.id}
+                            className="flex items-start space-x-3 group cursor-pointer"
+                          >
+                            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                              📅
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                                [회의실 예약] {reservation.title} -{" "}
+                                {reservation.meeting_rooms.name}
+                              </p>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <span className="text-xs text-gray-500">
+                                  {reservation.meeting_rooms.location}
+                                </span>
+                              </div>
+                              <span className="text-xs text-gray-500">
+                                {dateString}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-4">
+                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                          📅
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          예정된 회의실 예약이 없습니다
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 기존 알림들 */}
+                  </>
+                )}
               </div>
             </div>
           </div>

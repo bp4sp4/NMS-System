@@ -145,6 +145,12 @@ export default function Navigation() {
               >
                 게시판
               </Link>
+              <Link
+                href="/meeting-rooms"
+                className={`${styles.menuLink} ${styles.menuLinkInactive}`}
+              >
+                회의실 예약
+              </Link>
               {!isFreelancer && (
                 <Link
                   href="/attendance"
@@ -306,6 +312,12 @@ export default function Navigation() {
           )}
           <Link href="/ranking" className={styles.mobileMenuItem}>
             랭킹
+          </Link>
+          <Link href="/board" className={styles.mobileMenuItem}>
+            게시판
+          </Link>
+          <Link href="/meeting-rooms" className={styles.mobileMenuItem}>
+            회의실 예약
           </Link>
           {!isFreelancer && (
             <Link href="/attendance" className={styles.mobileMenuItem}>

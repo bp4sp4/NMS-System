@@ -151,6 +151,12 @@ export default function Navigation() {
               >
                 회의실 예약
               </Link>
+              <Link
+                href="/approval"
+                className={`${styles.menuLink} ${styles.menuLinkInactive}`}
+              >
+                전자결재
+              </Link>
               {!isFreelancer && (
                 <Link
                   href="/attendance"
@@ -318,6 +324,9 @@ export default function Navigation() {
           </Link>
           <Link href="/meeting-rooms" className={styles.mobileMenuItem}>
             회의실 예약
+          </Link>
+          <Link href="/approval" className={styles.mobileMenuItem}>
+            전자결재
           </Link>
           {!isFreelancer && (
             <Link href="/attendance" className={styles.mobileMenuItem}>

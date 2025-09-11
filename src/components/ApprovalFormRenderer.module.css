@@ -1,0 +1,597 @@
+.container {
+    min-height: 100vh;
+    background-color: #f8fafc;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 액션 바 스타일 */
+.topActions,
+.bottomActions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.bottomActions {
+    border-top: 1px solid #e5e7eb;
+    border-bottom: none;
+}
+
+.leftActions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.rightActions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.actionButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.actionButton:hover:not(:disabled) {
+    background-color: #2563eb;
+}
+
+.actionButton:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.autoSaveSelect {
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    background-color: white;
+}
+
+.listButton {
+    padding: 0.5rem 1rem;
+    background-color: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.listButton:hover {
+    background-color: #f9fafb;
+}
+
+/* 메인 양식 컨테이너 */
+.formContainer {
+    flex: 1;
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    gap: 2rem;
+    padding: 2rem;
+}
+
+.formContent {
+    flex: 1;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+}
+
+.formTitle {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.formTitle h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+/* 헤더 정보 */
+.headerInfo {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.writerInfo {
+    flex: 1;
+}
+
+.approvalLine {
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.infoTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.labelCell {
+    padding: 0.75rem;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    font-weight: 500;
+    color: #374151;
+    width: 120px;
+}
+
+.valueCell {
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    color: #111827;
+}
+
+.referenceInput {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+}
+
+.approvalLabel {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background-color: #f3f4f6;
+    border-radius: 0.375rem;
+}
+
+.approverInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.approverItem {
+    text-align: center;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background-color: #f9fafb;
+}
+
+.approverTitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.approverName {
+    font-weight: 600;
+    color: #111827;
+}
+
+/* 양식 필드 */
+.formFields {
+    margin-bottom: 2rem;
+}
+
+.fieldGroup {
+    margin-bottom: 1.5rem;
+}
+
+.fieldLabel {
+    display: block;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.required {
+    color: #dc2626;
+    margin-right: 0.25rem;
+}
+
+.fieldInput {
+    position: relative;
+}
+
+.input,
+.select,
+.textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: border-color 0.2s;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.inputError {
+    border-color: #dc2626;
+}
+
+.errorMessage {
+    color: #dc2626;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* 날짜 입력 */
+.dateInput {
+    position: relative;
+    display: inline-block;
+}
+
+.dateIcon {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+    pointer-events: none;
+}
+
+/* 휴가 기간 특별 스타일 */
+.vacationPeriod {
+    margin-bottom: 1.5rem;
+}
+
+.dateRangeInput {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.dateSeparator {
+    font-weight: 500;
+    color: #6b7280;
+}
+
+.daysInfo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.daysInput {
+    width: 60px;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    text-align: center;
+}
+
+/* 첨부파일 안내 */
+.attachmentGuide {
+    background-color: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.attachmentGuide h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #0369a1;
+    margin: 0 0 0.5rem 0;
+}
+
+.attachmentGuide ul {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: #0369a1;
+    font-size: 0.875rem;
+}
+
+.attachmentGuide li {
+    margin-bottom: 0.25rem;
+}
+
+/* 파일 업로드 */
+.fileUploadSection {
+    margin-bottom: 1.5rem;
+}
+
+.fileUploadHeader {
+    margin-bottom: 0.75rem;
+}
+
+.fileUploadLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.infoIcon {
+    color: #6b7280;
+}
+
+.fileUploadArea {
+    position: relative;
+    border: 2px dashed #d1d5db;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    transition: border-color 0.2s;
+}
+
+.fileUploadArea:hover {
+    border-color: #3b82f6;
+}
+
+.fileInput {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.fileUploadContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6b7280;
+}
+
+.uploadIcon {
+    color: #9ca3af;
+}
+
+.attachedFiles {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.attachedFile {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+}
+
+.fileName {
+    flex: 1;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.fileSize {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.removeFileButton {
+    background: none;
+    border: none;
+    color: #dc2626;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+}
+
+.removeFileButton:hover {
+    background-color: #fee2e2;
+}
+
+/* 관련 문서 */
+.relatedDocuments {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.relatedDocsLabel {
+    font-weight: 500;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.documentSearchButton {
+    padding: 0.5rem 1rem;
+    background-color: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.documentSearchButton:hover {
+    background-color: #e5e7eb;
+}
+
+/* 사이드바 */
+.sidebar {
+    width: 300px;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    height: fit-content;
+}
+
+.sidebarTabs {
+    display: flex;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.sidebarTab {
+    flex: 1;
+    padding: 1rem;
+    background: none;
+    border: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.activeTab {
+    color: #3b82f6;
+    border-bottom: 2px solid #3b82f6;
+    background-color: #f0f9ff;
+}
+
+.approvalFlow {
+    padding: 1.5rem;
+}
+
+.approvalStep {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background-color: #f9fafb;
+}
+
+.approverAvatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #3b82f6;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.approverDetails {
+    flex: 1;
+}
+
+.approverName {
+    font-weight: 600;
+    color: #111827;
+    font-size: 0.875rem;
+}
+
+.approverDept {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+}
+
+.approvalStatus {
+    font-size: 0.75rem;
+    color: #059669;
+    font-weight: 500;
+}
+
+.approvalArrow {
+    text-align: center;
+    color: #6b7280;
+    font-size: 1.25rem;
+    margin: 0.5rem 0;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+    .formContainer {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .sidebar {
+        width: 100%;
+        order: -1;
+    }
+
+    .headerInfo {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .approvalLine {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .approvalLabel {
+        writing-mode: horizontal-tb;
+        text-orientation: initial;
+    }
+
+    .dateRangeInput {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .daysInfo {
+        margin-left: 0;
+        justify-content: center;
+    }
+
+    .topActions,
+    .bottomActions {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .leftActions {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .rightActions {
+        justify-content: center;
+    }
+}

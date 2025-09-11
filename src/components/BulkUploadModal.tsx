@@ -685,8 +685,8 @@ export default function BulkUploadModal({
                       한글이 깨지는 경우 템플릿을 다시 다운로드하여 사용하세요
                     </li>
                     <li>
-                      Excel에서 저장 시 "CSV UTF-8(쉼표로 구분)(*.csv)" 형식으로
-                      저장하세요
+                      Excel에서 저장 시 &quot;CSV UTF-8(쉼표로
+                      구분)(*.csv)&quot; 형식으로 저장하세요
                     </li>
                     <li>
                       쉼표(,)가 포함된 데이터는 자동으로 따옴표로 처리됩니다

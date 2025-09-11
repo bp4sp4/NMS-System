@@ -11,7 +11,17 @@ import { getRecentMeetingReservations } from "@/lib/meetingRooms";
 import { getDepartmentColor } from "@/lib/utils";
 import type { Attendance } from "@/types/attendance";
 import type { MeetingReservation } from "@/lib/meetingRooms";
-import { Clock, Mail, FileText, Search, ChevronRight } from "lucide-react";
+import {
+  Clock,
+  Mail,
+  FileText,
+  Search,
+  ChevronRight,
+  Target,
+  TrendingUp,
+  Users,
+  DollarSign,
+} from "lucide-react";
 import Link from "next/link";
 
 interface DashboardData {
@@ -247,6 +257,33 @@ export default function HomePage() {
     }
   };
 
+  // 12시 이후 자동 퇴근 처리
+  useEffect(() => {
+    const checkAutoCheckout = () => {
+      if (!user || !todayAttendance) return;
+
+      const isClockedIn = !!todayAttendance.check_in_time;
+      const isClockedOut = !!todayAttendance.check_out_time;
+      const now = new Date();
+      const currentHour = now.getHours();
+      const shouldAutoCheckout =
+        isClockedIn && !isClockedOut && currentHour >= 12;
+
+      if (shouldAutoCheckout) {
+        handleCheckOut();
+        setMessage({
+          type: "success",
+          text: "12시가 지나 자동으로 19시 퇴근 처리되었습니다.",
+        });
+      }
+    };
+
+    // 매분마다 체크
+    const interval = setInterval(checkAutoCheckout, 60000);
+
+    return () => clearInterval(interval);
+  }, [user, todayAttendance, handleCheckOut]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -282,6 +319,7 @@ export default function HomePage() {
         status: "미출근",
         progressPercentage: 0,
         currentWorkHours: 0,
+        shouldAutoCheckout: false,
       };
     }
 
@@ -322,6 +360,12 @@ export default function HomePage() {
     const isClockedIn = !!todayAttendance.check_in_time;
     const isClockedOut = !!todayAttendance.check_out_time;
 
+    // 12시 이후 자동 퇴근 체크
+    const now = new Date();
+    const currentHour = now.getHours();
+    const shouldAutoCheckout =
+      isClockedIn && !isClockedOut && currentHour >= 12;
+
     return {
       clockInTime,
       clockOutTime,
@@ -339,6 +383,7 @@ export default function HomePage() {
           : "결근",
       progressPercentage,
       currentWorkHours,
+      shouldAutoCheckout,
     };
   };
 
@@ -361,10 +406,10 @@ export default function HomePage() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-full mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* 왼쪽 컬럼 - 사용자 정보 및 근태관리 */}
-          <div className="space-y-6">
+          <div className="lg:col-span-3 space-y-6">
             {/* 사용자 프로필 카드 */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center space-x-4">
@@ -467,7 +512,11 @@ export default function HomePage() {
                   <button
                     onClick={handleCheckOut}
                     disabled={!attendanceData.canCheckOut || attendanceLoading}
-                    className="bg-gray-500 text-white py-3 px-4 rounded-xl font-semibold hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`${
+                      attendanceData.canCheckOut
+                        ? "bg-blue-500 hover:bg-blue-600"
+                        : "bg-gray-500 hover:bg-gray-600"
+                    } text-white py-3 px-4 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {attendanceLoading ? "처리 중..." : "퇴근하기"}
                   </button>
@@ -498,8 +547,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 중앙 컬럼 - 전사게시판 및 캘린더 */}
-          <div className="space-y-6">
+          {/* 중앙 컬럼 - 전사게시판 및 KPI 목표 */}
+          <div className="lg:col-span-6 space-y-6">
             {/* 전사게시판 */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
               <div className="p-6 border-b border-gray-100">
@@ -607,132 +656,217 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* 캘린더 */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">2025.08</h3>
-                <div className="flex space-x-1">
-                  <button className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
-                    ‹
-                  </button>
-                  <button className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
-                    ›
-                  </button>
+            {/* KPI 목표 */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    KPI 목표
+                  </h3>
+                  <div className="flex items-center space-x-2">
+                    <Target className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm text-gray-600">2025년 목표</span>
+                  </div>
                 </div>
               </div>
 
-              {/* 요일 헤더 */}
-              <div className="grid grid-cols-7 gap-1 mb-2">
-                {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
-                  <div
-                    key={day}
-                    className="text-center text-xs font-medium text-gray-500 py-2"
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
-
-              {/* 캘린더 그리드 */}
-              <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: 35 }, (_, i) => {
-                  const day = i - 3; // 7월 27일부터 시작
-                  const isCurrentMonth = day > 0 && day <= 31;
-                  const isToday = day === 27; // 8월 27일이 오늘
-                  const hasEvent = [
-                    6, 7, 8, 13, 14, 18, 19, 20, 21, 22, 25, 28, 29,
-                  ].includes(day);
-                  const isHoliday = day === 15;
-
-                  return (
-                    <div
-                      key={i}
-                      className={`aspect-square rounded-lg flex items-center justify-center text-xs font-medium cursor-pointer transition-colors ${
-                        isToday
-                          ? "bg-blue-500 text-white"
-                          : isHoliday
-                          ? "text-red-500"
-                          : isCurrentMonth
-                          ? "text-gray-900 hover:bg-gray-100"
-                          : "text-gray-300"
-                      }`}
-                    >
-                      {isCurrentMonth && (
-                        <div className="text-center">
-                          <div>{day}</div>
-                          {hasEvent && (
-                            <div className="w-1 h-1 bg-blue-400 rounded-full mx-auto mt-1"></div>
-                          )}
+              <div className="p-6 space-y-6">
+                {/* 전체 목표 */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                    <Target className="w-4 h-4 text-blue-600" />
+                    <span>전체 목표</span>
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* 전체 매출 목표 */}
+                    <div className="space-y-3 p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-center space-x-2">
+                        <DollarSign className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium text-gray-700">
+                          전체 매출
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">월 목표</span>
+                          <span className="font-semibold text-gray-900">
+                            500,000,000원
+                          </span>
                         </div>
-                      )}
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-green-500 h-2 rounded-full"
+                            style={{ width: "68%" }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>340,000,000원</span>
+                          <span>68%</span>
+                        </div>
+                      </div>
                     </div>
-                  );
-                })}
+
+                    {/* 전체 신규 고객 목표 */}
+                    <div className="space-y-3 p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-center space-x-2">
+                        <Users className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-medium text-gray-700">
+                          전체 신규 고객
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">월 목표</span>
+                          <span className="font-semibold text-gray-900">
+                            300명
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-500 h-2 rounded-full"
+                            style={{ width: "72%" }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>216명</span>
+                          <span>72%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 지점별 목표 */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                    <TrendingUp className="w-4 h-4 text-purple-600" />
+                    <span>지점별 목표</span>
+                  </h4>
+                  <div className="space-y-4">
+                    {/* AIO지점 */}
+                    <div className="p-4 border border-gray-200 rounded-xl">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-medium text-gray-900">AIO지점</h5>
+                        <span className="text-sm text-gray-500">2팀</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">매출 목표</span>
+                            <span className="font-semibold text-gray-900">
+                              50,000,000원
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-green-500 h-2 rounded-full"
+                              style={{ width: "75%" }}
+                            ></div>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>37,500,000원</span>
+                            <span>75%</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">신규 고객</span>
+                            <span className="font-semibold text-gray-900">
+                              30명
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-blue-500 h-2 rounded-full"
+                              style={{ width: "60%" }}
+                            ></div>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>18명</span>
+                            <span>60%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 한평생교육지원센터 */}
+                    <div className="p-4 border border-gray-200 rounded-xl">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-medium text-gray-900">
+                          위드미지점
+                        </h5>
+                        <span className="text-sm text-gray-500">3-1팀</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">매출 목표</span>
+                            <span className="font-semibold text-gray-900">
+                              80,000,000원
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-green-500 h-2 rounded-full"
+                              style={{ width: "85%" }}
+                            ></div>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>68,000,000원</span>
+                            <span>85%</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">신규 고객</span>
+                            <span className="font-semibold text-gray-900">
+                              50명
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-blue-500 h-2 rounded-full"
+                              style={{ width: "78%" }}
+                            ></div>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>39명</span>
+                            <span>78%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 전체 진행률 요약 */}
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900">
+                        전체 목표 달성률
+                      </h4>
+                      <p className="text-xs text-gray-600 mt-1">
+                        2025년 9월 기준
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-blue-600">
+                        72%
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        전체 목표 대비 달성률
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* 오른쪽 컬럼 - 명예의 전당 및 알림 */}
-          <div className="space-y-6">
-            {/* 명예의 전당 */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                명예의 전당
-              </h3>
-
-              <div className="space-y-4">
-                {/* 1위 */}
-                <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl border border-yellow-200">
-                  <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                    1st
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-900">장은혜</div>
-                    <div className="text-xs text-gray-600">
-                      한평생교육지원센터 3-1팀
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-yellow-600">133,470,000</div>
-                    <div className="text-xs text-gray-500">점수</div>
-                  </div>
-                </div>
-
-                {/* 2위 */}
-                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl">
-                  <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                    2nd
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-900">
-                      강도연 주임
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-gray-600">106,950,000</div>
-                    <div className="text-xs text-gray-500">점수</div>
-                  </div>
-                </div>
-
-                {/* 3위 */}
-                <div className="flex items-center space-x-3 p-3 bg-orange-50 rounded-xl border border-orange-200">
-                  <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                    3rd
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-900">
-                      이규준 이사
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-orange-600">104,760,000</div>
-                    <div className="text-xs text-gray-500">점수</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 최근 알림 */}
+          {/* 오른쪽 컬럼 - 회의 알림 및 캘린더 */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* 회의 알림 */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">
@@ -826,6 +960,70 @@ export default function HomePage() {
                     {/* 기존 알림들 */}
                   </>
                 )}
+              </div>
+            </div>
+
+            {/* 캘린더 */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">2025.08</h3>
+                <div className="flex space-x-1">
+                  <button className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+                    ‹
+                  </button>
+                  <button className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+                    ›
+                  </button>
+                </div>
+              </div>
+
+              {/* 요일 헤더 */}
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
+                  <div
+                    key={day}
+                    className="text-center text-xs font-medium text-gray-500 py-2"
+                  >
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              {/* 캘린더 그리드 */}
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: 35 }, (_, i) => {
+                  const day = i - 3; // 7월 27일부터 시작
+                  const isCurrentMonth = day > 0 && day <= 31;
+                  const isToday = day === 27; // 8월 27일이 오늘
+                  const hasEvent = [
+                    6, 7, 8, 13, 14, 18, 19, 20, 21, 22, 25, 28, 29,
+                  ].includes(day);
+                  const isHoliday = day === 15;
+
+                  return (
+                    <div
+                      key={i}
+                      className={`aspect-square rounded-lg flex items-center justify-center text-xs font-medium cursor-pointer transition-colors ${
+                        isToday
+                          ? "bg-blue-500 text-white"
+                          : isHoliday
+                          ? "text-red-500"
+                          : isCurrentMonth
+                          ? "text-gray-900 hover:bg-gray-100"
+                          : "text-gray-300"
+                      }`}
+                    >
+                      {isCurrentMonth && (
+                        <div className="text-center">
+                          <div>{day}</div>
+                          {hasEvent && (
+                            <div className="w-1 h-1 bg-blue-400 rounded-full mx-auto mt-1"></div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

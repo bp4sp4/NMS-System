@@ -894,7 +894,7 @@ export default function CRMDBPage() {
                           className={styles.checkbox}
                         />
                       </th>
-                      <th className={styles.tableHeaderCell}>번호</th>
+
                       <th className={styles.tableHeaderCell}>지점</th>
                       <th className={styles.tableHeaderCell}>팀</th>
                       <th className={styles.tableHeaderCell}>담당자</th>
@@ -930,9 +930,7 @@ export default function CRMDBPage() {
                             className={styles.checkbox}
                           />
                         </td>
-                        <td className={styles.tableCell}>
-                          {crmStartIndex + index + 1}
-                        </td>
+
                         <td className={styles.tableCell}>{item.branch}</td>
                         <td className={styles.tableCell}>{item.team}</td>
                         <td className={styles.tableCell}>{item.manager}</td>

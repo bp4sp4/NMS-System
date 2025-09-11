@@ -1,15 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  Calendar,
-  Clock,
-  X,
-  Save,
-  Users,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Calendar, X, Save, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 interface MeetingRoom {
@@ -67,8 +59,6 @@ export default function MeetingRoomBookingModal({
     description: "",
     organizerName: "",
     attendees: "",
-    repeatType: "none",
-    repeatCount: 1,
   });
 
   const [loading, setLoading] = useState(false);
@@ -155,8 +145,6 @@ export default function MeetingRoomBookingModal({
               description: data.description || "",
               organizerName: data.organizer_name || "",
               attendees: data.attendees || "",
-              repeatType: data.repeat_type || "none",
-              repeatCount: data.repeat_count || 1,
             });
           }
         } catch (error) {
@@ -195,8 +183,7 @@ export default function MeetingRoomBookingModal({
     today.setHours(0, 0, 0, 0);
 
     for (let i = 0; i < 42; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
+      const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
       const isCurrentMonth = date.getMonth() === month;
       const isToday = date.getTime() === today.getTime();
       const isPast = date < today;
@@ -206,7 +193,9 @@ export default function MeetingRoomBookingModal({
         isCurrentMonth,
         isToday,
         isPast,
-        dateString: date.toISOString().split("T")[0],
+        dateString: `${date.getFullYear()}-${String(
+          date.getMonth() + 1
+        ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
       });
     }
 
@@ -327,8 +316,8 @@ export default function MeetingRoomBookingModal({
         start_time: startDateTime.toISOString(),
         end_time: endDateTime.toISOString(),
         is_all_day: formData.isAllDay,
-        repeat_type: formData.repeatType,
-        repeat_count: formData.repeatType !== "none" ? formData.repeatCount : 1,
+        repeat_type: "none",
+        repeat_count: 1,
       };
 
       let error;
@@ -637,74 +626,6 @@ export default function MeetingRoomBookingModal({
               rows={3}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
-          </div>
-
-          {/* 반복 예약 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              반복예약 (선택시간부터)
-            </label>
-            <div className="space-y-3">
-              <div className="flex space-x-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="repeatType"
-                    value="none"
-                    checked={formData.repeatType === "none"}
-                    onChange={(e) =>
-                      handleInputChange("repeatType", e.target.value)
-                    }
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">없음</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="repeatType"
-                    value="daily"
-                    checked={formData.repeatType === "daily"}
-                    onChange={(e) =>
-                      handleInputChange("repeatType", e.target.value)
-                    }
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">일(Day)</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="repeatType"
-                    value="weekly"
-                    checked={formData.repeatType === "weekly"}
-                    onChange={(e) =>
-                      handleInputChange("repeatType", e.target.value)
-                    }
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">주(Week)</span>
-                </label>
-              </div>
-
-              {formData.repeatType !== "none" && (
-                <div>
-                  <select
-                    value={formData.repeatCount}
-                    onChange={(e) =>
-                      handleInputChange("repeatCount", parseInt(e.target.value))
-                    }
-                    className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((count) => (
-                      <option key={count} value={count}>
-                        {count}회
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
           </div>
 
           {/* 버튼 */}

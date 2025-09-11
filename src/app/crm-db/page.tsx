@@ -428,35 +428,12 @@ export default function CRMDBPage() {
       <div className={styles.layout}>
         {/* 왼쪽 패널 */}
         <div className={styles.leftPanel}>
-          {/* 담당자 정보 */}
-          <div className={styles.agentInfo}>
-            <div className={styles.agentCard}>
-              <div className={styles.agentDetails}>
-                <span className={styles.agentBranch}>{user.branch}</span>
-                <div className={styles.divider}></div>
-                <span className={styles.agentTeam}>{user.team}</span>
-                <div className={styles.divider}></div>
-                <span className={styles.agentName}>{user.name}</span>
-              </div>
-            </div>
-          </div>
-
           {/* 가망고객 등록 폼 */}
           <div className="mb-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
               가망고객 등록
             </h3>
             <form onSubmit={handleProspectSubmit} className="space-y-4">
-              {/* 고객 분류 - CRM DB에서는 가망고객만 등록 */}
-              <div className="mb-3">
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  고객 분류
-                </label>
-                <div className="w-full bg-gray-100 border-0 rounded-lg px-3 py-2 text-sm text-gray-700">
-                  가망고객 (CRM DB 전용)
-                </div>
-              </div>
-
               {/* 과정 정보 */}
               <div className="grid grid-cols-3 gap-3">
                 <div>

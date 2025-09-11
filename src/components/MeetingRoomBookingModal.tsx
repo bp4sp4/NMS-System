@@ -1,7 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Calendar, Clock, X, Save, Users } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  X,
+  Save,
+  Users,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 interface MeetingRoom {
@@ -10,6 +18,14 @@ interface MeetingRoom {
   location: string;
   capacity: number;
   description: string;
+}
+
+interface CalendarDay {
+  date: Date;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  isPast: boolean;
+  dateString: string;
 }
 
 interface BookingModalProps {
@@ -57,6 +73,8 @@ export default function MeetingRoomBookingModal({
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarDate, setCalendarDate] = useState(new Date());
 
   // 초기 데이터가 변경될 때 폼 업데이트
   useEffect(() => {
@@ -71,15 +89,47 @@ export default function MeetingRoomBookingModal({
     }
   }, [initialData]);
 
-  // 모달이 열릴 때마다 현재 날짜로 초기화
+  // 모달이 열릴 때마다 현재 날짜로 초기화 (과거 날짜인 경우)
   useEffect(() => {
     if (isOpen) {
-      setFormData((prev) => ({
-        ...prev,
-        date: new Date().toISOString().split("T")[0],
-      }));
+      const today = new Date().toISOString().split("T")[0];
+      setFormData((prev) => {
+        // 현재 선택된 날짜가 오늘보다 이전이면 오늘로 설정
+        const currentDate = prev.date || today;
+        const shouldUpdateDate = currentDate < today;
+
+        return {
+          ...prev,
+          date: shouldUpdateDate ? today : currentDate,
+        };
+      });
     }
   }, [isOpen]);
+
+  // 달력이 열릴 때 선택된 날짜의 월로 이동
+  useEffect(() => {
+    if (showCalendar && formData.date) {
+      setCalendarDate(new Date(formData.date));
+    }
+  }, [showCalendar, formData.date]);
+
+  // 달력 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showCalendar) {
+        const target = event.target as Element;
+        if (!target.closest(".calendar-container")) {
+          setShowCalendar(false);
+        }
+      }
+    };
+
+    if (showCalendar) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showCalendar]);
 
   // 수정 모드일 때 기존 예약 데이터 로드
   useEffect(() => {
@@ -131,6 +181,55 @@ export default function MeetingRoomBookingModal({
     return options;
   };
 
+  // 달력 관련 함수들
+  const getCalendarDays = (): CalendarDay[] => {
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+    const days: CalendarDay[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < 42; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      const isCurrentMonth = date.getMonth() === month;
+      const isToday = date.getTime() === today.getTime();
+      const isPast = date < today;
+
+      days.push({
+        date,
+        isCurrentMonth,
+        isToday,
+        isPast,
+        dateString: date.toISOString().split("T")[0],
+      });
+    }
+
+    return days;
+  };
+
+  const handleDateSelect = (dateString: string) => {
+    handleInputChange("date", dateString);
+    setShowCalendar(false);
+  };
+
+  const navigateMonth = (direction: "prev" | "next") => {
+    setCalendarDate((prev) => {
+      const newDate = new Date(prev);
+      if (direction === "prev") {
+        newDate.setMonth(prev.getMonth() - 1);
+      } else {
+        newDate.setMonth(prev.getMonth() + 1);
+      }
+      return newDate;
+    });
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -140,6 +239,16 @@ export default function MeetingRoomBookingModal({
 
     if (!formData.title.trim()) {
       newErrors.title = "회의 제목을 입력해주세요.";
+    }
+
+    // 날짜 검증
+    if (!formData.date) {
+      newErrors.date = "예약일을 선택해주세요.";
+    } else {
+      const today = new Date().toISOString().split("T")[0];
+      if (formData.date < today) {
+        newErrors.date = "오늘 이후의 날짜를 선택해주세요.";
+      }
     }
 
     if (!formData.isAllDay) {
@@ -323,15 +432,98 @@ export default function MeetingRoomBookingModal({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               예약일
             </label>
-            <div className="relative">
+            <div className="relative calendar-container">
               <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => handleInputChange("date", e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                type="text"
+                value={
+                  formData.date
+                    ? new Date(formData.date).toLocaleDateString("ko-KR")
+                    : ""
+                }
+                onClick={() => setShowCalendar(!showCalendar)}
+                readOnly
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                placeholder="날짜를 선택하세요"
               />
               <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+
+              {/* 커스텀 달력 */}
+              {showCalendar && (
+                <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 w-full">
+                  {/* 달력 헤더 */}
+                  <div className="flex items-center justify-between p-3 border-b border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => navigateMonth("prev")}
+                      className="p-1 hover:bg-gray-100 rounded"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="font-semibold text-gray-900">
+                      {calendarDate.getFullYear()}년{" "}
+                      {calendarDate.getMonth() + 1}월
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => navigateMonth("next")}
+                      className="p-1 hover:bg-gray-100 rounded"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* 요일 헤더 */}
+                  <div className="grid grid-cols-7 border-b border-gray-200">
+                    {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
+                      <div
+                        key={day}
+                        className="p-2 text-center text-sm font-medium text-gray-500"
+                      >
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 날짜 그리드 */}
+                  <div className="grid grid-cols-7">
+                    {getCalendarDays().map((day, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() =>
+                          !day.isPast && handleDateSelect(day.dateString)
+                        }
+                        disabled={day.isPast}
+                        className={`p-2 text-sm hover:bg-blue-50 transition-colors ${
+                          day.isPast
+                            ? "text-gray-300 cursor-not-allowed"
+                            : day.isCurrentMonth
+                            ? "text-gray-900 hover:text-blue-600"
+                            : "text-gray-400"
+                        } ${
+                          day.isToday
+                            ? "bg-blue-100 text-blue-600 font-semibold"
+                            : ""
+                        } ${
+                          formData.date === day.dateString
+                            ? "bg-blue-600 text-white font-semibold"
+                            : ""
+                        }`}
+                      >
+                        {day.date.getDate()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+            {errors.date ? (
+              <p className="mt-1 text-sm text-red-600">{errors.date}</p>
+            ) : (
+              <p className="mt-1 text-xs text-gray-500">
+                오늘 이후의 날짜만 선택 가능합니다
+              </p>
+            )}
           </div>
 
           {/* 하루 종일 */}

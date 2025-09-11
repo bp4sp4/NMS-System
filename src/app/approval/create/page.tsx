@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Navigation";
@@ -9,7 +9,7 @@ import { getFormTemplate, createApprovalDocument } from "@/lib/approval";
 import type { FormTemplate } from "@/types/approval";
 import styles from "./page.module.css";
 
-export default function CreateApprovalPage() {
+function CreateApprovalContent() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -147,5 +147,22 @@ export default function CreateApprovalPage() {
         loading={false}
       />
     </div>
+  );
+}
+
+export default function CreateApprovalPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className={styles.container}>
+          <Header />
+          <div className={styles.loadingContainer}>
+            <div className={styles.loading}>양식을 불러오는 중...</div>
+          </div>
+        </div>
+      }
+    >
+      <CreateApprovalContent />
+    </Suspense>
   );
 }

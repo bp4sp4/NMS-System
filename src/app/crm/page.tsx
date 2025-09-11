@@ -1179,9 +1179,7 @@ export default function CRMPage() {
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                     </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      번호
-                    </th>
+
                     <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700">
                       지점
                     </th>
@@ -1240,9 +1238,7 @@ export default function CRMPage() {
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
-                        {startIndex + index + 1}
-                      </td>
+
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                         {item.branch}
                       </td>

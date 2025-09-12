@@ -358,7 +358,7 @@ async function determineApprover(
     const approverInfo = getApproverInfo(approverType);
 
     // 실제 승인자 ID 찾기 - 더 유연한 검색
-    let approverQuery = supabase
+    const approverQuery = supabase
       .from("users")
       .select("id")
       .eq("name", approverInfo.name);

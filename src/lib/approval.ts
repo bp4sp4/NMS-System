@@ -65,6 +65,38 @@ export async function getFormTemplate(
   }
 }
 
+// 직급 매핑 함수
+export function getApproverTitle(approverType: string): string {
+  const titleMap: Record<string, string> = {
+    direct_manager: "직속상관",
+    department_head: "부서장",
+    hr_manager: "인사실장",
+    general_manager: "실장",
+    accounting_manager: "회계실장",
+    purchase_manager: "구매실장",
+    sales_manager: "영업실장",
+    director: "이사",
+    ceo: "대표이사",
+  };
+
+  return titleMap[approverType] || approverType;
+}
+
+// 승인자 정보 매핑 함수
+export function getApproverInfo(approverType: string): {
+  name: string;
+  dept: string;
+} {
+  const approverMap: Record<string, { name: string; dept: string }> = {
+    hr_manager: { name: "경영", dept: "경영지원본부" },
+    general_manager: { name: "경영", dept: "경영지원본부" },
+    director: { name: "박상훈", dept: "브랜드마케팅본부" },
+    ceo: { name: "관리자", dept: "AIO지점" },
+  };
+
+  return approverMap[approverType] || { name: "승인자", dept: "부서" };
+}
+
 // 부서별 양식 필터링 함수
 function filterTemplatesByBranch(
   templates: FormTemplate[],
@@ -114,10 +146,15 @@ function filterTemplatesByBranch(
 
 // 전자결재 문서 관련 함수들
 export async function getApprovalDocuments(
-  filter: DocumentFilter = {},
-  userId?: string
+  userId?: string,
+  status?: string
 ): Promise<ApprovalApiResponse<ApprovalDocument[]>> {
   try {
+    // userId가 필수 - 신청자만 자신의 문서를 볼 수 있음
+    if (!userId) {
+      return { success: false, error: "사용자 ID가 필요합니다." };
+    }
+
     let query = supabase
       .from("approval_documents")
       .select(
@@ -128,52 +165,19 @@ export async function getApprovalDocuments(
         template:approval_form_templates(*)
       `
       )
+      .eq("applicant_id", userId) // 신청자만 자신의 문서 조회 가능
       .order("created_at", { ascending: false });
 
-    // 필터 적용
-    if (filter.status && filter.status.length > 0) {
-      query = query.in("status", filter.status);
-    }
-
-    if (filter.priority && filter.priority.length > 0) {
-      query = query.in("priority", filter.priority);
-    }
-
-    if (filter.applicant_id) {
-      query = query.eq("applicant_id", filter.applicant_id);
-    }
-
-    if (filter.approver_id) {
-      query = query.eq("current_approver_id", filter.approver_id);
-    }
-
-    if (filter.date_from) {
-      query = query.gte("created_at", filter.date_from);
-    }
-
-    if (filter.date_to) {
-      query = query.lte("created_at", filter.date_to);
-    }
-
-    if (filter.search) {
-      query = query.or(
-        `title.ilike.%${filter.search}%,content.ilike.%${filter.search}%`
-      );
+    // 상태 필터 적용
+    if (status) {
+      query = query.eq("status", status);
     }
 
     const { data, error } = await query;
 
     if (error) throw error;
 
-    // 조인된 데이터 정리
-    const documents =
-      data?.map((doc) => ({
-        ...doc,
-        applicant_name: doc.applicant?.name,
-        current_approver_name: doc.current_approver?.name,
-      })) || [];
-
-    return { success: true, data: documents };
+    return { success: true, data: data || [] };
   } catch (error) {
     console.error("결재 문서 조회 오류:", error);
     return { success: false, error: "결재 문서를 불러오는데 실패했습니다." };
@@ -181,7 +185,8 @@ export async function getApprovalDocuments(
 }
 
 export async function getApprovalDocument(
-  documentId: string
+  documentId: string,
+  userId?: string
 ): Promise<ApprovalApiResponse<ApprovalDocument>> {
   try {
     const { data, error } = await supabase
@@ -189,7 +194,6 @@ export async function getApprovalDocument(
       .select(
         `
         *,
-        applicant:users!approval_documents_applicant_id_fkey(name),
         current_approver:users!approval_documents_current_approver_id_fkey(name),
         template:approval_form_templates(*)
       `
@@ -199,9 +203,26 @@ export async function getApprovalDocument(
 
     if (error) throw error;
 
+    // 권한 확인: 신청자만 자신의 문서를 볼 수 있음
+    if (userId && data.applicant_id !== userId) {
+      return { success: false, error: "이 문서를 조회할 권한이 없습니다." };
+    }
+
+    // 신청자 정보 별도 조회
+    const { data: applicantData, error: applicantError } = await supabase
+      .from("users")
+      .select("name, branch")
+      .eq("id", data.applicant_id)
+      .single();
+
+    if (applicantError) {
+      console.error("신청자 정보 조회 오류:", applicantError);
+    }
+
     const document = {
       ...data,
-      applicant_name: data.applicant?.name,
+      applicant_name: applicantData?.name || "신청자",
+      applicant_branch: applicantData?.branch || "부서",
       current_approver_name: data.current_approver?.name,
     };
 
@@ -213,14 +234,13 @@ export async function getApprovalDocument(
 }
 
 export async function createApprovalDocument(
-  request: CreateDocumentRequest
+  request: CreateDocumentRequest,
+  userId?: string
 ): Promise<ApprovalApiResponse<ApprovalDocument>> {
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return { success: false, error: "로그인이 필요합니다." };
+    // userId가 제공되지 않은 경우 클라이언트에서 전달받아야 함
+    if (!userId) {
+      return { success: false, error: "사용자 ID가 필요합니다." };
     }
 
     // 템플릿 정보 가져오기
@@ -234,7 +254,7 @@ export async function createApprovalDocument(
     // 승인자 결정 로직
     const currentApproverId = await determineApprover(
       template.approval_flow,
-      user.id,
+      userId,
       request.form_data
     );
 
@@ -242,7 +262,7 @@ export async function createApprovalDocument(
       template_id: request.template_id,
       title: request.title,
       form_data: request.form_data,
-      applicant_id: user.id,
+      applicant_id: userId,
       current_approver_id: currentApproverId,
       status: "draft" as const,
       priority: request.priority || "normal",
@@ -287,6 +307,27 @@ export async function submitApprovalDocument(
   }
 }
 
+export async function updateApprovalDocument(
+  documentId: string,
+  updateData: Partial<ApprovalDocument>
+): Promise<ApprovalApiResponse<ApprovalDocument>> {
+  try {
+    const { data, error } = await supabase
+      .from("approval_documents")
+      .update(updateData)
+      .eq("id", documentId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { success: true, data };
+  } catch (error) {
+    console.error("결재 문서 수정 오류:", error);
+    return { success: false, error: "결재 문서 수정에 실패했습니다." };
+  }
+}
+
 // 승인자 결정 로직
 async function determineApprover(
   approvalFlow: any,
@@ -298,9 +339,59 @@ async function determineApprover(
     const firstStep = approvalFlow.steps?.[0];
     if (!firstStep) return null;
 
-    // 실제 구현에서는 사용자의 직급과 부서 정보를 기반으로 승인자 결정
-    // 여기서는 임시로 null 반환
-    return null;
+    // 사용자 정보 조회
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("branch, team, position_id")
+      .eq("id", applicantId)
+      .single();
+
+    if (userError || !userData) {
+      console.error("사용자 정보 조회 실패:", userError);
+      return null;
+    }
+
+    // 승인자 타입에 따른 승인자 찾기
+    const approverType = firstStep.approverType;
+
+    // 승인자 매핑 정보 사용
+    const approverInfo = getApproverInfo(approverType);
+
+    // 실제 승인자 ID 찾기 - 더 유연한 검색
+    let approverQuery = supabase
+      .from("users")
+      .select("id")
+      .eq("name", approverInfo.name);
+
+    // 부서가 일치하는 경우 우선 검색
+    const { data: approverData, error: approverError } = await approverQuery
+      .eq("branch", approverInfo.dept)
+      .single();
+
+    if (approverError || !approverData) {
+      // 부서가 일치하지 않으면 이름만으로 검색
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("name", approverInfo.name)
+        .single();
+
+      if (fallbackError || !fallbackData) {
+        console.error("승인자 조회 실패:", approverError);
+        // 마지막 수단으로 관리자 사용
+        const { data: adminData } = await supabase
+          .from("users")
+          .select("id")
+          .eq("name", "관리자")
+          .single();
+
+        return adminData?.id || null;
+      }
+
+      return fallbackData.id;
+    }
+
+    return approverData.id;
   } catch (error) {
     console.error("승인자 결정 오류:", error);
     return null;
@@ -309,14 +400,31 @@ async function determineApprover(
 
 // 승인 처리 함수
 export async function processApproval(
-  request: ApprovalActionRequest
+  request: ApprovalActionRequest,
+  userId?: string
 ): Promise<ApprovalApiResponse<ApprovalDocument>> {
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return { success: false, error: "로그인이 필요합니다." };
+    if (!userId) {
+      return { success: false, error: "사용자 ID가 필요합니다." };
+    }
+
+    // 사용자 정보 조회하여 권한 확인
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("name, branch")
+      .eq("id", userId)
+      .single();
+
+    if (userError || !userData) {
+      return { success: false, error: "사용자 정보를 찾을 수 없습니다." };
+    }
+
+    // 경영지원본부 실장만 승인/반려 가능
+    if (userData.branch !== "경영지원본부" || userData.name !== "경영") {
+      return {
+        success: false,
+        error: "승인 권한이 없습니다. 경영지원본부 실장만 승인할 수 있습니다.",
+      };
     }
 
     // 승인 이력 추가
@@ -324,7 +432,7 @@ export async function processApproval(
       .from("approval_history")
       .insert({
         document_id: request.document_id,
-        approver_id: user.id,
+        approver_id: userId,
         action: request.action,
         comment: request.comment,
         step_order: 1, // 실제로는 현재 단계 계산
@@ -383,21 +491,19 @@ export async function getFavoriteForms(
 }
 
 export async function toggleFavoriteForm(
-  templateId: string
+  templateId: string,
+  userId?: string
 ): Promise<ApprovalApiResponse<boolean>> {
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return { success: false, error: "로그인이 필요합니다." };
+    if (!userId) {
+      return { success: false, error: "사용자 ID가 필요합니다." };
     }
 
     // 기존 즐겨찾기 확인
     const { data: existing } = await supabase
       .from("user_favorite_forms")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("template_id", templateId)
       .single();
 
@@ -406,7 +512,7 @@ export async function toggleFavoriteForm(
       const { error } = await supabase
         .from("user_favorite_forms")
         .delete()
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("template_id", templateId);
 
       if (error) throw error;
@@ -414,7 +520,7 @@ export async function toggleFavoriteForm(
     } else {
       // 즐겨찾기 추가
       const { error } = await supabase.from("user_favorite_forms").insert({
-        user_id: user.id,
+        user_id: userId,
         template_id: templateId,
       });
 

@@ -8,15 +8,16 @@ import {
   FileText,
   Save,
   Send,
-  Eye,
-  X,
   Info,
+  X,
 } from "lucide-react";
 import type {
   FormTemplate,
   FormField,
   DynamicFormProps,
 } from "@/types/approval";
+import { getApproverTitle, getApproverInfo } from "@/lib/approval";
+import { useAuth } from "@/components/AuthContext";
 import styles from "./ApprovalFormRenderer.module.css";
 
 export default function ApprovalFormRenderer({
@@ -26,7 +27,11 @@ export default function ApprovalFormRenderer({
   onSave,
   readonly = false,
   loading = false,
-}: DynamicFormProps) {
+  documentInfo,
+}: DynamicFormProps & {
+  documentInfo?: { applicant_name?: string; applicant_branch?: string };
+}) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<Record<string, any>>(initialData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
@@ -201,52 +206,57 @@ export default function ApprovalFormRenderer({
     return `${date.toLocaleDateString("ko-KR")}(${days[date.getDay()]})`;
   };
 
+  // 동적 결재선 렌더링
+  const renderApprovalLine = () => {
+    if (!template.approval_flow?.steps) return null;
+
+    // 신청자 정보 (기안자)
+    console.log("ApprovalFormRenderer - documentInfo:", documentInfo);
+    console.log("ApprovalFormRenderer - user:", user);
+
+    // documentInfo가 있으면 우선 사용, 없으면 현재 사용자 정보 사용
+    const applicantName =
+      documentInfo?.applicant_name || user?.name || "신청자";
+    const applicantBranch =
+      documentInfo?.applicant_branch || user?.branch || "부서";
+
+    console.log("ApprovalFormRenderer - applicantName:", applicantName);
+    console.log("ApprovalFormRenderer - applicantBranch:", applicantBranch);
+
+    return (
+      <>
+        {/* 첫 번째 항목: 실제 문서의 신청자 */}
+        <div className={styles.approverItem}>
+          <div className={styles.approverTitle}>기안</div>
+          <div className={styles.approverName}>{applicantName}</div>
+          <div className={styles.approverDept}>{applicantBranch}</div>
+        </div>
+
+        {/* 승인자들 */}
+        {template.approval_flow.steps.map((step, index) => {
+          const title = getApproverTitle(step.approverType);
+          const approverInfo = getApproverInfo(step.approverType);
+
+          return (
+            <div key={index}>
+              {/* 화살표 */}
+              <div className={styles.approverArrow}></div>
+
+              {/* 승인자 */}
+              <div className={styles.approverItem}>
+                <div className={styles.approverTitle}>{title}</div>
+                <div className={styles.approverName}>{approverInfo.name}</div>
+                <div className={styles.approverDept}>{approverInfo.dept}</div>
+              </div>
+            </div>
+          );
+        })}
+      </>
+    );
+  };
+
   return (
     <div className={styles.container}>
-      {/* 상단 액션 바 */}
-      <div className={styles.topActions}>
-        <div className={styles.leftActions}>
-          <button
-            className={styles.actionButton}
-            onClick={() => handleSubmit("submit")}
-            disabled={readonly || isSubmitting}
-          >
-            <Send size={16} />
-            결재요청
-          </button>
-          {onSave && (
-            <button
-              className={styles.actionButton}
-              onClick={() => handleSubmit("save")}
-              disabled={readonly || isSubmitting}
-            >
-              <Save size={16} />
-              임시저장
-            </button>
-          )}
-          <button className={styles.actionButton}>
-            <Eye size={16} />
-            미리보기
-          </button>
-          <button className={styles.actionButton}>
-            <X size={16} />
-            취소
-          </button>
-          <button className={styles.actionButton}>
-            <Info size={16} />
-            결재 정보
-          </button>
-        </div>
-        <div className={styles.rightActions}>
-          <select className={styles.autoSaveSelect}>
-            <option>자동저장안함</option>
-            <option>5분마다</option>
-            <option>10분마다</option>
-          </select>
-          <button className={styles.listButton}>목록</button>
-        </div>
-      </div>
-
       {/* 메인 양식 영역 */}
       <div className={styles.formContainer}>
         <div className={styles.formContent}>
@@ -268,11 +278,19 @@ export default function ApprovalFormRenderer({
                   </tr>
                   <tr>
                     <td className={styles.labelCell}>신청부서</td>
-                    <td className={styles.valueCell}>브랜드마케팅본부</td>
+                    <td className={styles.valueCell}>
+                      {documentInfo?.applicant_branch ||
+                        user?.branch ||
+                        "부서 미설정"}
+                    </td>
                   </tr>
                   <tr>
                     <td className={styles.labelCell}>신청자</td>
-                    <td className={styles.valueCell}>박상훈</td>
+                    <td className={styles.valueCell}>
+                      {documentInfo?.applicant_name ||
+                        user?.name ||
+                        "사용자 미설정"}
+                    </td>
                   </tr>
                   <tr>
                     <td className={styles.labelCell}>참조자</td>
@@ -291,93 +309,92 @@ export default function ApprovalFormRenderer({
 
             <div className={styles.approvalLine}>
               <div className={styles.approvalLabel}>결재선</div>
-              <div className={styles.approverInfo}>
-                <div className={styles.approverItem}>
-                  <div className={styles.approverTitle}>실장</div>
-                  <div className={styles.approverName}>유현모</div>
-                </div>
-              </div>
+              <div className={styles.approverInfo}>{renderApprovalLine()}</div>
             </div>
           </div>
 
-          {/* 양식 필드들 */}
+          {/* 양식 필드들 - 테이블 형태 */}
           <div className={styles.formFields}>
-            {Array.isArray(template.fields) &&
-              template.fields.map((field) => (
-                <div key={field.name} className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>
-                    {field.required && (
-                      <span className={styles.required}>*</span>
-                    )}
-                    {field.label}
-                  </label>
-                  <div className={styles.fieldInput}>
-                    {renderField(field)}
-                    {errors[field.name] && (
-                      <div className={styles.errorMessage}>
-                        {errors[field.name]}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+            <table className={styles.formTable}>
+              <tbody>
+                {Array.isArray(template.fields) &&
+                  template.fields.map((field) => (
+                    <tr key={field.name} className={styles.tableRow}>
+                      <td className={styles.tableLabel}>
+                        {field.required && (
+                          <span className={styles.required}>*</span>
+                        )}
+                        {field.label}
+                      </td>
+                      <td className={styles.tableValue}>
+                        {renderField(field)}
+                        {errors[field.name] && (
+                          <div className={styles.errorMessage}>
+                            {errors[field.name]}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
 
-            {/* 휴가 기간 특별 처리 */}
-            {template.name === "휴가신청서" && (
-              <div className={styles.vacationPeriod}>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>
-                    <span className={styles.required}>*</span>
-                    휴가 기간
-                  </label>
-                  <div className={styles.dateRangeInput}>
-                    <div className={styles.dateInput}>
-                      <input
-                        type="date"
-                        value={formData.startDate || ""}
-                        onChange={(e) =>
-                          handleFieldChange("startDate", e.target.value)
-                        }
-                        disabled={readonly}
-                        className={`${styles.input} ${
-                          errors.startDate ? styles.inputError : ""
-                        }`}
-                      />
-                      <Calendar size={16} className={styles.dateIcon} />
-                    </div>
-                    <span className={styles.dateSeparator}>~</span>
-                    <div className={styles.dateInput}>
-                      <input
-                        type="date"
-                        value={formData.endDate || ""}
-                        onChange={(e) =>
-                          handleFieldChange("endDate", e.target.value)
-                        }
-                        disabled={readonly}
-                        className={`${styles.input} ${
-                          errors.endDate ? styles.inputError : ""
-                        }`}
-                      />
-                      <Calendar size={16} className={styles.dateIcon} />
-                    </div>
-                    <div className={styles.daysInfo}>
-                      <span>사용일수:</span>
-                      <input
-                        type="number"
-                        value={formData.days || 0}
-                        onChange={(e) =>
-                          handleFieldChange("days", e.target.value)
-                        }
-                        disabled={readonly}
-                        className={styles.daysInput}
-                        min="1"
-                      />
-                      <span>일</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+                {/* 휴가 기간 특별 처리 */}
+                {template.name === "휴가신청서" && (
+                  <tr className={styles.tableRow}>
+                    <td className={styles.tableLabel}>
+                      <span className={styles.required}>*</span>
+                      휴가 기간
+                    </td>
+                    <td className={styles.tableValue}>
+                      <div className={styles.dateRangeInput}>
+                        <div className={styles.dateInput}>
+                          <input
+                            type="date"
+                            value={formData.startDate || ""}
+                            onChange={(e) =>
+                              handleFieldChange("startDate", e.target.value)
+                            }
+                            disabled={readonly}
+                            className={`${styles.input} ${
+                              errors.startDate ? styles.inputError : ""
+                            }`}
+                          />
+                          <Calendar size={16} className={styles.dateIcon} />
+                        </div>
+                        <span className={styles.dateSeparator}>~</span>
+                        <div className={styles.dateInput}>
+                          <input
+                            type="date"
+                            value={formData.endDate || ""}
+                            onChange={(e) =>
+                              handleFieldChange("endDate", e.target.value)
+                            }
+                            disabled={readonly}
+                            className={`${styles.input} ${
+                              errors.endDate ? styles.inputError : ""
+                            }`}
+                          />
+                          <Calendar size={16} className={styles.dateIcon} />
+                        </div>
+                        <div className={styles.daysInfo}>
+                          <span>사용일수:</span>
+                          <input
+                            type="number"
+                            value={formData.days || 0}
+                            onChange={(e) =>
+                              handleFieldChange("days", e.target.value)
+                            }
+                            disabled={readonly}
+                            className={styles.daysInput}
+                            min="1"
+                          />
+                          <span>일</span>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
 
           {/* 첨부파일 안내 */}
@@ -455,6 +472,7 @@ export default function ApprovalFormRenderer({
           </div>
 
           <div className={styles.approvalFlow}>
+            {/* 기안자 */}
             <div className={styles.approvalStep}>
               <div className={styles.approverAvatar}>
                 <User size={20} />
@@ -466,18 +484,33 @@ export default function ApprovalFormRenderer({
               </div>
             </div>
 
-            <div className={styles.approvalArrow}>↓</div>
+            {/* 동적 결재선 */}
+            {template.approval_flow?.steps?.map((step, index) => {
+              const title = getApproverTitle(step.approverType);
+              const approverInfo = getApproverInfo(step.approverType);
 
-            <div className={styles.approvalStep}>
-              <div className={styles.approverAvatar}>
-                <User size={20} />
-              </div>
-              <div className={styles.approverDetails}>
-                <div className={styles.approverName}>유현모 실장</div>
-                <div className={styles.approverDept}>경영지원본부</div>
-                <div className={styles.approvalStatus}>결재 예정</div>
-              </div>
-            </div>
+              return (
+                <div key={index}>
+                  <div className={styles.approvalArrow}>↓</div>
+                  <div className={styles.approvalStep}>
+                    <div className={styles.approverAvatar}>
+                      <User size={20} />
+                    </div>
+                    <div className={styles.approverDetails}>
+                      <div className={styles.approverName}>
+                        {approverInfo.name} {title}
+                      </div>
+                      <div className={styles.approverDept}>
+                        {approverInfo.dept}
+                      </div>
+                      <div className={styles.approvalStatus}>
+                        {index === 0 ? "결재 예정" : "결재 대기"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -503,18 +536,6 @@ export default function ApprovalFormRenderer({
               임시저장
             </button>
           )}
-          <button className={styles.actionButton}>
-            <Eye size={16} />
-            미리보기
-          </button>
-          <button className={styles.actionButton}>
-            <X size={16} />
-            취소
-          </button>
-          <button className={styles.actionButton}>
-            <Info size={16} />
-            결재 정보
-          </button>
         </div>
         <div className={styles.rightActions}>
           <select className={styles.autoSaveSelect}>

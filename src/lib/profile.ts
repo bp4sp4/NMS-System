@@ -79,7 +79,7 @@ export const getUserBasicInfo = async (userId: string) => {
       return null;
     }
 
-    // 2단계: 직급 정보 조회 (별도로)
+    // 2단계: 직급 정보 조회 (사용자 테이블의 position_id 사용)
     let positionName = null;
     if (userData.position_id) {
       const { data: positionData, error: positionError } = await supabase
@@ -88,10 +88,11 @@ export const getUserBasicInfo = async (userId: string) => {
         .eq("id", userData.position_id)
         .single();
 
-      if (positionError) {
-        console.error("직급 정보 조회 오류:", positionError);
+      if (!positionError && positionData) {
+        positionName = positionData.name;
+        console.log("직급 정보:", positionName);
       } else {
-        positionName = positionData?.name;
+        console.error("직급 정보 조회 오류:", positionError);
       }
     }
 

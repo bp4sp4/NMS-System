@@ -36,6 +36,7 @@ interface ApprovalFormSelectModalProps {
   onClose: () => void;
   onSelect: (template: FormTemplate) => void;
   userBranch?: string;
+  userId?: string;
 }
 
 export default function ApprovalFormSelectModal({
@@ -43,6 +44,7 @@ export default function ApprovalFormSelectModal({
   onClose,
   onSelect,
   userBranch = "전체",
+  userId,
 }: ApprovalFormSelectModalProps) {
   const [templates, setTemplates] = useState<FormTemplate[]>([]);
   const [filteredTemplates, setFilteredTemplates] = useState<FormTemplate[]>(
@@ -141,15 +143,12 @@ export default function ApprovalFormSelectModal({
 
   const loadFavoriteForms = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!userId) return;
 
       const { data, error } = await supabase
         .from("user_favorite_forms")
         .select("template_id")
-        .eq("user_id", user.id);
+        .eq("user_id", userId);
 
       if (error) throw error;
 
@@ -172,10 +171,7 @@ export default function ApprovalFormSelectModal({
 
   const toggleFavorite = async (templateId: string) => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!userId) return;
 
       const isFavorite = favoriteForms.has(templateId);
 
@@ -184,7 +180,7 @@ export default function ApprovalFormSelectModal({
         const { error } = await supabase
           .from("user_favorite_forms")
           .delete()
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .eq("template_id", templateId);
 
         if (error) throw error;
@@ -195,7 +191,7 @@ export default function ApprovalFormSelectModal({
       } else {
         // 즐겨찾기 추가
         const { error } = await supabase.from("user_favorite_forms").insert({
-          user_id: user.id,
+          user_id: userId,
           template_id: templateId,
         });
 

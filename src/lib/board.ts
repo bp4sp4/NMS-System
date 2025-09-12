@@ -198,8 +198,6 @@ export const createPost = async (
 
     // 2단계: 첨부파일 저장 (있는 경우)
     if (attachments && attachments.length > 0) {
-      console.log("첨부파일 저장 시작:", attachments.length, "개");
-
       try {
         const attachmentData = attachments.map((file) => ({
           post_id: data.id,
@@ -208,8 +206,6 @@ export const createPost = async (
           file_size: file.size,
           mime_type: file.type || "application/octet-stream",
         }));
-
-        console.log("저장할 첨부파일 데이터:", attachmentData);
 
         const { data: attachmentResult, error: attachmentError } =
           await supabase
@@ -227,7 +223,6 @@ export const createPost = async (
           // 첨부파일 저장 실패해도 게시글은 성공으로 처리
           console.warn("첨부파일 저장에 실패했지만 게시글은 작성되었습니다.");
         } else {
-          console.log("첨부파일 저장 성공:", attachmentResult);
         }
       } catch (error) {
         console.error("첨부파일 저장 중 예외 발생:", error);
@@ -286,7 +281,6 @@ export const getPostById = async (postId: string): Promise<Post | null> => {
     }
 
     // 5단계: 첨부파일 정보 조회
-    console.log("게시글 상세 조회 - 게시글 ID:", postId);
 
     const { data: attachmentsData, error: attachmentsError } = await supabase
       .from("post_attachments")
@@ -296,11 +290,9 @@ export const getPostById = async (postId: string): Promise<Post | null> => {
     if (attachmentsError) {
       console.error("첨부파일 조회 오류:", attachmentsError);
     } else {
-      console.log("게시글 상세 - 조회된 첨부파일:", attachmentsData);
     }
 
     // 6단계: 댓글 데이터 조회 (단순화)
-    console.log("댓글 조회 시작 - 게시글 ID:", postId);
 
     const { data: commentsData, error: commentsError } = await supabase
       .from("post_comments")
@@ -311,9 +303,6 @@ export const getPostById = async (postId: string): Promise<Post | null> => {
     if (commentsError) {
       console.error("댓글 조회 오류:", commentsError);
     } else {
-      console.log("게시글 상세 - 조회된 댓글:", commentsData);
-      console.log("댓글 개수:", commentsData?.length || 0);
-
       // 전체 댓글 테이블 확인
       const { data: allComments, error: allCommentsError } = await supabase
         .from("post_comments")
@@ -323,8 +312,6 @@ export const getPostById = async (postId: string): Promise<Post | null> => {
       if (allCommentsError) {
         console.error("전체 댓글 조회 오류:", allCommentsError);
       } else {
-        console.log("전체 댓글 테이블 샘플:", allComments);
-        console.log("전체 댓글 개수:", allComments?.length || 0);
       }
     }
 
@@ -430,8 +417,6 @@ export const updatePost = async (
 
     // 2단계: 새로운 첨부파일 추가 (있는 경우)
     if (newAttachments && newAttachments.length > 0) {
-      console.log("새 첨부파일 추가 시작:", newAttachments.length, "개");
-
       const attachmentData = newAttachments.map((file) => ({
         post_id: postId,
         file_name: file.name,
@@ -519,31 +504,24 @@ export const createComment = async (
   commentData: CreateCommentData
 ): Promise<{ success: boolean; comment?: any; error?: string }> => {
   try {
-    console.log("createComment 시작 - postId:", postId);
-
     // 1단계: Supabase Auth에서 사용자 정보 조회
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    console.log("Supabase Auth 사용자:", user);
 
     let actualUser = user;
 
     // 2단계: Supabase Auth에 사용자가 없으면 로컬 스토리지에서 확인
     if (!user) {
-      console.log("Supabase Auth에서 사용자 정보 없음, 로컬 스토리지 확인");
-
       if (typeof window !== "undefined") {
         const sessionData = localStorage.getItem("nms-user-session");
         if (sessionData) {
           try {
             const localUser = JSON.parse(sessionData);
-            console.log("로컬 스토리지 사용자:", localUser);
 
             if (localUser && localUser.id) {
               // 로컬 세션을 사용하여 댓글 작성 시도
               actualUser = localUser;
-              console.log("로컬 세션 사용자로 댓글 작성 시도:", actualUser);
             }
           } catch (parseError) {
             console.error("로컬 세션 파싱 오류:", parseError);
@@ -553,11 +531,8 @@ export const createComment = async (
     }
 
     if (!actualUser || !actualUser.id) {
-      console.log("사용자 정보를 찾을 수 없음");
       return { success: false, error: "로그인이 필요합니다." };
     }
-
-    console.log("사용자 ID:", actualUser.id, "타입:", typeof actualUser.id);
 
     // 사용자 ID가 올바른 형식인지 확인
     if (
@@ -581,42 +556,34 @@ export const createComment = async (
       return { success: false, error: "사용자 정보를 찾을 수 없습니다." };
     }
 
-    console.log("사용자 정보 조회 성공:", userData);
-
-    // 사용자 직급 정보 조회
-    const { data: positionData, error: positionError } = await supabase
+    // 사용자 직급 정보 조회 (가장 높은 레벨의 직급 선택)
+    const { data: userPositions, error: positionError } = await supabase
       .from("user_positions")
       .select("position_id")
       .eq("user_id", actualUser.id)
-      .single();
+      .eq("is_active", true);
 
-    if (positionError) {
+    let positionName = "직급 미설정";
+    if (!positionError && userPositions && userPositions.length > 0) {
+      // 각 직급의 레벨을 조회하여 가장 높은 레벨 선택
+      const positionIds = userPositions.map((up) => up.position_id);
+      const { data: positions, error: positionsError } = await supabase
+        .from("positions")
+        .select("id, name, level")
+        .in("id", positionIds)
+        .order("level", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!positionsError && positions) {
+        positionName = positions.name;
+      }
+    } else if (positionError) {
       console.error("직급 정보 조회 오류:", positionError);
-      // 직급 정보가 없어도 댓글은 작성 가능하도록 처리
       console.warn("직급 정보 없음, 기본값 사용");
     }
 
-    let positionName = "직급 미설정";
-    if (positionData) {
-      // 직급명 조회
-      const { data: positionNameData, error: positionNameError } =
-        await supabase
-          .from("positions")
-          .select("name")
-          .eq("id", positionData.position_id)
-          .single();
-
-      if (!positionNameError && positionNameData) {
-        positionName = positionNameData.name;
-      }
-    }
-
     // 댓글 생성 시작
-    console.log("댓글 생성 시작:", {
-      post_id: postId,
-      user_id: actualUser.id,
-      content: commentData.content,
-    });
 
     // 사용자 ID 유효성 검사
     if (!actualUser || !actualUser.id) {
@@ -656,7 +623,6 @@ export const createComment = async (
     }
 
     // 댓글 생성 시도
-    console.log("댓글 생성 시도");
 
     const { data: comment, error: commentError } = await supabase
       .from("post_comments")
@@ -717,8 +683,6 @@ export const createComment = async (
       user_position: positionName,
       user_team: userData.team,
     };
-
-    console.log("댓글 생성 완료:", commentWithUser);
 
     return { success: true, comment: commentWithUser };
   } catch (error) {
@@ -827,14 +791,26 @@ export const updateComment = async (
     // 직급 정보 조회
     let positionName = "직급 미설정";
     if (userData) {
-      const { data: positionData, error: positionError } = await supabase
+      const { data: userPositions, error: positionError } = await supabase
         .from("user_positions")
-        .select("positions!user_positions_position_id_fkey(name)")
+        .select("position_id")
         .eq("user_id", comment.user_id)
-        .single();
+        .eq("is_active", true);
 
-      if (!positionError && (positionData as any)?.positions?.name) {
-        positionName = (positionData as any).positions.name;
+      if (!positionError && userPositions && userPositions.length > 0) {
+        // 각 직급의 레벨을 조회하여 가장 높은 레벨 선택
+        const positionIds = userPositions.map((up) => up.position_id);
+        const { data: positions, error: positionsError } = await supabase
+          .from("positions")
+          .select("id, name, level")
+          .in("id", positionIds)
+          .order("level", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (!positionsError && positions) {
+          positionName = positions.name;
+        }
       } else if ((userData as any).position) {
         positionName = (userData as any).position;
       }
@@ -872,49 +848,12 @@ export const getRecentPosts = async (
   limit: number = 5
 ): Promise<{ success: boolean; posts?: HomePagePost[]; error?: string }> => {
   try {
-    console.log("getRecentPosts 시작 - limit:", limit);
-
-    // 먼저 posts 테이블의 구조를 확인
-    console.log("posts 테이블 구조 확인 중...");
-    const { data: tableInfo, error: tableError } = await supabase
-      .from("posts")
-      .select("*")
-      .limit(1);
-
-    if (tableError) {
-      console.error("posts 테이블 구조 확인 오류:", tableError);
-      return {
-        success: false,
-        error: `테이블 구조 확인 실패: ${tableError.message}`,
-      };
-    }
-
-    console.log("posts 테이블 구조:", tableInfo);
-
-    // 테이블 구조에서 실제 필드명 확인
-    if (tableInfo && tableInfo.length > 0) {
-      const firstPost = tableInfo[0];
-      console.log("첫 번째 게시글의 모든 필드:", Object.keys(firstPost));
-
-      // author_id 또는 user_id 필드가 있는지 확인
-      const hasAuthorId = "author_id" in firstPost;
-      const hasUserId = "user_id" in firstPost;
-      console.log(
-        "필드 존재 여부 - author_id:",
-        hasAuthorId,
-        "user_id:",
-        hasUserId
-      );
-    }
-
-    // posts 테이블에서 게시글 조회 (모든 필드 선택)
+    // posts 테이블에서 게시글 조회
     const { data: posts, error } = await supabase
       .from("posts")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(limit);
-
-    console.log("posts 테이블 조회 결과:", { posts, error });
 
     if (error) {
       console.error("posts 조회 오류:", error);
@@ -922,29 +861,17 @@ export const getRecentPosts = async (
     }
 
     if (!posts || posts.length === 0) {
-      console.log("게시글이 없습니다.");
       return { success: true, posts: [] };
     }
-
-    console.log("조회된 게시글 수:", posts.length);
 
     // 각 게시글에 대해 사용자 정보를 별도로 조회
     const postsWithUserInfo = await Promise.all(
       posts.map(async (post) => {
         try {
-          console.log("게시글 처리 중:", post);
-
           // 실제 테이블 구조에 맞는 필드명 사용
           // author_id, user_id, 또는 다른 필드명일 수 있음
           const authorId =
             post.author_id || post.user_id || post.author || post.user;
-          console.log("작성자 ID (시도한 필드들):", {
-            author_id: post.author_id,
-            user_id: post.user_id,
-            author: post.author,
-            user: post.user,
-            "최종 선택": authorId,
-          });
 
           if (!authorId) {
             console.warn("작성자 ID를 찾을 수 없습니다:", post);
@@ -961,10 +888,10 @@ export const getRecentPosts = async (
             } as HomePagePost;
           }
 
-          // 사용자 정보 조회
+          // 사용자 정보 조회 (position_id 포함)
           const { data: userData, error: userError } = await supabase
             .from("users")
-            .select("name, branch, team")
+            .select("name, branch, team, position_id")
             .eq("id", authorId)
             .single();
 
@@ -972,31 +899,17 @@ export const getRecentPosts = async (
             console.warn("사용자 정보 조회 실패:", userError);
           }
 
-          // 직급 정보 조회
-          const { data: positionData, error: positionError } = await supabase
-            .from("user_positions")
-            .select("position_id")
-            .eq("user_id", authorId)
-            .single();
-
-          if (positionError) {
-            console.warn("직급 정보 조회 실패:", positionError);
-          }
-
+          // 사용자 직급 정보 조회
           let positionName = "직급 미설정";
-          if (positionData?.position_id) {
-            const { data: masterData, error: masterError } = await supabase
+          if (userData?.position_id) {
+            const { data: positionData, error: positionError } = await supabase
               .from("positions")
               .select("name")
-              .eq("id", positionData.position_id)
+              .eq("id", userData.position_id)
               .single();
 
-            if (masterError) {
-              console.warn("직급 마스터 조회 실패:", masterError);
-            }
-
-            if (masterData?.name) {
-              positionName = masterData.name;
+            if (!positionError && positionData) {
+              positionName = positionData.name;
             }
           }
 
@@ -1012,10 +925,8 @@ export const getRecentPosts = async (
             team: userData?.team || "팀 미설정",
           } as HomePagePost;
 
-          console.log("처리된 게시글:", result);
           return result;
         } catch (error) {
-          console.error("게시글 처리 중 오류:", error);
           return {
             id: post.id,
             title: post.title,
@@ -1031,7 +942,6 @@ export const getRecentPosts = async (
       })
     );
 
-    console.log("최종 처리된 게시글:", postsWithUserInfo);
     return { success: true, posts: postsWithUserInfo };
   } catch (error) {
     console.error("getRecentPosts 전체 오류:", error);

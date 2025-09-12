@@ -13,6 +13,7 @@ import {
   XCircle,
   AlertCircle,
 } from "lucide-react";
+import { getApprovalDocuments } from "@/lib/approval";
 import styles from "./page.module.css";
 
 interface ApprovalDocument {
@@ -48,9 +49,7 @@ export default function ApprovalPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [documents, setDocuments] = useState<ApprovalDocument[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<
-    "my-documents" | "pending-approvals" | "all-documents"
-  >("my-documents");
+  const [activeTab, setActiveTab] = useState<"my-documents">("my-documents");
 
   // 인증 상태 확인 및 리다이렉트
   useEffect(() => {
@@ -70,55 +69,39 @@ export default function ApprovalPage() {
   const loadDocuments = async () => {
     setLoading(true);
     try {
-      // 실제 구현에서는 API 호출
-      // 임시 데이터
-      const mockDocuments: ApprovalDocument[] = [
-        {
-          id: "1",
-          title: "휴가신청서",
-          status: "pending",
-          priority: "normal",
-          applicant_name: user?.name || "사용자",
-          current_approver_name: "김부장",
-          created_at: "2024-01-15T09:00:00Z",
-          updated_at: "2024-01-15T09:00:00Z",
-        },
-        {
-          id: "2",
-          title: "출장신청서",
-          status: "approved",
-          priority: "high",
-          applicant_name: user?.name || "사용자",
-          created_at: "2024-01-14T14:30:00Z",
-          updated_at: "2024-01-14T16:45:00Z",
-        },
-        {
-          id: "3",
-          title: "경비정산서",
-          status: "draft",
-          priority: "normal",
-          applicant_name: user?.name || "사용자",
-          created_at: "2024-01-13T11:20:00Z",
-          updated_at: "2024-01-13T11:20:00Z",
-        },
-      ];
-
-      // 탭별 필터링
-      let filteredDocuments = mockDocuments;
-      if (activeTab === "my-documents") {
-        filteredDocuments = mockDocuments.filter(
-          (doc) => doc.applicant_name === user?.name
-        );
-      } else if (activeTab === "pending-approvals") {
-        filteredDocuments = mockDocuments.filter(
-          (doc) =>
-            doc.status === "pending" && doc.current_approver_name === user?.name
-        );
+      // 모든 탭에서 사용자 ID가 필요함 (신청자만 자신의 문서 조회 가능)
+      if (!user?.id) {
+        setDocuments([]);
+        setLoading(false);
+        return;
       }
 
-      setDocuments(filteredDocuments);
+      // 내 문서만 조회
+      const result = await getApprovalDocuments(user.id);
+
+      if (result.success && result.data) {
+        // 데이터 변환
+        const transformedDocuments: ApprovalDocument[] = result.data.map(
+          (doc: any) => ({
+            id: doc.id,
+            title: doc.title,
+            status: doc.status,
+            priority: doc.priority,
+            applicant_name: doc.applicant?.name || "알 수 없음",
+            current_approver_name: doc.current_approver?.name || null,
+            created_at: doc.created_at,
+            updated_at: doc.updated_at,
+          })
+        );
+
+        setDocuments(transformedDocuments);
+      } else {
+        console.error("문서 로드 실패:", result.error);
+        setDocuments([]);
+      }
     } catch (error) {
       console.error("문서 로드 오류:", error);
+      setDocuments([]);
     } finally {
       setLoading(false);
     }
@@ -222,33 +205,6 @@ export default function ApprovalPage() {
           </button>
         </div>
 
-        <div className={styles.tabs}>
-          <button
-            className={`${styles.tab} ${
-              activeTab === "my-documents" ? styles.activeTab : ""
-            }`}
-            onClick={() => setActiveTab("my-documents")}
-          >
-            내 문서
-          </button>
-          <button
-            className={`${styles.tab} ${
-              activeTab === "pending-approvals" ? styles.activeTab : ""
-            }`}
-            onClick={() => setActiveTab("pending-approvals")}
-          >
-            승인 대기
-          </button>
-          <button
-            className={`${styles.tab} ${
-              activeTab === "all-documents" ? styles.activeTab : ""
-            }`}
-            onClick={() => setActiveTab("all-documents")}
-          >
-            전체 문서
-          </button>
-        </div>
-
         <div className={styles.content}>
           {loading ? (
             <div className={styles.loading}>문서를 불러오는 중...</div>
@@ -257,11 +213,7 @@ export default function ApprovalPage() {
               <FileText size={48} className={styles.emptyIcon} />
               <h3 className={styles.emptyTitle}>결재할 문서가 없습니다</h3>
               <p className={styles.emptyDescription}>
-                {activeTab === "my-documents" &&
-                  "아직 작성한 결재 문서가 없습니다."}
-                {activeTab === "pending-approvals" &&
-                  "승인 대기 중인 문서가 없습니다."}
-                {activeTab === "all-documents" && "전체 문서가 없습니다."}
+                아직 작성한 결재 문서가 없습니다.
               </p>
               <button
                 className={styles.createButton}
@@ -341,6 +293,7 @@ export default function ApprovalPage() {
         onClose={() => setIsModalOpen(false)}
         onSelect={handleFormSelect}
         userBranch={user?.branch}
+        userId={user?.id}
       />
     </div>
   );

@@ -133,19 +133,14 @@ export default function HomePage() {
     const fetchRecentPosts = async () => {
       try {
         setPostsLoading(true);
-        console.log("메인 페이지: 최근 게시글 조회 시작...");
 
         const result = await getRecentPosts(5);
-        console.log("메인 페이지: getRecentPosts 결과:", result);
 
         if (result.success && result.posts) {
-          console.log("메인 페이지: 게시글 데이터:", result.posts);
           setRecentPosts(result.posts);
         } else {
-          console.error("메인 페이지: 게시글 조회 실패:", result.error);
         }
       } catch (error) {
-        console.error("메인 페이지: 게시글 조회 중 오류:", error);
       } finally {
         setPostsLoading(false);
       }

@@ -24,7 +24,9 @@ export interface ApprovalStep {
     | "general_manager"
     | "accounting_manager"
     | "purchase_manager"
-    | "sales_manager";
+    | "sales_manager"
+    | "director"
+    | "ceo";
   required: boolean;
   autoApproval?: boolean;
   conditions?: {
@@ -79,6 +81,7 @@ export interface ApprovalDocument {
 
   // 조인된 데이터
   applicant_name?: string;
+  applicant_branch?: string;
   current_approver_name?: string;
   template?: FormTemplate;
 }

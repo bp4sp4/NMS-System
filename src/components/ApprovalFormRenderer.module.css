@@ -5,21 +5,15 @@
     flex-direction: column;
 }
 
-/* 액션 바 스타일 */
-.topActions,
+/* 하단 액션 바 스타일 */
 .bottomActions {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1rem 2rem;
     background-color: white;
-    border-bottom: 1px solid #e5e7eb;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-
-.bottomActions {
     border-top: 1px solid #e5e7eb;
-    border-bottom: none;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 .leftActions {
@@ -173,7 +167,17 @@
 .approverInfo {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.approverArrow {
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 12px solid #6b7280;
+    margin: 0.5rem 0;
 }
 
 .approverItem {
@@ -193,11 +197,58 @@
 .approverName {
     font-weight: 600;
     color: #111827;
+    margin-bottom: 0.25rem;
 }
 
-/* 양식 필드 */
+.approverDept {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+/* 양식 필드 - 테이블 스타일 */
 .formFields {
     margin-bottom: 2rem;
+}
+
+.formTable {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.tableRow {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.tableRow:last-child {
+    border-bottom: none;
+}
+
+.tableLabel {
+    width: 30%;
+    padding: 1rem 1.5rem;
+    background-color: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+    border-right: 1px solid #e5e7eb;
+    vertical-align: top;
+    font-size: 0.875rem;
+}
+
+.tableValue {
+    width: 70%;
+    padding: 1rem 1.5rem;
+    background-color: white;
+    vertical-align: top;
+}
+
+.required {
+    color: #dc2626;
+    margin-right: 0.25rem;
 }
 
 .fieldGroup {
@@ -210,11 +261,6 @@
     color: #374151;
     margin-bottom: 0.5rem;
     font-size: 0.875rem;
-}
-
-.required {
-    color: #dc2626;
-    margin-right: 0.25rem;
 }
 
 .fieldInput {
@@ -579,7 +625,6 @@
         justify-content: center;
     }
 
-    .topActions,
     .bottomActions {
         padding: 1rem;
         flex-direction: column;
@@ -593,5 +638,45 @@
 
     .rightActions {
         justify-content: center;
+    }
+
+    /* 모바일 테이블 스타일 */
+    .formTable {
+        border: none;
+        box-shadow: none;
+    }
+
+    .tableRow {
+        display: block;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background-color: white;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+
+    .tableRow:last-child {
+        margin-bottom: 0;
+    }
+
+    .tableLabel {
+        display: block;
+        width: 100%;
+        padding: 0;
+        margin-bottom: 0.5rem;
+        background-color: transparent;
+        border: none;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .tableValue {
+        display: block;
+        width: 100%;
+        padding: 0;
+        background-color: transparent;
+        border: none;
     }
 }

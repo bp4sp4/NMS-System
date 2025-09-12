@@ -19,23 +19,15 @@ function CreateApprovalContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 인증 상태 확인 및 리다이렉트
-  useEffect(() => {
-    if (isLoading) return;
-    if (!user) {
-      router.push("/auth/login");
-    }
-  }, [user, isLoading, router]);
-
   // 템플릿 로드
   useEffect(() => {
-    if (templateId && user) {
+    if (templateId) {
       loadTemplate();
-    } else if (!templateId) {
+    } else {
       setError("양식 템플릿이 선택되지 않았습니다.");
       setLoading(false);
     }
-  }, [templateId, user]);
+  }, [templateId]);
 
   const loadTemplate = async () => {
     if (!templateId) return;
@@ -60,19 +52,29 @@ function CreateApprovalContent() {
   };
 
   const handleSubmit = async (formData: Record<string, any>) => {
-    if (!template || !user) return;
+    if (!template) return;
+
+    // 제출 시에만 로그인 체크
+    if (!user) {
+      alert("결재 문서를 제출하려면 로그인이 필요합니다.");
+      router.push("/auth/login");
+      return;
+    }
 
     try {
       // 제목 생성 (양식명 + 날짜)
       const today = new Date().toLocaleDateString("ko-KR");
       const title = `${template.name} - ${today}`;
 
-      const result = await createApprovalDocument({
-        template_id: template.id,
-        title,
-        form_data: formData,
-        priority: "normal",
-      });
+      const result = await createApprovalDocument(
+        {
+          template_id: template.id,
+          title,
+          form_data: formData,
+          priority: "normal",
+        },
+        user.id
+      );
 
       if (result.success) {
         // 성공 시 결재 문서 상세 페이지로 이동
@@ -87,12 +89,35 @@ function CreateApprovalContent() {
   };
 
   const handleSave = async (formData: Record<string, any>) => {
-    if (!template || !user) return;
+    if (!template) return;
+
+    // 임시저장 시에도 로그인 체크
+    if (!user) {
+      alert("임시저장하려면 로그인이 필요합니다.");
+      router.push("/auth/login");
+      return;
+    }
 
     try {
-      // 임시저장 로직 (실제로는 별도 API 호출)
-      console.log("임시저장:", formData);
-      alert("임시저장되었습니다.");
+      // 제목 생성 (양식명 + 날짜)
+      const today = new Date().toLocaleDateString("ko-KR");
+      const title = `${template.name} - ${today} (임시저장)`;
+
+      const result = await createApprovalDocument(
+        {
+          template_id: template.id,
+          title,
+          form_data: formData,
+          priority: "normal",
+        },
+        user.id
+      );
+
+      if (result.success) {
+        alert("임시저장되었습니다.");
+      } else {
+        alert(result.error || "임시저장에 실패했습니다.");
+      }
     } catch (error) {
       console.error("임시저장 오류:", error);
       alert("임시저장 중 오류가 발생했습니다.");
@@ -145,6 +170,10 @@ function CreateApprovalContent() {
         onSave={handleSave}
         readonly={false}
         loading={false}
+        documentInfo={{
+          applicant_name: user?.name,
+          applicant_branch: user?.branch,
+        }}
       />
     </div>
   );

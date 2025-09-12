@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 테스트</title>
+</head>
+
+<body>
+    <h1>로그인 테스트</h1>
+    <div>
+        <h2>로그인 정보:</h2>
+        <p><strong>이메일:</strong> bp4sp4@naver.com</p>
+        <p><strong>비밀번호:</strong> 123456</p>
+        <p><strong>사용자명:</strong> 윈터</p>
+        <p><strong>부서:</strong> AIO지점</p>
+        <p><strong>팀:</strong> 1팀</p>
+        <p><strong>직급:</strong> 실장</p>
+    </div>
+
+    <div>
+        <h2>로그인 테스트 방법:</h2>
+        <ol>
+            <li>브라우저에서 개발자 도구 열기 (F12)</li>
+            <li>Console 탭으로 이동</li>
+            <li>다음 코드 실행:</li>
+        </ol>
+        <pre>
+// 로그인 테스트
+localStorage.setItem('nms-user-session', JSON.stringify({
+    id: 'f93e774f-47c9-4db7-822c-e41a196f12e8',
+    email: 'bp4sp4@naver.com',
+    name: '윈터',
+    branch: 'AIO지점',
+    team: '1팀',
+    loggedInAt: new Date().toISOString()
+}));
+
+// 페이지 새로고침
+location.reload();
+        </pre>
+    </div>
+
+    <div>
+        <h2>또는 직접 로그인:</h2>
+        <p>로그인 페이지에서 위 정보로 로그인을 시도해보세요.</p>
+    </div>
+</body>
+
+</html>

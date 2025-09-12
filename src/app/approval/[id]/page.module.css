@@ -1,0 +1,315 @@
+.container {
+    min-height: 100vh;
+    background-color: #f8fafc;
+}
+
+.main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.backButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    color: #64748b;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.backButton:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.loadingContainer,
+.errorContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 50vh;
+}
+
+.loading {
+    font-size: 1.125rem;
+    color: #64748b;
+}
+
+.error {
+    text-align: center;
+    padding: 2rem;
+    background: #fff;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.error h2 {
+    color: #dc2626;
+    margin-bottom: 1rem;
+}
+
+.error p {
+    color: #64748b;
+    margin-bottom: 1.5rem;
+}
+
+.documentInfo {
+    background: #fff;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.infoRow {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.infoRow:last-child {
+    border-bottom: none;
+}
+
+.label {
+    font-weight: 600;
+    color: #374151;
+    min-width: 120px;
+    margin-right: 1rem;
+}
+
+.value {
+    color: #64748b;
+    flex: 1;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.statusDraft {
+    color: #6b7280;
+}
+
+.statusSubmitted,
+.statusPending {
+    color: #f59e0b;
+}
+
+.statusApproved {
+    color: #10b981;
+}
+
+.statusRejected {
+    color: #ef4444;
+}
+
+.statusCancelled {
+    color: #6b7280;
+}
+
+.priority {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.priorityUrgent {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.priorityHigh {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.priorityNormal {
+    background: #f0f9ff;
+    color: #0284c7;
+}
+
+.priorityLow {
+    background: #f9fafb;
+    color: #6b7280;
+}
+
+.formSection {
+    background: #fff;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.sectionTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.approvalSection {
+    background: #fff;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.commentSection {
+    margin-bottom: 1.5rem;
+}
+
+.commentLabel {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.commentTextarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.commentTextarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.actionButtons {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.actionButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.actionButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.approveButton {
+    background: #10b981;
+    color: #fff;
+}
+
+.approveButton:hover:not(:disabled) {
+    background: #059669;
+}
+
+.rejectButton {
+    background: #ef4444;
+    color: #fff;
+}
+
+.rejectButton:hover:not(:disabled) {
+    background: #dc2626;
+}
+
+.editSection {
+    background: #fff;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.editButton {
+    background: #3b82f6;
+    color: #fff;
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.editButton:hover {
+    background: #2563eb;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .main {
+        padding: 1rem;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .title {
+        font-size: 1.5rem;
+    }
+
+    .infoRow {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    .label {
+        min-width: auto;
+        margin-right: 0;
+    }
+
+    .actionButtons {
+        flex-direction: column;
+    }
+
+    .actionButton {
+        justify-content: center;
+    }
+}

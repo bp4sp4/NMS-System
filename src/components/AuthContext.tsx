@@ -112,6 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               JSON.stringify(fullUserInfo)
             );
           } else {
+            console.warn("직급 정보 조회 실패, 기본 정보로 설정");
             setUser(userSession as User);
           }
         } catch (profileError) {

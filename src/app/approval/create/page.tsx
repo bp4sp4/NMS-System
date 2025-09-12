@@ -73,7 +73,8 @@ function CreateApprovalContent() {
           form_data: formData,
           priority: "normal",
         },
-        user.id
+        user.id,
+        true // 결재요청이므로 바로 제출 상태로 생성
       );
 
       if (result.success) {

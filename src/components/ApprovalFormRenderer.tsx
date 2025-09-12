@@ -93,19 +93,24 @@ export default function ApprovalFormRenderer({
   };
 
   const handleSubmit = async (action: "submit" | "save") => {
+    // 결재요청 시에만 유효성 검사
     if (action === "submit" && !validateForm()) {
+      alert("필수 항목을 모두 입력해주세요.");
       return;
     }
 
     setIsSubmitting(true);
     try {
       if (action === "submit") {
+        // 결재요청 - 바로 결재 프로세스 시작
         await onSubmit(formData);
-      } else if (onSave) {
+      } else if (action === "save" && onSave) {
+        // 임시저장 - 나중에 수정 가능
         await onSave(formData);
       }
     } catch (error) {
       console.error("양식 처리 오류:", error);
+      alert("처리 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
       setIsSubmitting(false);
     }
@@ -210,44 +215,18 @@ export default function ApprovalFormRenderer({
   const renderApprovalLine = () => {
     if (!template.approval_flow?.steps) return null;
 
-    // 신청자 정보 (기안자)
-    console.log("ApprovalFormRenderer - documentInfo:", documentInfo);
-    console.log("ApprovalFormRenderer - user:", user);
-
-    // documentInfo가 있으면 우선 사용, 없으면 현재 사용자 정보 사용
-    const applicantName =
-      documentInfo?.applicant_name || user?.name || "신청자";
-    const applicantBranch =
-      documentInfo?.applicant_branch || user?.branch || "부서";
-
-    console.log("ApprovalFormRenderer - applicantName:", applicantName);
-    console.log("ApprovalFormRenderer - applicantBranch:", applicantBranch);
-
     return (
       <>
-        {/* 첫 번째 항목: 실제 문서의 신청자 */}
-        <div className={styles.approverItem}>
-          <div className={styles.approverTitle}>기안</div>
-          <div className={styles.approverName}>{applicantName}</div>
-          <div className={styles.approverDept}>{applicantBranch}</div>
-        </div>
-
-        {/* 승인자들 */}
+        {/* 승인자들만 표시 */}
         {template.approval_flow.steps.map((step, index) => {
           const title = getApproverTitle(step.approverType);
           const approverInfo = getApproverInfo(step.approverType);
 
           return (
-            <div key={index}>
-              {/* 화살표 */}
-              <div className={styles.approverArrow}></div>
-
-              {/* 승인자 */}
-              <div className={styles.approverItem}>
-                <div className={styles.approverTitle}>{title}</div>
-                <div className={styles.approverName}>{approverInfo.name}</div>
-                <div className={styles.approverDept}>{approverInfo.dept}</div>
-              </div>
+            <div key={index} className={styles.approverItem}>
+              <div className={styles.approverTitle}>{title}</div>
+              <div className={styles.approverName}>{approverInfo.name}</div>
+              <div className={styles.approverDept}>{approverInfo.dept}</div>
             </div>
           );
         })}
@@ -478,8 +457,12 @@ export default function ApprovalFormRenderer({
                 <User size={20} />
               </div>
               <div className={styles.approverDetails}>
-                <div className={styles.approverName}>박상훈 사원</div>
-                <div className={styles.approverDept}>브랜드마케팅본부</div>
+                <div className={styles.approverName}>
+                  {documentInfo?.applicant_name || user?.name || "작성자"}
+                </div>
+                <div className={styles.approverDept}>
+                  {documentInfo?.applicant_branch || user?.branch || "부서"}
+                </div>
                 <div className={styles.approvalStatus}>기안</div>
               </div>
             </div>
@@ -515,37 +498,40 @@ export default function ApprovalFormRenderer({
         </div>
       </div>
 
-      {/* 하단 액션 바 */}
-      <div className={styles.bottomActions}>
-        <div className={styles.leftActions}>
-          <button
-            className={styles.actionButton}
-            onClick={() => handleSubmit("submit")}
-            disabled={readonly || isSubmitting}
-          >
-            <Send size={16} />
-            결재요청
-          </button>
-          {onSave && (
+      {/* 하단 액션 바 - 읽기 전용이 아닐 때만 표시 */}
+      {!readonly && (
+        <div className={styles.bottomActions}>
+          <div className={styles.leftActions}>
             <button
               className={styles.actionButton}
-              onClick={() => handleSubmit("save")}
-              disabled={readonly || isSubmitting}
+              onClick={() => handleSubmit("submit")}
+              disabled={isSubmitting}
             >
-              <Save size={16} />
-              임시저장
+              <Send size={16} />
+              {isSubmitting ? "제출 중..." : "결재요청"}
             </button>
-          )}
+            {onSave && (
+              <button
+                className={styles.actionButton}
+                onClick={() => handleSubmit("save")}
+                disabled={isSubmitting}
+                style={{ backgroundColor: "#6b7280" }}
+              >
+                <Save size={16} />
+                임시저장
+              </button>
+            )}
+          </div>
+          <div className={styles.rightActions}>
+            <select className={styles.autoSaveSelect}>
+              <option>자동저장안함</option>
+              <option>5분마다</option>
+              <option>10분마다</option>
+            </select>
+            <button className={styles.listButton}>목록</button>
+          </div>
         </div>
-        <div className={styles.rightActions}>
-          <select className={styles.autoSaveSelect}>
-            <option>자동저장안함</option>
-            <option>5분마다</option>
-            <option>10분마다</option>
-          </select>
-          <button className={styles.listButton}>목록</button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

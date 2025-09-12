@@ -193,6 +193,11 @@ export const signIn = async (
 export const signOut = async (): Promise<void> => {
   try {
     localStorage.removeItem("nms-user-session");
+
+    // 로그아웃 후 로그인 페이지로 리다이렉트
+    if (typeof window !== "undefined") {
+      window.location.href = "/auth/login";
+    }
   } catch (error) {
     throw new Error("로그아웃 중 오류가 발생했습니다.");
   }

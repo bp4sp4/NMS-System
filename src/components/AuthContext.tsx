@@ -134,6 +134,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const signOut = async () => {
     await authSignOut();
     setUser(null);
+
+    // 로그아웃 후 로그인 페이지로 리다이렉트
+    if (typeof window !== "undefined") {
+      window.location.href = "/auth/login";
+    }
   };
 
   const createUser = async (userData: {

@@ -154,7 +154,7 @@
 }
 
 .approvalLabel {
-    writing-mode: vertical-rl;
+
     text-orientation: mixed;
     font-weight: 600;
     color: #374151;
@@ -166,9 +166,10 @@
 
 .approverInfo {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 0.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .approverArrow {

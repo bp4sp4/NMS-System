@@ -88,10 +88,13 @@ export function getApproverInfo(approverType: string): {
   dept: string;
 } {
   const approverMap: Record<string, { name: string; dept: string }> = {
-    hr_manager: { name: "경영", dept: "경영지원본부" },
-    general_manager: { name: "경영", dept: "경영지원본부" },
-    director: { name: "박상훈", dept: "브랜드마케팅본부" },
-    ceo: { name: "관리자", dept: "AIO지점" },
+    hr_manager: { name: "경영실장", dept: "경영지원본부" },
+    general_manager: { name: "경영실장", dept: "경영지원본부" },
+    accounting_manager: { name: "경영실장", dept: "경영지원본부" },
+    purchase_manager: { name: "경영실장", dept: "경영지원본부" },
+    sales_manager: { name: "경영실장", dept: "경영지원본부" },
+    director: { name: "이사", dept: "경영지원본부" },
+    ceo: { name: "대표이사", dept: "경영지원본부" },
   };
 
   return approverMap[approverType] || { name: "승인자", dept: "부서" };
@@ -184,6 +187,95 @@ export async function getApprovalDocuments(
   }
 }
 
+// 결재 대기 중인 문서들 조회 (결재자가 볼 수 있는 문서들)
+export async function getPendingApprovalDocuments(
+  userId?: string
+): Promise<ApprovalApiResponse<ApprovalDocument[]>> {
+  try {
+    if (!userId) {
+      return { success: false, error: "사용자 ID가 필요합니다." };
+    }
+
+    // 사용자 직급 확인
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select(
+        `
+        *,
+        positions (
+          id,
+          name,
+          level
+        )
+      `
+      )
+      .eq("id", userId)
+      .single();
+
+    if (userError || !userData) {
+      return { success: false, error: "사용자 정보를 찾을 수 없습니다." };
+    }
+
+    // 결재 권한이 있는 직급인지 확인 (이사 이상만 결재 가능)
+    const userLevel = userData.positions?.level || 0;
+    if (userLevel < 5) {
+      // 이사(level 5) 미만은 결재 권한 없음
+      return { success: true, data: [] }; // 빈 배열 반환
+    }
+
+    let query = supabase
+      .from("approval_documents")
+      .select(
+        `
+        *,
+        applicant:users!approval_documents_applicant_id_fkey(name),
+        current_approver:users!approval_documents_current_approver_id_fkey(name),
+        template:approval_form_templates(*)
+      `
+      )
+      .eq("current_approver_id", userId) // 현재 결재자가 본인인 문서들
+      .in("status", ["submitted", "pending"]) // 제출됨 또는 승인대기 상태
+      .order("created_at", { ascending: false });
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    return { success: true, data: data || [] };
+  } catch (error) {
+    console.error("결재 대기 문서 조회 오류:", error);
+    return {
+      success: false,
+      error: "결재 대기 문서를 불러오는데 실패했습니다.",
+    };
+  }
+}
+
+// 승인 이력 조회 함수
+export async function getApprovalHistory(
+  documentId: string
+): Promise<ApprovalApiResponse<any[]>> {
+  try {
+    const { data, error } = await supabase
+      .from("approval_history")
+      .select(
+        `
+        *,
+        approver:users!approval_history_approver_id_fkey(name)
+      `
+      )
+      .eq("document_id", documentId)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    return { success: true, data: data || [] };
+  } catch (error) {
+    console.error("승인 이력 조회 오류:", error);
+    return { success: false, error: "승인 이력을 불러오는데 실패했습니다." };
+  }
+}
+
 export async function getApprovalDocument(
   documentId: string,
   userId?: string
@@ -203,8 +295,12 @@ export async function getApprovalDocument(
 
     if (error) throw error;
 
-    // 권한 확인: 신청자만 자신의 문서를 볼 수 있음
-    if (userId && data.applicant_id !== userId) {
+    // 권한 확인: 신청자 또는 현재 결재자만 문서를 볼 수 있음
+    if (
+      userId &&
+      data.applicant_id !== userId &&
+      data.current_approver_id !== userId
+    ) {
       return { success: false, error: "이 문서를 조회할 권한이 없습니다." };
     }
 
@@ -235,7 +331,8 @@ export async function getApprovalDocument(
 
 export async function createApprovalDocument(
   request: CreateDocumentRequest,
-  userId?: string
+  userId?: string,
+  isSubmit: boolean = false
 ): Promise<ApprovalApiResponse<ApprovalDocument>> {
   try {
     // userId가 제공되지 않은 경우 클라이언트에서 전달받아야 함
@@ -264,7 +361,7 @@ export async function createApprovalDocument(
       form_data: request.form_data,
       applicant_id: userId,
       current_approver_id: currentApproverId,
-      status: "draft" as const,
+      status: isSubmit ? ("submitted" as const) : ("draft" as const),
       priority: request.priority || "normal",
       approval_flow: template.approval_flow,
     };
@@ -419,11 +516,26 @@ export async function processApproval(
       return { success: false, error: "사용자 정보를 찾을 수 없습니다." };
     }
 
-    // 경영지원본부 실장만 승인/반려 가능
-    if (userData.branch !== "경영지원본부" || userData.name !== "경영") {
+    // 문서 정보 조회하여 현재 결재자 확인
+    const { data: documentData, error: documentError } = await supabase
+      .from("approval_documents")
+      .select("current_approver_id, status")
+      .eq("id", request.document_id)
+      .single();
+
+    if (documentError || !documentData) {
+      return { success: false, error: "문서를 찾을 수 없습니다." };
+    }
+
+    // 현재 결재자가 본인이 아니거나 문서 상태가 승인 대기 중이 아닌 경우
+    if (
+      documentData.current_approver_id !== userId ||
+      !["submitted", "pending"].includes(documentData.status)
+    ) {
       return {
         success: false,
-        error: "승인 권한이 없습니다. 경영지원본부 실장만 승인할 수 있습니다.",
+        error:
+          "승인 권한이 없습니다. 현재 결재자가 아니거나 승인 대기 중인 문서가 아닙니다.",
       };
     }
 

@@ -5,7 +5,11 @@ import { useAuth } from "@/components/AuthContext";
 import { useRouter, useParams } from "next/navigation";
 import Header from "@/components/Navigation";
 import ApprovalFormRenderer from "@/components/ApprovalFormRenderer";
-import { getApprovalDocument, processApproval } from "@/lib/approval";
+import {
+  getApprovalDocument,
+  processApproval,
+  getApprovalHistory,
+} from "@/lib/approval";
 import type { ApprovalDocument } from "@/types/approval";
 import { CheckCircle, XCircle, ArrowLeft, Clock, FileText } from "lucide-react";
 import styles from "./page.module.css";
@@ -21,6 +25,7 @@ function ApprovalDetailContent() {
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [comment, setComment] = useState("");
+  const [approvalHistory, setApprovalHistory] = useState<any[]>([]);
 
   // 문서 로드
   useEffect(() => {
@@ -41,6 +46,12 @@ function ApprovalDetailContent() {
         console.log("Applicant name:", result.data.applicant_name);
         console.log("Applicant branch:", result.data.applicant_branch);
         setDocument(result.data);
+
+        // 승인 이력도 함께 로드
+        const historyResult = await getApprovalHistory(documentId);
+        if (historyResult.success && historyResult.data) {
+          setApprovalHistory(historyResult.data);
+        }
       } else {
         setError(result.error || "문서를 불러오는데 실패했습니다.");
       }
@@ -313,6 +324,43 @@ function ApprovalDetailContent() {
                 <XCircle size={20} />
                 반려
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* 승인 이력 섹션 */}
+        {approvalHistory.length > 0 && (
+          <div className={styles.historySection}>
+            <h2 className={styles.sectionTitle}>승인 이력</h2>
+            <div className={styles.historyList}>
+              {approvalHistory.map((history, index) => (
+                <div key={history.id} className={styles.historyItem}>
+                  <div className={styles.historyHeader}>
+                    <div className={styles.historyInfo}>
+                      <span className={styles.historyApprover}>
+                        {history.approver?.name || "승인자"}
+                      </span>
+                      <span
+                        className={`${styles.historyAction} ${
+                          history.action === "approve"
+                            ? styles.approved
+                            : styles.rejected
+                        }`}
+                      >
+                        {history.action === "approve" ? "승인" : "반려"}
+                      </span>
+                    </div>
+                    <span className={styles.historyDate}>
+                      {new Date(history.created_at).toLocaleString("ko-KR")}
+                    </span>
+                  </div>
+                  {history.comment && (
+                    <div className={styles.historyComment}>
+                      "{history.comment}"
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}

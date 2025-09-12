@@ -313,3 +313,75 @@
         justify-content: center;
     }
 }
+
+/* 승인 이력 스타일 */
+.historySection {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.historyList {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.historyItem {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background: #f9fafb;
+}
+
+.historyHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.historyInfo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.historyApprover {
+    font-weight: 600;
+    color: #111827;
+}
+
+.historyAction {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.historyAction.approved {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.historyAction.rejected {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.historyDate {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.historyComment {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    font-style: italic;
+    color: #374151;
+    margin-top: 0.5rem;
+}

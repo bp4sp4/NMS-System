@@ -13,7 +13,10 @@ import {
   XCircle,
   AlertCircle,
 } from "lucide-react";
-import { getApprovalDocuments } from "@/lib/approval";
+import {
+  getApprovalDocuments,
+  getPendingApprovalDocuments,
+} from "@/lib/approval";
 import styles from "./page.module.css";
 
 interface ApprovalDocument {
@@ -49,7 +52,10 @@ export default function ApprovalPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [documents, setDocuments] = useState<ApprovalDocument[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"my-documents">("my-documents");
+  const [activeTab, setActiveTab] = useState<
+    "my-documents" | "pending-approvals"
+  >("my-documents");
+  const [canApprove, setCanApprove] = useState(false);
 
   // 인증 상태 확인 및 리다이렉트
   useEffect(() => {
@@ -59,25 +65,42 @@ export default function ApprovalPage() {
     }
   }, [user, isLoading, router]);
 
-  // 문서 목록 로드
+  // 사용자 직급 확인 및 문서 목록 로드
   useEffect(() => {
     if (user) {
+      checkApprovalPermission();
       loadDocuments();
     }
   }, [user, activeTab]);
 
+  const checkApprovalPermission = () => {
+    if (!user?.positions?.level) {
+      setCanApprove(false);
+      return;
+    }
+
+    // 이사(level 5) 이상만 결재 권한 있음
+    setCanApprove(user.positions.level >= 5);
+  };
+
   const loadDocuments = async () => {
     setLoading(true);
     try {
-      // 모든 탭에서 사용자 ID가 필요함 (신청자만 자신의 문서 조회 가능)
       if (!user?.id) {
         setDocuments([]);
         setLoading(false);
         return;
       }
 
-      // 내 문서만 조회
-      const result = await getApprovalDocuments(user.id);
+      let result;
+
+      if (activeTab === "my-documents") {
+        // 내가 작성한 문서들 조회
+        result = await getApprovalDocuments(user.id);
+      } else {
+        // 내가 결재해야 할 문서들 조회
+        result = await getPendingApprovalDocuments(user.id);
+      }
 
       if (result.success && result.data) {
         // 데이터 변환
@@ -194,6 +217,27 @@ export default function ApprovalPage() {
           <p className={styles.subtitle}>
             {user?.branch} - {user?.name}님의 결재 문서를 관리하세요
           </p>
+        </div>
+
+        <div className={styles.tabs}>
+          <button
+            className={`${styles.tab} ${
+              activeTab === "my-documents" ? styles.activeTab : ""
+            }`}
+            onClick={() => setActiveTab("my-documents")}
+          >
+            내 문서
+          </button>
+          {canApprove && (
+            <button
+              className={`${styles.tab} ${
+                activeTab === "pending-approvals" ? styles.activeTab : ""
+              }`}
+              onClick={() => setActiveTab("pending-approvals")}
+            >
+              결재 대기
+            </button>
+          )}
         </div>
 
         <div className={styles.actions}>

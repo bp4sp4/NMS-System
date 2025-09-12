@@ -216,10 +216,13 @@ export async function getPendingApprovalDocuments(
       return { success: false, error: "사용자 정보를 찾을 수 없습니다." };
     }
 
-    // 결재 권한이 있는 직급인지 확인 (이사 이상만 결재 가능)
+    // 결재 권한이 있는 직급인지 확인
     const userLevel = userData.positions?.level || 0;
-    if (userLevel < 5) {
-      // 이사(level 5) 미만은 결재 권한 없음
+    const userBranch = userData.branch;
+
+    // 경영지원본부는 직급과 관계없이 결재 권한 있음
+    // 그 외는 이사(level 5) 이상만 결재 가능
+    if (userBranch !== "경영지원본부" && userLevel < 5) {
       return { success: true, data: [] }; // 빈 배열 반환
     }
 

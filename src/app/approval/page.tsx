@@ -74,12 +74,18 @@ export default function ApprovalPage() {
   }, [user, activeTab]);
 
   const checkApprovalPermission = () => {
+    // 경영지원본부는 직급과 관계없이 결재 권한 있음
+    if (user?.branch === "경영지원본부") {
+      setCanApprove(true);
+      return;
+    }
+
+    // 그 외는 이사(level 5) 이상만 결재 권한 있음
     if (!user?.positions?.level) {
       setCanApprove(false);
       return;
     }
 
-    // 이사(level 5) 이상만 결재 권한 있음
     setCanApprove(user.positions.level >= 5);
   };
 

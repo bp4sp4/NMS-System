@@ -356,7 +356,7 @@ function ApprovalDetailContent() {
                   </div>
                   {history.comment && (
                     <div className={styles.historyComment}>
-                      "{history.comment}"
+                      &ldquo;{history.comment}&rdquo;
                     </div>
                   )}
                 </div>
